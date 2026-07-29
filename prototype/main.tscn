@@ -1,8 +1,9 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene load_steps=7 format=3]
 
 [ext_resource type="Script" path="res://scripts/main.gd" id="1_main"]
 [ext_resource type="Script" path="res://scripts/player.gd" id="2_player"]
-[ext_resource type="Texture2D" path="res://assets/characters/male/body_walk_4way.png" id="3_body"]
+[ext_resource type="Texture2D" path="res://assets/characters/chibi/body_walk_4way.png" id="3_body"]
+[ext_resource type="Texture2D" path="res://assets/characters/chibi/head_male_walk_4way.png" id="4_head"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_player"]
 size = Vector2(34, 24)
@@ -15,9 +16,13 @@ position = Vector2(128, 96)
 script = ExtResource("2_player")
 
 [node name="BodySprite" type="Sprite2D" parent="Player"]
-position = Vector2(0, -58)
-scale = Vector2(0.5, 0.5)
+position = Vector2(0, -26)
 texture = ExtResource("3_body")
+texture_filter = 1
+
+[node name="HeadSprite" type="Sprite2D" parent="Player"]
+position = Vector2(0, -26)
+texture = ExtResource("4_head")
 texture_filter = 1
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Player"]

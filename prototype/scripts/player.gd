@@ -10,9 +10,11 @@ var direction_row := 0
 var walk_phase := 0.0
 var space_was_down := false
 var variant := "male"
-var frame_textures: Array[Texture2D] = []
+var body_frame_textures: Array[Texture2D] = []
+var head_frame_textures: Array[Texture2D] = []
 
 @onready var body_sprite: Sprite2D = $BodySprite
+@onready var head_sprite: Sprite2D = $HeadSprite
 
 
 func _ready() -> void:
@@ -35,15 +37,22 @@ func _physics_process(delta: float) -> void:
 
 
 func _load_frame_textures() -> void:
-	frame_textures.clear()
+	body_frame_textures.clear()
+	head_frame_textures.clear()
 	for row in range(4):
-		for column in range(4):
-			var path := "res://assets/characters/%s/frames/walk_row%d_frame%d.png" % [variant, row, column]
-			var texture := load(path) as Texture2D
-			if texture == null:
-				push_error("Missing character frame: " + path)
-				continue
-			frame_textures.append(texture)
+		for column in range(8):
+			var body_path := "res://assets/characters/chibi/body_frames/walk_row%d_frame%d.png" % [row, column]
+			var head_path := "res://assets/characters/chibi/head_%s_frames/walk_row%d_frame%d.png" % [variant, row, column]
+			var body_texture := load(body_path) as Texture2D
+			var head_texture := load(head_path) as Texture2D
+			if body_texture == null:
+				push_error("Missing character body frame: " + body_path)
+			else:
+				body_frame_textures.append(body_texture)
+			if head_texture == null:
+				push_error("Missing character head frame: " + head_path)
+			else:
+				head_frame_textures.append(head_texture)
 
 
 func _read_keyboard_vector() -> Vector2:
@@ -72,20 +81,18 @@ func _update_direction(input_vector: Vector2) -> void:
 
 func _update_walk_frame(delta: float, is_moving: bool) -> void:
 	if is_moving:
-		walk_phase = fmod(walk_phase + delta * walk_fps, 4.0)
+		walk_phase = fmod(walk_phase + delta * walk_fps, 8.0)
 	else:
 		walk_phase = 0.0
 	_apply_frame(int(walk_phase))
 
 
 func _apply_frame(frame: int) -> void:
-	if frame_textures.is_empty():
+	if body_frame_textures.is_empty() or head_frame_textures.is_empty():
 		return
-	var index := direction_row * 4 + posmod(frame, 4)
-	body_sprite.texture = frame_textures[index]
-	body_sprite.hframes = 1
-	body_sprite.vframes = 1
-	body_sprite.frame_coords = Vector2i.ZERO
+	var index := direction_row * 8 + posmod(frame, 8)
+	body_sprite.texture = body_frame_textures[index]
+	head_sprite.texture = head_frame_textures[index]
 
 
 func _update_bomb_input() -> void:

@@ -17,11 +17,14 @@ func _run() -> void:
 
 	var player := instance.get_node_or_null("Player") as CharacterBody2D
 	var body_sprite := instance.get_node_or_null("Player/BodySprite") as Sprite2D
-	if player == null or body_sprite == null:
+	var head_sprite := instance.get_node_or_null("Player/HeadSprite") as Sprite2D
+	if player == null or body_sprite == null or head_sprite == null:
 		_fail("player scene nodes are missing")
 		return
-	if body_sprite.texture == null or player.frame_textures.size() != 16:
-		_fail("body frame set is not loaded as 16 separate frames")
+	if body_sprite.texture == null or head_sprite.texture == null:
+		_fail("body/head frame textures are not loaded")
+	if player.body_frame_textures.size() != 32 or player.head_frame_textures.size() != 32:
+		_fail("body/head frame sets are not loaded as 32 separate frames")
 		return
 
 	player._update_direction(Vector2.RIGHT)

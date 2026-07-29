@@ -30,7 +30,7 @@ Keep gender presentation out of the neutral mannequin wherever possible. Treat b
 1. Created front-facing visual anchors for the male-presenting and female-presenting variants.
 2. Created four-direction neutral mannequin sheets for both variants. Each sheet includes full-body turns plus separate head-only and body-only turn rows.
 
-The neutral base has no hair, eyes, nose, mouth, clothing, underwear, accessories, or anatomical detail. The front-facing anchors may include eyes and clothing for visual design reference, but no nose or mouth.
+The neutral base has no hair, ears, eyes, nose, mouth, clothing, underwear, accessories, or anatomical detail. The head is intentionally oversized in the QQTang/Q-style proportion, with a compact body beneath it. The front-facing anchors may include eyes and clothing for visual design reference, but no nose or mouth.
 
 ### Generated Assets
 
@@ -50,11 +50,12 @@ Do not build the random face, hair, or clothing generation pipeline yet. First v
 ### Animation Specification
 
 - Direction set: front, right, back, left.
-- First cycle: four frames per direction.
+- First cycle: eight frames per direction.
 - Frame order: left contact, passing, right contact, passing.
 - Motion: small readable leg stride, opposite arm swing, restrained body bob, and a stable head anchor.
-- Layout: one 4 x 4 sheet per presentation variant; rows are directions and columns are frames.
-- Base content: no hair, eyes, nose, mouth, clothing, underwear, accessories, or anatomical detail.
+- Layout: one 4 x 8 sheet per presentation variant; rows are directions and columns are frames.
+- Base content: no hair, ears, eyes, nose, mouth, clothing, underwear, accessories, or anatomical detail.
+- Runtime composition: one shared body layer plus an independent male or female blank-head layer. Female blush remains a separate optional face overlay.
 
 ### Execution Steps
 
@@ -98,12 +99,12 @@ Recommended animation names are `idle_front`, `idle_right`, `idle_back`, `idle_l
 
 ## Minimal Prototype Status
 
-The first runtime processing pass is complete for the neutral body layer:
+The current runtime processing pass is complete for the QQTang-style neutral layers:
 
-- Each walk sheet is split conceptually into a 4 x 4 atlas with 384 x 256 cells.
-- Gray background and guide lines were removed with local image processing.
-- Transparent runtime atlases, individual frames, idle atlases, and JSON manifests were created under `prototype/assets/characters/`.
-- `prototype/` contains a UI-free Godot 4.6.2 test project with movement, collision walls, four-direction walk animation, and a simplified bomb fuse/blast feedback.
+- The generated 4 x 8 sheets are split into 64 x 64 runtime cells with a 52-pixel subject envelope and a shared foot baseline.
+- Magenta background was removed with local image processing; head and body layers overlap slightly at the neck to prevent seams.
+- Transparent body, male-head, and female-head atlases, individual frames, and a JSON manifest were created under `prototype/assets/characters/chibi/`.
+- `prototype/` contains a UI-free Godot test project with movement, collision walls, eight-frame four-direction walk animation, and a simplified bomb fuse/blast feedback.
 - The same prototype can select the female base with the `--female` command-line argument.
 
 ### Silent Verification
@@ -122,7 +123,8 @@ The current prototype validates the movement and asset handoff path. It is not y
 ### Prototype Iteration 1 Fixes
 
 - Corrected the generated side-view row mapping so left and right movement face the expected direction.
-- Switched runtime playback from the large 4 x 4 atlas to the isolated frame PNGs, preventing adjacent-frame bleed and the stray head fragment visible when moving upward.
+- Switched runtime playback to isolated 64 x 64 frame PNGs, preventing adjacent-frame bleed and the stray head fragment visible when moving upward.
+- Replaced the small-head source with a QQTang-style oversized head, removed ears from every directional view, and split the runtime into shared body plus male/female head layers.
 - Confirmed that the walk timer advances the actual texture frame while movement continues.
 - Reprocessed transparent frames with edge-color extrusion to reduce filtered halos and particle-like edge noise.
 
