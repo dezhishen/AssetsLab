@@ -13,6 +13,8 @@ CELL_WIDTH = 384
 CELL_HEIGHT = 256
 GRID_COLUMNS = 4
 GRID_ROWS = 4
+FRAME_ANCHOR_X = CELL_WIDTH // 2
+FRAME_BASELINE_Y = CELL_HEIGHT - 11
 
 
 def build_foreground_mask(cell: Image.Image) -> Image.Image:
@@ -46,6 +48,63 @@ def build_foreground_mask(cell: Image.Image) -> Image.Image:
     output = output.filter(ImageFilter.MinFilter(3))
     output = output.filter(ImageFilter.MaxFilter(3))
     return output
+
+
+def keep_largest_component(mask: Image.Image) -> Image.Image:
+    """Discard detached pixels such as the next row bleeding into this cell."""
+    width, height = mask.size
+    source = mask.load()
+    visited = bytearray(width * height)
+    largest: list[int] = []
+
+    for y in range(height):
+        for x in range(width):
+            start = y * width + x
+            if visited[start] or source[x, y] == 0:
+                continue
+
+            component = [start]
+            visited[start] = 1
+            for index in component:
+                cx = index % width
+                cy = index // width
+                for nx, ny in (
+                    (cx - 1, cy),
+                    (cx + 1, cy),
+                    (cx, cy - 1),
+                    (cx, cy + 1),
+                ):
+                    if not (0 <= nx < width and 0 <= ny < height):
+                        continue
+                    neighbor = ny * width + nx
+                    if not visited[neighbor] and source[nx, ny] != 0:
+                        visited[neighbor] = 1
+                        component.append(neighbor)
+
+            if len(component) > len(largest):
+                largest = component
+
+    output = bytearray(width * height)
+    for index in largest:
+        output[index] = 255
+    return Image.frombytes("L", (width, height), bytes(output))
+
+
+def align_frame(rgba: Image.Image, alpha: Image.Image) -> tuple[Image.Image, Image.Image]:
+    """Give every frame a stable horizontal center and foot baseline."""
+    bbox = alpha.getbbox()
+    if bbox is None:
+        return rgba, alpha
+
+    current_center_x = (bbox[0] + bbox[2]) / 2.0
+    dx = round(FRAME_ANCHOR_X - current_center_x)
+    dy = FRAME_BASELINE_Y - bbox[3]
+
+    aligned_rgba = Image.new("RGBA", rgba.size, (0, 0, 0, 0))
+    aligned_alpha = Image.new("L", alpha.size, 0)
+    aligned_rgba.alpha_composite(rgba, (dx, dy))
+    aligned_alpha.paste(alpha, (dx, dy))
+    return aligned_rgba, aligned_alpha
 
 
 def bleed_edge_colors(rgba: Image.Image, alpha: Image.Image, passes: int = 5) -> Image.Image:
@@ -102,9 +161,10 @@ def process_variant(source_name: str, variant_name: str) -> dict[str, object]:
                 (row + 1) * CELL_HEIGHT,
             )
             cell = source.crop(box)
-            alpha = build_foreground_mask(cell)
+            alpha = keep_largest_component(build_foreground_mask(cell))
             rgba = cell.convert("RGBA")
             rgba.putalpha(alpha)
+            rgba, alpha = align_frame(rgba, alpha)
             rgba = bleed_edge_colors(rgba, alpha)
             if first_frame is None:
                 first_frame = rgba.copy()
