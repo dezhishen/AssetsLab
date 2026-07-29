@@ -28,11 +28,11 @@ func _run() -> void:
 		return
 
 	player._update_direction(Vector2.RIGHT)
-	if player.direction_row != 3:
+	if player.direction_row != 1:
 		_fail("right movement is mapped to the wrong side row")
 		return
 	player._update_direction(Vector2.LEFT)
-	if player.direction_row != 1:
+	if player.direction_row != 3:
 		_fail("left movement is mapped to the wrong side row")
 		return
 	player._update_direction(Vector2.UP)

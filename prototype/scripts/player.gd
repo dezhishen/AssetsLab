@@ -73,8 +73,8 @@ func _update_direction(input_vector: Vector2) -> void:
 	if input_vector.length_squared() <= 0.0:
 		return
 	if absf(input_vector.x) > absf(input_vector.y):
-		# The generated side-view rows face left on row 1 and right on row 3.
-		direction_row = 3 if input_vector.x > 0.0 else 1
+		# The generated side-view rows face right on row 1 and left on row 3.
+		direction_row = 1 if input_vector.x > 0.0 else 3
 	else:
 		direction_row = 0 if input_vector.y > 0.0 else 2
 
