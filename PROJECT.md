@@ -2,7 +2,7 @@
 
 ## Working Directory
 
-`D:\Apps\CodeXApp\Tests\AssetsLab`
+`E:\WorkProject\AssetsLab`
 
 All project work and project files must be kept within this directory.
 
@@ -108,7 +108,7 @@ The first runtime processing pass is complete for the neutral body layer:
 
 ### Silent Verification
 
-The Godot 4.6.2 console executable was downloaded to the sibling directory `D:\Apps\CodeXApp\Tests\Godot-4.6.2` and used without opening the editor UI.
+The Godot 4.6.2 console executable can be selected from `-GodotPath`, the `GODOT_BIN`/`GODOT_PATH` environment variable, `godot`/`godot4` on `PATH`, or the legacy sibling directory `Godot-4.6.2`. It is used without opening the editor UI.
 
 Verified commands:
 
@@ -129,3 +129,5 @@ The current prototype validates the movement and asset handoff path. It is not y
 ### Automated Visual Capture
 
 `tools/capture_walk_gif.ps1` runs `prototype/tests/capture_test.gd` with internal W/A/S/D key events, captures the rendered viewport at 12 FPS, and uses the local Pillow tool environment to produce `prototype/test_output/movement_walk.gif`. Godot is launched as a hidden process with the normal OpenGL renderer because Godot's dummy `--headless` renderer has no readable viewport texture on this machine. The test still runs without presenting an editor or game window.
+
+`tools/run_headless_tests.ps1` runs the male smoke test and optionally the female smoke test with `--headless`. Set `$env:GODOT_BIN` (or `$env:GODOT_PATH`) or pass `-GodotPath` when Godot is installed in a different directory.

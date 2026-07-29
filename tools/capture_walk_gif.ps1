@@ -1,21 +1,20 @@
 param(
-    [switch]$Female
+    [switch]$Female,
+    [string]$GodotPath
 )
 
 $ErrorActionPreference = "Stop"
 
 $assetsLabRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $prototypeRoot = Join-Path $assetsLabRoot "prototype"
-$godotPath = Join-Path $assetsLabRoot "..\Godot-4.6.2\unpacked\Godot_v4.6.2-stable_win64_console.exe"
+. (Join-Path $PSScriptRoot "resolve_godot.ps1")
+$godotPath = Resolve-GodotExecutable -RequestedPath $GodotPath -AssetsLabRoot $assetsLabRoot
 $pythonPath = "C:\Python314\python.exe"
 $pythonModules = Join-Path $assetsLabRoot ".tools\python"
 $frameDirectory = Join-Path $prototypeRoot "test_output\capture_frames"
 $gifPath = Join-Path $prototypeRoot "test_output\movement_walk.gif"
 $logPath = Join-Path $prototypeRoot "test_output\capture.log"
 
-if (-not (Test-Path -LiteralPath $godotPath)) {
-    throw "Godot executable not found: $godotPath"
-}
 if (-not (Test-Path -LiteralPath $pythonPath)) {
     throw "Python executable not found: $pythonPath"
 }

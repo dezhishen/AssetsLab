@@ -17,12 +17,14 @@ Controls:
 
 Append `--female` to run the same prototype with the female-presenting base.
 
-Run from the Godot 4.6.2 executable directory:
+Run from the repository root. The test scripts resolve Godot in this order: `-GodotPath`, `GODOT_BIN`/`GODOT_PATH`, `godot`/`godot4` on `PATH`, then the legacy adjacent `Godot-4.6.2` directory:
 
 ```powershell
-godot --path D:\Apps\CodeXApp\Tests\AssetsLab\prototype --editor --headless --quit
-godot --path D:\Apps\CodeXApp\Tests\AssetsLab\prototype --headless --script res://tests/smoke_test.gd
-godot --path D:\Apps\CodeXApp\Tests\AssetsLab\prototype --headless --script res://tests/smoke_test.gd -- --female
+$env:GODOT_BIN = 'E:\Path\To\Godot_v4.6.2-stable_win64_console.exe'
+.\tools\run_headless_tests.ps1 -Female
+
+# Or pass a different local installation for one run:
+.\tools\run_headless_tests.ps1 -GodotPath 'E:\Other\Godot\godot.exe' -Female
 ```
 
 Generate a hidden-window W/A/S/D capture and GIF from the repository root:
