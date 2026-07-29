@@ -3,7 +3,7 @@ extends CharacterBody2D
 signal bomb_requested
 
 @export var move_speed: float = 180.0
-@export var walk_fps: float = 8.0
+@export var walk_fps: float = 10.0
 
 var spawn_position := Vector2.ZERO
 var direction_row := 0
