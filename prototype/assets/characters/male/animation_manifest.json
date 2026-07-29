@@ -1,0 +1,52 @@
+{
+  "variant": "male",
+  "source": "walk-base-4way-male-4frame-sheet.png",
+  "atlas": "prototype/assets/characters/male/body_walk_4way.png",
+  "idle_atlas": "prototype/assets/characters/male/body_idle_4way.png",
+  "frame_directory": "prototype/assets/characters/male/frames",
+  "cell_size": [
+    384,
+    256
+  ],
+  "columns": 4,
+  "rows": 4,
+  "row_directions": [
+    "front",
+    "right",
+    "back",
+    "left"
+  ],
+  "frame_order": [
+    "left_contact",
+    "passing",
+    "right_contact",
+    "passing"
+  ],
+  "frames": [
+    [
+      "walk_row0_frame0.png",
+      "walk_row0_frame1.png",
+      "walk_row0_frame2.png",
+      "walk_row0_frame3.png"
+    ],
+    [
+      "walk_row1_frame0.png",
+      "walk_row1_frame1.png",
+      "walk_row1_frame2.png",
+      "walk_row1_frame3.png"
+    ],
+    [
+      "walk_row2_frame0.png",
+      "walk_row2_frame1.png",
+      "walk_row2_frame2.png",
+      "walk_row2_frame3.png"
+    ],
+    [
+      "walk_row3_frame0.png",
+      "walk_row3_frame1.png",
+      "walk_row3_frame2.png",
+      "walk_row3_frame3.png"
+    ]
+  ],
+  "transparent_background": true
+}
