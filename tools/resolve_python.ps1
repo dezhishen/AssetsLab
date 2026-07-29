@@ -23,6 +23,16 @@ function Resolve-PythonExecutable {
         throw "Python executable was not found at '$requestedValue'. Set PYTHON_BIN or pass -PythonPath."
     }
 
+    $fallbackCandidates = @(
+        "E:\env\venv\Scripts\python.exe",
+        (Join-Path $AssetsLabRoot ".venv\Scripts\python.exe")
+    )
+    foreach ($candidate in $fallbackCandidates) {
+        if (Test-Path -LiteralPath $candidate -PathType Leaf) {
+            return (Resolve-Path -LiteralPath $candidate).Path
+        }
+    }
+
     foreach ($commandName in @("python", "python3", "py")) {
         $command = Get-Command $commandName -ErrorAction SilentlyContinue
         if ($null -ne $command -and $command.CommandType -eq "Application") {
@@ -30,15 +40,8 @@ function Resolve-PythonExecutable {
         }
     }
 
-    $fallbackCandidates = @(
-        "E:\env\venv\Scripts\python.exe",
-        (Join-Path $AssetsLabRoot ".venv\Scripts\python.exe"),
-        "C:\Python314\python.exe"
-    )
-    foreach ($candidate in $fallbackCandidates) {
-        if (Test-Path -LiteralPath $candidate -PathType Leaf) {
-            return (Resolve-Path -LiteralPath $candidate).Path
-        }
+    if (Test-Path -LiteralPath "C:\Python314\python.exe" -PathType Leaf) {
+        return (Resolve-Path -LiteralPath "C:\Python314\python.exe").Path
     }
 
     throw "Python executable was not found. Set PYTHON_BIN, pass -PythonPath, or add Python to PATH."
