@@ -19,11 +19,13 @@
     "left"
   ],
   "body_atlas": "prototype/assets/characters/chibi/body_walk_4way.png",
+  "leg_atlas": "prototype/assets/characters/chibi/leg_walk_4way.png",
   "head_atlases": {
     "male": "prototype/assets/characters/chibi/head_male_walk_4way.png",
     "female": "prototype/assets/characters/chibi/head_female_walk_4way.png"
   },
   "body_frame_directory": "prototype/assets/characters/chibi/body_frames",
+  "leg_frame_directory": "prototype/assets/characters/chibi/leg_frames",
   "head_frame_directories": {
     "male": "prototype/assets/characters/chibi/head_male_frames",
     "female": "prototype/assets/characters/chibi/head_female_frames"
@@ -31,8 +33,51 @@
   "target_subject_height": 52,
   "baseline_y": 58,
   "head_split_ratio": 0.5,
+  "leg_split_ratio": 0.66,
   "frames": {
     "body": [
+      [
+        "walk_row0_frame0.png",
+        "walk_row0_frame1.png",
+        "walk_row0_frame2.png",
+        "walk_row0_frame3.png",
+        "walk_row0_frame4.png",
+        "walk_row0_frame5.png",
+        "walk_row0_frame6.png",
+        "walk_row0_frame7.png"
+      ],
+      [
+        "walk_row1_frame0.png",
+        "walk_row1_frame1.png",
+        "walk_row1_frame2.png",
+        "walk_row1_frame3.png",
+        "walk_row1_frame4.png",
+        "walk_row1_frame5.png",
+        "walk_row1_frame6.png",
+        "walk_row1_frame7.png"
+      ],
+      [
+        "walk_row2_frame0.png",
+        "walk_row2_frame1.png",
+        "walk_row2_frame2.png",
+        "walk_row2_frame3.png",
+        "walk_row2_frame4.png",
+        "walk_row2_frame5.png",
+        "walk_row2_frame6.png",
+        "walk_row2_frame7.png"
+      ],
+      [
+        "walk_row3_frame0.png",
+        "walk_row3_frame1.png",
+        "walk_row3_frame2.png",
+        "walk_row3_frame3.png",
+        "walk_row3_frame4.png",
+        "walk_row3_frame5.png",
+        "walk_row3_frame6.png",
+        "walk_row3_frame7.png"
+      ]
+    ],
+    "leg": [
       [
         "walk_row0_frame0.png",
         "walk_row0_frame1.png",

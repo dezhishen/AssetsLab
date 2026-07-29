@@ -19,6 +19,7 @@ TARGET_HEIGHT = 52
 BASELINE_Y = 58
 CENTER_X = CELL_SIZE // 2
 HEAD_SPLIT_RATIO = 0.50
+LEG_SPLIT_RATIO = 0.66
 SEAM_OVERLAP = 2
 
 
@@ -37,7 +38,7 @@ def chroma_alpha(cell: Image.Image) -> Image.Image:
     return alpha
 
 
-def split_subject(cell: Image.Image) -> tuple[Image.Image, Image.Image]:
+def split_subject(cell: Image.Image) -> tuple[Image.Image, Image.Image, Image.Image]:
     alpha = chroma_alpha(cell)
     bbox = alpha.getbbox()
     if bbox is None:
@@ -50,21 +51,31 @@ def split_subject(cell: Image.Image) -> tuple[Image.Image, Image.Image]:
     subject_alpha = subject.getchannel("A")
 
     split_y = round(TARGET_HEIGHT * HEAD_SPLIT_RATIO)
+    leg_split_y = round(TARGET_HEIGHT * LEG_SPLIT_RATIO)
     head_end = min(TARGET_HEIGHT, split_y + SEAM_OVERLAP)
     body_start = max(0, split_y - SEAM_OVERLAP)
+    body_end = min(TARGET_HEIGHT, leg_split_y + SEAM_OVERLAP)
+    leg_start = max(0, leg_split_y - SEAM_OVERLAP)
     head_alpha = Image.new("L", subject.size, 0)
     body_alpha = Image.new("L", subject.size, 0)
+    leg_alpha = Image.new("L", subject.size, 0)
     head_alpha.paste(subject_alpha.crop((0, 0, scaled_width, head_end)), (0, 0))
     body_alpha.paste(
-        subject_alpha.crop((0, body_start, scaled_width, TARGET_HEIGHT)),
+        subject_alpha.crop((0, body_start, scaled_width, body_end)),
         (0, body_start),
+    )
+    leg_alpha.paste(
+        subject_alpha.crop((0, leg_start, scaled_width, TARGET_HEIGHT)),
+        (0, leg_start),
     )
 
     head = Image.new("RGBA", subject.size, (0, 0, 0, 0))
     body = Image.new("RGBA", subject.size, (0, 0, 0, 0))
+    leg = Image.new("RGBA", subject.size, (0, 0, 0, 0))
     head.paste(subject, (0, 0), head_alpha)
     body.paste(subject, (0, 0), body_alpha)
-    return head, body
+    leg.paste(subject, (0, 0), leg_alpha)
+    return head, body, leg
 
 
 def frame_bounds(source: Image.Image, row: int, column: int) -> tuple[int, int, int, int]:
@@ -85,8 +96,13 @@ def process_sheet(source: Image.Image, layer: str) -> tuple[Image.Image, list[li
         row_names: list[str] = []
         for column in range(COLUMNS):
             cell = source.crop(frame_bounds(source, row, column))
-            head, body = split_subject(cell)
-            frame = head if layer.startswith("head") else body
+            head, body, leg = split_subject(cell)
+            if layer.startswith("head"):
+                frame = head
+            elif layer == "leg":
+                frame = leg
+            else:
+                frame = body
             canvas = Image.new("RGBA", (CELL_SIZE, CELL_SIZE), (0, 0, 0, 0))
             x = CENTER_X - frame.width // 2
             y = BASELINE_Y - TARGET_HEIGHT
@@ -111,9 +127,11 @@ def main() -> None:
 
     # The body always comes from the shared neutral source. Only the head varies.
     body_atlas, body_frames = process_sheet(shared, "body")
+    leg_atlas, leg_frames = process_sheet(shared, "leg")
     male_atlas, male_frames = process_sheet(male, "head_male")
     female_atlas, female_frames = process_sheet(female, "head_female")
     body_atlas.save(OUTPUT / "body_walk_4way.png")
+    leg_atlas.save(OUTPUT / "leg_walk_4way.png")
     male_atlas.save(OUTPUT / "head_male_walk_4way.png")
     female_atlas.save(OUTPUT / "head_female_walk_4way.png")
 
@@ -130,11 +148,13 @@ def main() -> None:
         "frame_count_per_direction": COLUMNS,
         "row_directions": ["front", "right", "back", "left"],
         "body_atlas": (OUTPUT / "body_walk_4way.png").relative_to(ROOT).as_posix(),
+        "leg_atlas": (OUTPUT / "leg_walk_4way.png").relative_to(ROOT).as_posix(),
         "head_atlases": {
             "male": (OUTPUT / "head_male_walk_4way.png").relative_to(ROOT).as_posix(),
             "female": (OUTPUT / "head_female_walk_4way.png").relative_to(ROOT).as_posix(),
         },
         "body_frame_directory": (OUTPUT / "body_frames").relative_to(ROOT).as_posix(),
+        "leg_frame_directory": (OUTPUT / "leg_frames").relative_to(ROOT).as_posix(),
         "head_frame_directories": {
             "male": (OUTPUT / "head_male_frames").relative_to(ROOT).as_posix(),
             "female": (OUTPUT / "head_female_frames").relative_to(ROOT).as_posix(),
@@ -142,8 +162,10 @@ def main() -> None:
         "target_subject_height": TARGET_HEIGHT,
         "baseline_y": BASELINE_Y,
         "head_split_ratio": HEAD_SPLIT_RATIO,
+        "leg_split_ratio": LEG_SPLIT_RATIO,
         "frames": {
             "body": body_frames,
+            "leg": leg_frames,
             "head_male": male_frames,
             "head_female": female_frames,
         },

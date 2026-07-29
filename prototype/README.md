@@ -39,4 +39,4 @@ The capture script resolves Python from `-PythonPath`, `PYTHON_BIN`, PATH, or th
 
 The Godot process uses the normal OpenGL renderer but is launched hidden, so no editor or game window is presented. PNG frames and the GIF are written to `prototype/test_output/`; this directory is ignored by Git. The GIF is `prototype/test_output/movement_walk.gif`.
 
-The generated walk sheets are source assets. The processed transparent atlases under `assets/characters/chibi/` are the runtime inputs for this prototype. The mannequin has no ears, facial features, hair, or clothing; female blush is reserved for a later independent face overlay.
+The generated walk sheets are source assets. The processed transparent atlases under `assets/characters/chibi/` are the runtime inputs for this prototype. The runtime stack is independent `Leg` + `Body` + male/female `Head` layers, with a small per-frame head offset. The mannequin has no ears, facial features, hair, or clothing; female blush is reserved for a later independent face overlay.

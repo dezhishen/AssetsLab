@@ -11,10 +11,17 @@ var walk_phase := 0.0
 var space_was_down := false
 var variant := "male"
 var body_frame_textures: Array[Texture2D] = []
+var leg_frame_textures: Array[Texture2D] = []
 var head_frame_textures: Array[Texture2D] = []
 
 @onready var body_sprite: Sprite2D = $BodySprite
+@onready var leg_sprite: Sprite2D = $LegSprite
 @onready var head_sprite: Sprite2D = $HeadSprite
+
+const HEAD_BOB_OFFSETS := [
+	Vector2(0, 0), Vector2(0, -1), Vector2(1, -1), Vector2(0, 0),
+	Vector2(0, 1), Vector2(-1, 1), Vector2(0, 0), Vector2(0, -1),
+]
 
 
 func _ready() -> void:
@@ -38,17 +45,24 @@ func _physics_process(delta: float) -> void:
 
 func _load_frame_textures() -> void:
 	body_frame_textures.clear()
+	leg_frame_textures.clear()
 	head_frame_textures.clear()
 	for row in range(4):
 		for column in range(8):
 			var body_path := "res://assets/characters/chibi/body_frames/walk_row%d_frame%d.png" % [row, column]
+			var leg_path := "res://assets/characters/chibi/leg_frames/walk_row%d_frame%d.png" % [row, column]
 			var head_path := "res://assets/characters/chibi/head_%s_frames/walk_row%d_frame%d.png" % [variant, row, column]
 			var body_texture := load(body_path) as Texture2D
+			var leg_texture := load(leg_path) as Texture2D
 			var head_texture := load(head_path) as Texture2D
 			if body_texture == null:
 				push_error("Missing character body frame: " + body_path)
 			else:
 				body_frame_textures.append(body_texture)
+			if leg_texture == null:
+				push_error("Missing character leg frame: " + leg_path)
+			else:
+				leg_frame_textures.append(leg_texture)
 			if head_texture == null:
 				push_error("Missing character head frame: " + head_path)
 			else:
@@ -88,11 +102,13 @@ func _update_walk_frame(delta: float, is_moving: bool) -> void:
 
 
 func _apply_frame(frame: int) -> void:
-	if body_frame_textures.is_empty() or head_frame_textures.is_empty():
+	if body_frame_textures.is_empty() or leg_frame_textures.is_empty() or head_frame_textures.is_empty():
 		return
 	var index := direction_row * 8 + posmod(frame, 8)
 	body_sprite.texture = body_frame_textures[index]
+	leg_sprite.texture = leg_frame_textures[index]
 	head_sprite.texture = head_frame_textures[index]
+	head_sprite.position = Vector2(0, -26) + HEAD_BOB_OFFSETS[posmod(frame, HEAD_BOB_OFFSETS.size())]
 
 
 func _update_bomb_input() -> void:

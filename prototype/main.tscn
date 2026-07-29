@@ -1,9 +1,10 @@
-[gd_scene load_steps=7 format=3]
+[gd_scene load_steps=8 format=3]
 
 [ext_resource type="Script" path="res://scripts/main.gd" id="1_main"]
 [ext_resource type="Script" path="res://scripts/player.gd" id="2_player"]
 [ext_resource type="Texture2D" path="res://assets/characters/chibi/body_walk_4way.png" id="3_body"]
 [ext_resource type="Texture2D" path="res://assets/characters/chibi/head_male_walk_4way.png" id="4_head"]
+[ext_resource type="Texture2D" path="res://assets/characters/chibi/leg_walk_4way.png" id="5_leg"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_player"]
 size = Vector2(34, 24)
@@ -14,6 +15,11 @@ script = ExtResource("1_main")
 [node name="Player" type="CharacterBody2D" parent="."]
 position = Vector2(128, 96)
 script = ExtResource("2_player")
+
+[node name="LegSprite" type="Sprite2D" parent="Player"]
+position = Vector2(0, -26)
+texture = ExtResource("5_leg")
+texture_filter = 1
 
 [node name="BodySprite" type="Sprite2D" parent="Player"]
 position = Vector2(0, -26)

@@ -55,7 +55,7 @@ Do not build the random face, hair, or clothing generation pipeline yet. First v
 - Motion: small readable leg stride, opposite arm swing, restrained body bob, and a stable head anchor.
 - Layout: one 4 x 8 sheet per presentation variant; rows are directions and columns are frames.
 - Base content: no hair, ears, eyes, nose, mouth, clothing, underwear, accessories, or anatomical detail.
-- Runtime composition: one shared body layer plus an independent male or female blank-head layer. Female blush remains a separate optional face overlay.
+- Runtime composition: one shared torso layer, an independent shared leg layer, and a male or female blank-head layer. Female blush remains a separate optional face overlay.
 
 ### Execution Steps
 
@@ -85,7 +85,9 @@ Use one gameplay root and one synchronized visual stack:
 - `CharacterBody2D` or the project's existing character root handles movement and collision.
 - A `CharacterVisual` child owns the visual layers.
 - Each layer is a `Sprite2D` using the same cell size, origin, 4-column frame grid, and 4-row direction grid.
-- Suggested layers: `Body`, `Face`, `Hair`, `Clothing`, and optional `Accessory`.
+- Suggested layers: `Leg`, `Body`, `Head`/`Face`, `Hair`, `Clothing`, and optional `Accessory`.
+- The reference BomboAdvanture assets use six walk frames per direction with an independent `Leg` component. The prototype keeps eight stronger keyframes but now follows the same independent-leg structure.
+- Head motion is implemented as a small per-frame Sprite2D offset; the reference resource mostly relies on per-frame component textures and small anchor differences rather than a large head transform.
 - One controller stores `direction` and `walk_frame`, then applies the same `frame_coords` to every layer. This prevents random layers from drifting out of sync.
 - Use `AnimatedSprite2D` with `SpriteFrames` when a character is already flattened into a single composite animation.
 
