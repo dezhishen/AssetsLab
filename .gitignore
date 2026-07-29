@@ -1,3 +1,4 @@
 .tools/
 prototype/.godot/
+prototype/test_output/
 *.import

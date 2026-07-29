@@ -125,3 +125,7 @@ The current prototype validates the movement and asset handoff path. It is not y
 - Switched runtime playback from the large 4 x 4 atlas to the isolated frame PNGs, preventing adjacent-frame bleed and the stray head fragment visible when moving upward.
 - Confirmed that the walk timer advances the actual texture frame while movement continues.
 - Reprocessed transparent frames with edge-color extrusion to reduce filtered halos and particle-like edge noise.
+
+### Automated Visual Capture
+
+`tools/capture_walk_gif.ps1` runs `prototype/tests/capture_test.gd` with internal W/A/S/D key events, captures the rendered viewport at 12 FPS, and uses the local Pillow tool environment to produce `prototype/test_output/movement_walk.gif`. Godot is launched as a hidden process with the normal OpenGL renderer because Godot's dummy `--headless` renderer has no readable viewport texture on this machine. The test still runs without presenting an editor or game window.

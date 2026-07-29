@@ -25,4 +25,14 @@ godot --path D:\Apps\CodeXApp\Tests\AssetsLab\prototype --headless --script res:
 godot --path D:\Apps\CodeXApp\Tests\AssetsLab\prototype --headless --script res://tests/smoke_test.gd -- --female
 ```
 
+Generate a hidden-window W/A/S/D capture and GIF from the repository root:
+
+```powershell
+.\tools\capture_walk_gif.ps1
+```
+
+Add `-Female` to capture the female-presenting base.
+
+The Godot process uses the normal OpenGL renderer but is launched hidden, so no editor or game window is presented. PNG frames and the GIF are written to `prototype/test_output/`; this directory is ignored by Git. The GIF is `prototype/test_output/movement_walk.gif`.
+
 The generated walk sheets are reference assets. The processed transparent atlases under `assets/characters/` are the runtime inputs for this prototype.
