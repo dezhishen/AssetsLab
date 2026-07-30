@@ -77,7 +77,9 @@ func _load_frame_textures() -> void:
 		for column in range(8):
 			var direction_names: Array[String] = ["front", "right", "back", "left"]
 			var direction_name: String = direction_names[row]
-			var base_path := "res://assets/characters/%s/" % asset_root
+			var body_root := asset_root
+			var body_base_path := "res://assets/characters/%s/" % body_root
+			var head_base_path := "res://assets/characters/%s/" % asset_root
 			var torso_path: String
 			var arms_path: String
 			var lower_body_path: String
@@ -89,11 +91,11 @@ func _load_frame_textures() -> void:
 				lower_body_path = rebuild_body_path + "lower_body/%s_frame%d.png" % [direction_name, column]
 				feet_path = rebuild_body_path + "feet/%s_frame%d.png" % [direction_name, column]
 			else:
-				torso_path = base_path + "torso_frames/walk_row%d_frame%d.png" % [row, column]
-				arms_path = base_path + "arms_frames/walk_row%d_frame%d.png" % [row, column]
-				lower_body_path = base_path + "lower_body_frames/walk_row%d_frame%d.png" % [row, column]
-				feet_path = base_path + "feet_frames/walk_row%d_frame%d.png" % [row, column]
-			var head_path := base_path + "head_%s_frames/walk_row%d_frame%d.png" % [variant, row, column]
+				torso_path = body_base_path + "torso_frames/walk_row%d_frame%d.png" % [row, column]
+				arms_path = body_base_path + "arms_frames/walk_row%d_frame%d.png" % [row, column]
+				lower_body_path = body_base_path + "lower_body_frames/walk_row%d_frame%d.png" % [row, column]
+				feet_path = body_base_path + "feet_frames/walk_row%d_frame%d.png" % [row, column]
+			var head_path := head_base_path + "head_%s_frames/walk_row%d_frame%d.png" % [variant, row, column]
 			var ear_path: String
 			var face_path: String
 			if rebuild_head:

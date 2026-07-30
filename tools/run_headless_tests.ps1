@@ -4,8 +4,8 @@ param(
     [switch]$Female,
     [switch]$Compact,
     [switch]$BaseFeatures,
-    [switch]$RebuildHead,
-    [switch]$RebuildBody,
+	[switch]$RebuildHead,
+	[switch]$RebuildBody,
     [switch]$RgsWalkReference,
     [int]$AppearanceSeed
 )
@@ -114,10 +114,10 @@ try {
             throw "Rebuild runtime anchor validation failed with exit code $LASTEXITCODE"
         }
     }
-    & $pythonPath (Join-Path $assetsLabRoot "tools\validate_chibi_frames.py")
+	& $pythonPath (Join-Path $assetsLabRoot "tools\validate_chibi_frames.py")
     if ($LASTEXITCODE -ne 0) {
-        throw "Chibi frame validation failed with exit code $LASTEXITCODE"
-    }
+		throw "Chibi frame validation failed with exit code $LASTEXITCODE"
+	}
     & $pythonPath (Join-Path $assetsLabRoot "tools\validate_face_variants.py")
     if ($LASTEXITCODE -ne 0) {
         throw "Face and ear frame validation failed with exit code $LASTEXITCODE"
@@ -179,12 +179,12 @@ function Invoke-SmokeTest {
             $arguments += @("--", "--rebuild-body")
         }
     }
-    if ($RgsWalkReference) {
+	if ($RgsWalkReference) {
         if ($arguments -contains "--") {
             $arguments += "--rgs-walk-reference"
         } else {
             $arguments += @("--", "--rgs-walk-reference")
-        }
+	}
     }
 
     Write-Output ("Running headless smoke test ({0}) with {1}" -f ($(if ($UseFemale) { "female" } else { "male" }), $godotPath))

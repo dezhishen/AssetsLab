@@ -22,7 +22,7 @@ headless tests remain sufficient.
 
 ## Development Status
 
-Last updated: 2026-07-30.
+Last updated: 2026-07-31.
 
 ### Current Production Candidate
 
@@ -152,6 +152,31 @@ assets at runtime, so gameplay remains deterministic and does not depend on an
 AI service.
 
 ## Walking Base Execution Plan
+
+### Authoritative Limb-Puzzle Contract
+
+The user-authored rectangle pose contract is the source of truth for the
+right-facing body redraw. It exists to prevent image generation from guessing
+which projected arm or leg is visible, and to make the intended occlusion
+explicit before any final pixels are drawn.
+
+- Source: `prototype/assets/characters/limb_puzzle.json`
+- Schema: `limb_puzzle_v1`; 64 x 64 cells, eight walk frames in the order
+  `contact_a`, `down_a`, `passing_a`, `up_a`, `contact_b`, `down_b`,
+  `passing_b`, `up_b`.
+- Every frame stores `left_hand`, `right_hand`, `left_foot`, and `right_foot`
+  as independent rectangles with `x`, `y`, `w`, `h`, `angle`, and `z_order`.
+- The current approved occlusion relationship is fixed: `left_hand` and
+  `left_foot` use `z_order: 9` (behind torso), torso uses `z_order: 10`, and
+  `right_hand` and `right_foot` use `z_order: 11` (in front of torso).
+- The rectangle positions and layer order are mandatory pose input. A body
+  generation must render all four limbs from this contract; it must not hide a
+  rear limb merely because the body is right-facing. Pixel-level registration
+  may be refined, but the front/back relationship must not be inferred anew.
+
+`tools/render_limb_puzzle_guide.py` renders this contract as a 2 x 4 layout
+guide, and `prototype/preview/limb_puzzle.html` is the interactive
+editor/exporter for this data.
 
 ### Animation Specification
 

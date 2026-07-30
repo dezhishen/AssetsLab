@@ -7,5 +7,14 @@ prototype/preview/calibration/*.json
 third_party/rgs_modular_animated_characters/
 prototype/archive/retired_keyframe_rig/
 prototype/archive/retired_walk_candidates/
+prototype/assets/characters/chibi_phase_v1/
+prototype/assets/characters/rebuild_body_pose_v1/
+prototype/assets/characters/walk_pose_board.json
+prototype/assets/characters/limb_puzzle_refined_v2.json
+prototype/preview/walk_pose_board.html
+tools/build_phase_corrected_body.py
+tools/validate_phase_corrected_body.py
+tools/build_pose_board_body.py
+tools/refine_limb_puzzle_motion.py
 *.import
 __pycache__/

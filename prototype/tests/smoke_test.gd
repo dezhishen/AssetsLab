@@ -79,7 +79,9 @@ func _run() -> void:
 	if player.walk_phase != phase_before_idle:
 		_fail("walk phase reset when movement stopped")
 		return
-	var expected_head_position := Vector2.ZERO
+	# All visual layers share the scene's fixed -26px visual anchor. Rebuild
+	# head mode adds its direction-specific calibration offset on top.
+	var expected_head_position := Vector2(0.0, -26.0)
 	if player.rebuild_head:
 		expected_head_position = player._current_body_anchor_offset()
 		expected_head_position.y -= 26.0

@@ -8,6 +8,14 @@ The direction table is intentionally explicit: Godot row 1 is the right-facing b
 
 Use `body_calibrate.html` to align the complete head group against the four-direction body. The page uses a horizontal neck guide and stores offsets in the ignored `prototype/preview/calibration/body_latest.json` file.
 
+Use `limb_puzzle.html` when the four limbs need to be positioned independently. It exports `limb_puzzle_v1`, preserving the rectangle placement, angle, and layer order for each limb.
+
+The tracked body-pose source of truth is instead
+`prototype/assets/characters/limb_puzzle.json` (`limb_puzzle_v1`). Its four
+rectangles per frame record position, angle, and `z_order`; retain the explicit
+rear/torso/front relationship when drawing final pixels. The page exports the
+same schema so the adjusted file can be copied back into that tracked path.
+
 The RGS open-source character is a motion reference, not final character art.
 Run `tools/capture_walk_gif.ps1 -RgsWalkReference` to render its complete
 eight-frame loop without opening the Godot editor. The project will later redraw

@@ -1,8 +1,8 @@
 param(
     [switch]$Female,
     [switch]$Compact,
-    [switch]$BaseFeatures,
-    [switch]$RgsWalkReference,
+	[switch]$BaseFeatures,
+	[switch]$RgsWalkReference,
     [string]$GodotPath,
     [string]$PythonPath,
     [int]$AppearanceSeed
@@ -24,7 +24,7 @@ $gifName = if ($RgsWalkReference) {
 } elseif ($BaseFeatures) {
     "movement_walk_base_features_v1.gif"
 } elseif ($Compact) {
-    "movement_walk_compact.gif"
+	"movement_walk_compact.gif"
 } else {
     "movement_walk.gif"
 }
@@ -102,7 +102,7 @@ if ($BaseFeatures) {
     $godotArguments += "--appearance-seed=$appearanceSeed"
 }
 if ($RgsWalkReference) {
-    $godotArguments += "--rgs-walk-reference"
+	$godotArguments += "--rgs-walk-reference"
 }
 $godotProcess = Start-Process -FilePath $godotPath -ArgumentList $godotArguments -WindowStyle Hidden -PassThru -Wait
 if (Test-Path -LiteralPath $logPath) {
