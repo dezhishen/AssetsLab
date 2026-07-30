@@ -183,4 +183,10 @@ runtime frames and a manifest, and is ignored by Git. The package uses the same
 seed passed to Godot, so the generated preview and the original movement/GIF
 test exercise the same face, ears, and base layers.
 
+The fixed fitting candidate is stored under
+`prototype/assets/characters/base_features_v1/`. It is generated with
+direction-aware 4 x 8 frames and per-frame registration against the existing
+head alpha bounds. It is intentionally marked `randomization_ready: false`;
+random variants should only consume it after the base movement GIF is accepted.
+
 `tools/capture_walk_gif.ps1` resolves Python from `-PythonPath`, `$env:PYTHON_BIN`, PATH, or the local `.venv`/sibling fallback. Pillow is required for GIF conversion.

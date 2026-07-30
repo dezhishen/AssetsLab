@@ -3,6 +3,7 @@ param(
     [string]$PythonPath,
     [switch]$Female,
     [switch]$Compact,
+    [switch]$BaseFeatures,
     [int]$AppearanceSeed
 )
 
@@ -61,6 +62,14 @@ try {
     if ($validationExitCode -ne 0) {
         throw "Random appearance validation failed with exit code $validationExitCode"
     }
+    if ($BaseFeatures) {
+        $baseValidationOutput = & $pythonPath (Join-Path $assetsLabRoot "tools\validate_base_features.py") 2>&1
+        $baseValidationExitCode = $LASTEXITCODE
+        $baseValidationOutput | ForEach-Object { Write-Output $_ }
+        if ($baseValidationExitCode -ne 0) {
+            throw "Base feature validation failed with exit code $baseValidationExitCode"
+        }
+    }
 }
 finally {
     $env:PYTHONPATH = $previousGeneratorPythonPath
@@ -118,10 +127,18 @@ function Invoke-SmokeTest {
             $arguments += @("--", "--compact")
         }
     }
-    if ($arguments -contains "--") {
-        $arguments += "--appearance-seed=$appearanceSeed"
+    if ($BaseFeatures) {
+        if ($arguments -contains "--") {
+            $arguments += "--base-features"
+        } else {
+            $arguments += @("--", "--base-features")
+        }
     } else {
-        $arguments += @("--", "--appearance-seed=$appearanceSeed")
+        if ($arguments -contains "--") {
+            $arguments += "--appearance-seed=$appearanceSeed"
+        } else {
+            $arguments += @("--", "--appearance-seed=$appearanceSeed")
+        }
     }
 
     Write-Output ("Running headless smoke test ({0}) with {1}" -f ($(if ($UseFemale) { "female" } else { "male" }), $godotPath))

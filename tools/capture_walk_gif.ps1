@@ -1,6 +1,7 @@
 param(
     [switch]$Female,
     [switch]$Compact,
+    [switch]$BaseFeatures,
     [string]$GodotPath,
     [string]$PythonPath,
     [int]$AppearanceSeed
@@ -17,7 +18,13 @@ $pythonPath = Resolve-PythonExecutable -RequestedPath $PythonPath -AssetsLabRoot
 $pythonModules = Join-Path $assetsLabRoot ".tools\python"
 $frameDirectory = Join-Path $prototypeRoot "test_output\capture_frames"
 $randomAppearanceRoot = Join-Path $prototypeRoot "test_output\random_appearance"
-$gifName = if ($Compact) { "movement_walk_compact.gif" } else { "movement_walk.gif" }
+$gifName = if ($BaseFeatures) {
+    "movement_walk_base_features_v1.gif"
+} elseif ($Compact) {
+    "movement_walk_compact.gif"
+} else {
+    "movement_walk.gif"
+}
 $gifPath = Join-Path $prototypeRoot "test_output\$gifName"
 $logPath = Join-Path $prototypeRoot "test_output\capture.log"
 
@@ -54,6 +61,14 @@ try {
     if ($validationExitCode -ne 0) {
         throw "Random appearance validation failed with exit code $validationExitCode"
     }
+    if ($BaseFeatures) {
+        $baseValidationOutput = & $pythonPath (Join-Path $assetsLabRoot "tools\validate_base_features.py") 2>&1
+        $baseValidationExitCode = $LASTEXITCODE
+        $baseValidationOutput | ForEach-Object { Write-Output $_ }
+        if ($baseValidationExitCode -ne 0) {
+            throw "Base feature validation failed with exit code $baseValidationExitCode"
+        }
+    }
 }
 finally {
     $env:PYTHONPATH = $previousGeneratorPythonPath
@@ -74,7 +89,11 @@ if ($Female) {
 if ($Compact) {
     $godotArguments += "--compact"
 }
-$godotArguments += "--appearance-seed=$appearanceSeed"
+if ($BaseFeatures) {
+    $godotArguments += "--base-features"
+} else {
+    $godotArguments += "--appearance-seed=$appearanceSeed"
+}
 $godotProcess = Start-Process -FilePath $godotPath -ArgumentList $godotArguments -WindowStyle Hidden -PassThru -Wait
 if (Test-Path -LiteralPath $logPath) {
     Get-Content -LiteralPath $logPath

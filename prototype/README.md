@@ -19,6 +19,8 @@ Controls:
 Append `--female` to run the same prototype with the female-presenting base.
 Append `--compact` to use the isolated compact-stride candidate assets.
 Append `--appearance-seed=12345` to select a repeatable face/ear combination.
+Use `-BaseFeatures` on the test scripts to validate the fixed directional
+`base_features_v1` set before enabling randomization.
 
 Run from the repository root. The test scripts resolve Godot in this order: `-GodotPath`, `GODOT_BIN`/`GODOT_PATH`, `godot`/`godot4` on `PATH`, then the legacy adjacent `Godot-4.6.2` directory:
 
@@ -42,6 +44,8 @@ Both test entry points generate a fresh random appearance package under
 `prototype/test_output/random_appearance/` before starting Godot. The package
 contains the selected seed, a composited 4 x 8 walk atlas, individual frames,
 and a preview. Pass `-AppearanceSeed 12345` to reproduce one package exactly.
+When `-BaseFeatures` is used, the test additionally validates and runs the
+non-random base feature set.
 
 The capture script resolves Python from `-PythonPath`, `PYTHON_BIN`, PATH, or the local `.venv`/sibling fallback. Pillow is required for GIF conversion.
 
