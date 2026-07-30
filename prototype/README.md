@@ -9,6 +9,7 @@ This prototype is intentionally UI-free. It is a command-line validated gameplay
 - collision against arena walls;
 - one bomb with a short fuse and blast feedback;
 - QQTang-style oversized-head neutral base as the current runtime skin: shared torso, arms, lower-body, feet, plus male/female head layers.
+- deterministic front-facing ear and eye/blush layers selected by an appearance seed.
 
 Controls:
 
@@ -17,6 +18,7 @@ Controls:
 
 Append `--female` to run the same prototype with the female-presenting base.
 Append `--compact` to use the isolated compact-stride candidate assets.
+Append `--appearance-seed=12345` to select a repeatable face/ear combination.
 
 Run from the repository root. The test scripts resolve Godot in this order: `-GodotPath`, `GODOT_BIN`/`GODOT_PATH`, `godot`/`godot4` on `PATH`, then the legacy adjacent `Godot-4.6.2` directory:
 
@@ -40,6 +42,14 @@ The capture script resolves Python from `-PythonPath`, `PYTHON_BIN`, PATH, or th
 
 The Godot process uses the normal OpenGL renderer but is launched hidden, so no editor or game window is presented. PNG frames and the GIF are written to `prototype/test_output/`; this directory is ignored by Git. The GIF is `prototype/test_output/movement_walk.gif`.
 
-The headless test runner validates all 192 frames across six chibi layers before launching Godot. It checks fixed frame size, layer seam ranges, and the shared foot baseline. Add `-Compact` to validate and run the compact variant.
+The headless test runner validates all 192 frames across six chibi layers and
+512 face/ear component frames before launching Godot. It checks fixed frame
+size, layer seam ranges, the shared foot baseline, transparent rear appearance
+rows, and deterministic seed selection. Add `-Compact` to validate and run the
+compact variant.
 
-The generated walk sheets are source assets. The processed transparent atlases under `assets/characters/chibi/` are the runtime inputs for this prototype. The runtime stack is independent `Feet` + `LowerBody` + `Arms` + `Torso` + male/female `Head` layers. The mannequin has no ears, facial features, hair, or clothing; female blush is reserved for a later independent face overlay.
+The generated walk sheets are source assets. The processed transparent atlases
+under `assets/characters/chibi/` are the runtime inputs for this prototype. The
+runtime stack is independent `Feet` + `LowerBody` + `Arms` + `Torso` + `Ear` +
+male/female `Head` + `Face` layers. The first appearance pass has no nose or
+mouth; hair and clothing remain future layers.

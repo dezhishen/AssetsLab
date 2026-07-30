@@ -2,3 +2,4 @@
 prototype/.godot/
 prototype/test_output/
 *.import
+__pycache__/

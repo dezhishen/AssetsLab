@@ -41,9 +41,27 @@ The neutral base has no hair, ears, eyes, nose, mouth, clothing, underwear, acce
 - `walk-base-4way-male-4frame-sheet.png` - male-presenting neutral four-direction walk-cycle reference.
 - `walk-base-4way-female-4frame-sheet.png` - female-presenting neutral four-direction walk-cycle reference.
 
-### Deferred Work
+### Appearance Pipeline Status
 
-Do not build the random face, hair, or clothing generation pipeline yet. First validate the four-direction alignment, layer boundaries, scale, and attachment points. Random generation should consume these validated layers as constrained references or seeds.
+The first deterministic appearance pass is now implemented after reviewing the
+`test_gen_human` branch of the BomboAdvanture reference project. AssetsLab
+adopts its useful ideas—stable seeds, component manifests, and direction-aware
+draw layers—while keeping the current 64 x 64, 4 x 8 runtime format.
+
+- `ears` and `eyes/optional_blush` are independent runtime layers.
+- Eight face/ear combinations are generated offline and indexed by one
+  `appearance_seed`.
+- The first pass places these overlays on the front direction only. Side and
+  rear views remain transparent until direction-specific ear/face art is ready.
+- Nose and mouth are explicitly excluded from the manifest and generated
+  layers.
+- Hair and clothing remain deferred; clothing will be introduced as complete
+  outfit kits first, then split into replacement slots after alignment is
+  proven.
+
+The image generation step is offline. Godot only selects already processed
+assets at runtime, so gameplay remains deterministic and does not depend on an
+AI service.
 
 ## Walking Base Execution Plan
 
@@ -85,7 +103,7 @@ Use one gameplay root and one synchronized visual stack:
 - `CharacterBody2D` or the project's existing character root handles movement and collision.
 - A `CharacterVisual` child owns the visual layers.
 - Each layer is a `Sprite2D` using the same cell size, origin, 4-column frame grid, and 4-row direction grid.
-- Suggested layers: `Feet`, `LowerBody`, `Arms`, `Torso`, `Head`/`Face`, `Hair`, `Clothing`, and optional `Accessory`.
+- Suggested layers: `Feet`, `LowerBody`, `Arms`, `Torso`, `Ear`, `Head`, `Face`, `Hair`, `Clothing`, and optional `Accessory`.
 - The reference BomboAdvanture assets use per-component walk textures. The prototype keeps eight stronger keyframes and applies one synchronized frame index to every layer.
 - Head motion currently uses a fixed shared anchor; source-frame registration must be stable before adding any bob or clothing offsets.
 - One controller stores `direction` and `walk_frame`, then applies the same `frame_coords` to every layer. This prevents random layers from drifting out of sync.
@@ -121,7 +139,9 @@ Verified commands:
 - female smoke test: `SMOKE_TEST_PASS`;
 - two-second headless main-scene launch: passed.
 
-The current prototype validates the movement and modular asset handoff path. It is not yet the production character system and does not include random face, hair, or clothing content layers.
+The current prototype validates the movement and modular asset handoff path and
+now includes the first deterministic face/ear content layer. It is not yet the
+production character system and does not include random hair or clothing.
 
 ### Prototype Iteration 1 Fixes
 
@@ -150,5 +170,11 @@ The current prototype validates the movement and modular asset handoff path. It 
 `tools/capture_walk_gif.ps1` runs `prototype/tests/capture_test.gd` with internal W/A/S/D key events, captures the rendered viewport at 12 FPS, and uses the local Pillow tool environment to produce `prototype/test_output/movement_walk.gif`. Godot is launched as a hidden process with the normal OpenGL renderer because Godot's dummy `--headless` renderer has no readable viewport texture on this machine. The test still runs without presenting an editor or game window.
 
 `tools/run_headless_tests.ps1` runs the male smoke test and optionally the female smoke test with `--headless`; add `-Compact` to test the compact asset variant. Set `$env:GODOT_BIN` (or `$env:GODOT_PATH`) or pass `-GodotPath` when Godot is installed in a different directory.
+
+`tools/process_face_variants.py` converts the image-generated face and ear
+reference sheets into transparent 64 x 64 layers and writes
+`prototype/assets/characters/faces/face_manifest.json`. Use
+`-AppearanceSeed 12345` with the headless runner to verify a repeatable
+appearance selection.
 
 `tools/capture_walk_gif.ps1` resolves Python from `-PythonPath`, `$env:PYTHON_BIN`, PATH, or the local `.venv`/sibling fallback. Pillow is required for GIF conversion.

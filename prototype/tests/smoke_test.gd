@@ -20,15 +20,22 @@ func _run() -> void:
 	var arms_sprite := instance.get_node_or_null("Player/ArmsSprite") as Sprite2D
 	var lower_body_sprite := instance.get_node_or_null("Player/LowerBodySprite") as Sprite2D
 	var feet_sprite := instance.get_node_or_null("Player/FeetSprite") as Sprite2D
+	var ear_sprite := instance.get_node_or_null("Player/EarSprite") as Sprite2D
 	var head_sprite := instance.get_node_or_null("Player/HeadSprite") as Sprite2D
-	if player == null or body_sprite == null or arms_sprite == null or lower_body_sprite == null or feet_sprite == null or head_sprite == null:
+	var face_sprite := instance.get_node_or_null("Player/FaceSprite") as Sprite2D
+	if player == null or body_sprite == null or arms_sprite == null or lower_body_sprite == null or feet_sprite == null or ear_sprite == null or head_sprite == null or face_sprite == null:
 		_fail("player scene nodes are missing")
 		return
-	if body_sprite.texture == null or arms_sprite.texture == null or lower_body_sprite.texture == null or feet_sprite.texture == null or head_sprite.texture == null:
+	if body_sprite.texture == null or arms_sprite.texture == null or lower_body_sprite.texture == null or feet_sprite.texture == null or ear_sprite.texture == null or head_sprite.texture == null or face_sprite.texture == null:
 		_fail("layer frame textures are not loaded")
 		return
-	if player.torso_frame_textures.size() != 32 or player.arms_frame_textures.size() != 32 or player.lower_body_frame_textures.size() != 32 or player.feet_frame_textures.size() != 32 or player.head_frame_textures.size() != 32:
-		_fail("all five layer frame sets are not loaded as 32 separate frames")
+	if player.torso_frame_textures.size() != 32 or player.arms_frame_textures.size() != 32 or player.lower_body_frame_textures.size() != 32 or player.feet_frame_textures.size() != 32 or player.head_frame_textures.size() != 32 or player.ear_frame_textures.size() != 32 or player.face_frame_textures.size() != 32:
+		_fail("all body and appearance frame sets are not loaded as 32 separate frames")
+		return
+	var appearance_a: int = player.appearance_variant_for_seed(123456)
+	var appearance_b: int = player.appearance_variant_for_seed(123456)
+	if appearance_a != appearance_b:
+		_fail("same appearance seed produced different variants")
 		return
 
 	player._update_direction(Vector2.RIGHT)
@@ -58,6 +65,9 @@ func _run() -> void:
 		return
 	if head_sprite.position != Vector2(0, -26):
 		_fail("head anchor drifted during frame application")
+		return
+	if ear_sprite.position != Vector2(0, -26) or face_sprite.position != Vector2(0, -26):
+		_fail("appearance layer anchor drifted during frame application")
 		return
 
 	var original_position := player.global_position

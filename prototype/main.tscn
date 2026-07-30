@@ -1,4 +1,4 @@
-[gd_scene load_steps=10 format=3]
+[gd_scene load_steps=12 format=3]
 
 [ext_resource type="Script" path="res://scripts/main.gd" id="1_main"]
 [ext_resource type="Script" path="res://scripts/player.gd" id="2_player"]
@@ -7,6 +7,8 @@
 [ext_resource type="Texture2D" path="res://assets/characters/chibi/lower_body_walk_4way.png" id="5_lower_body"]
 [ext_resource type="Texture2D" path="res://assets/characters/chibi/arms_walk_4way.png" id="6_arms"]
 [ext_resource type="Texture2D" path="res://assets/characters/chibi/feet_walk_4way.png" id="7_feet"]
+[ext_resource type="Texture2D" path="res://assets/characters/faces/ear_00/frames/walk_row0_frame0.png" id="8_ear"]
+[ext_resource type="Texture2D" path="res://assets/characters/faces/face_00/frames/walk_row0_frame0.png" id="9_face"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_player"]
 size = Vector2(34, 24)
@@ -38,9 +40,19 @@ position = Vector2(0, -26)
 texture = ExtResource("3_torso")
 texture_filter = 1
 
+[node name="EarSprite" type="Sprite2D" parent="Player"]
+position = Vector2(0, -26)
+texture = ExtResource("8_ear")
+texture_filter = 1
+
 [node name="HeadSprite" type="Sprite2D" parent="Player"]
 position = Vector2(0, -26)
 texture = ExtResource("4_head")
+texture_filter = 1
+
+[node name="FaceSprite" type="Sprite2D" parent="Player"]
+position = Vector2(0, -26)
+texture = ExtResource("9_face")
 texture_filter = 1
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Player"]

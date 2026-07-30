@@ -2,7 +2,8 @@ param(
     [string]$GodotPath,
     [string]$PythonPath,
     [switch]$Female,
-    [switch]$Compact
+    [switch]$Compact,
+    [int]$AppearanceSeed
 )
 
 $ErrorActionPreference = "Stop"
@@ -16,6 +17,15 @@ $pythonPath = Resolve-PythonExecutable -RequestedPath $PythonPath -AssetsLabRoot
 $pythonModules = Join-Path $assetsLabRoot ".tools\python"
 $assetVariant = if ($Compact) { "chibi_compact" } else { "chibi" }
 
+$importLogPath = Join-Path $assetsLabRoot "prototype\test_output\headless_import.log"
+New-Item -ItemType Directory -Force -Path (Split-Path $importLogPath) | Out-Null
+$importOutput = & $godotPath --headless --editor --import --path $prototypeRoot --quit 2>&1
+$importExitCode = $LASTEXITCODE
+$importOutput | Out-File -LiteralPath $importLogPath -Encoding utf8
+if ($importExitCode -ne 0) {
+    throw "Godot headless asset import failed with exit code $importExitCode"
+}
+
 $previousPythonPath = $env:PYTHONPATH
 $previousChibiAssetRoot = $env:CHIBI_ASSET_ROOT
 $env:PYTHONPATH = $pythonModules
@@ -24,6 +34,10 @@ try {
     & $pythonPath (Join-Path $assetsLabRoot "tools\validate_chibi_frames.py")
     if ($LASTEXITCODE -ne 0) {
         throw "Chibi frame validation failed with exit code $LASTEXITCODE"
+    }
+    & $pythonPath (Join-Path $assetsLabRoot "tools\validate_face_variants.py")
+    if ($LASTEXITCODE -ne 0) {
+        throw "Face and ear frame validation failed with exit code $LASTEXITCODE"
     }
 }
 finally {
@@ -53,6 +67,13 @@ function Invoke-SmokeTest {
             $arguments += "--compact"
         } else {
             $arguments += @("--", "--compact")
+        }
+    }
+    if ($PSBoundParameters.ContainsKey("AppearanceSeed")) {
+        if ($arguments -contains "--") {
+            $arguments += "--appearance-seed=$AppearanceSeed"
+        } else {
+            $arguments += @("--", "--appearance-seed=$AppearanceSeed")
         }
     }
 

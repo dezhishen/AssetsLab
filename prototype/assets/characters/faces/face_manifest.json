@@ -1,0 +1,513 @@
+{
+  "generator": "process_face_variants.py",
+  "generator_version": 1,
+  "source": "prototype/assets/characters/generated/raw_face_overlay_variants_2x4.png",
+  "ear_source": "prototype/assets/characters/generated/raw_ear_overlay_variants_2x4.png",
+  "cell_size": [
+    64,
+    64
+  ],
+  "columns": 8,
+  "rows": 4,
+  "directions": [
+    "front",
+    "right",
+    "back",
+    "left"
+  ],
+  "frame_count_per_direction": 8,
+  "variant_count": 8,
+  "selection": "stable appearance_seed selects one face variant",
+  "gender_rules": {
+    "male": {
+      "allowed_variants": [
+        0,
+        2,
+        4,
+        6
+      ],
+      "blush": false
+    },
+    "female": {
+      "allowed_variants": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "blush": "optional"
+    }
+  },
+  "components": [
+    "ears",
+    "eyes",
+    "optional_blush"
+  ],
+  "forbidden_components": [
+    "nose",
+    "mouth"
+  ],
+  "front_only": true,
+  "variants": [
+    {
+      "id": 0,
+      "path": "face_00",
+      "ear_path": "ear_00",
+      "source_cell": {
+        "row": 0,
+        "column": 0
+      },
+      "factors": {
+        "eye_shape": "gentle_oval",
+        "blush": false
+      },
+      "ear_factor": "small_round",
+      "front_only": true,
+      "frames": [
+        [
+          "walk_row0_frame0.png",
+          "walk_row0_frame1.png",
+          "walk_row0_frame2.png",
+          "walk_row0_frame3.png",
+          "walk_row0_frame4.png",
+          "walk_row0_frame5.png",
+          "walk_row0_frame6.png",
+          "walk_row0_frame7.png"
+        ],
+        [
+          "walk_row1_frame0.png",
+          "walk_row1_frame1.png",
+          "walk_row1_frame2.png",
+          "walk_row1_frame3.png",
+          "walk_row1_frame4.png",
+          "walk_row1_frame5.png",
+          "walk_row1_frame6.png",
+          "walk_row1_frame7.png"
+        ],
+        [
+          "walk_row2_frame0.png",
+          "walk_row2_frame1.png",
+          "walk_row2_frame2.png",
+          "walk_row2_frame3.png",
+          "walk_row2_frame4.png",
+          "walk_row2_frame5.png",
+          "walk_row2_frame6.png",
+          "walk_row2_frame7.png"
+        ],
+        [
+          "walk_row3_frame0.png",
+          "walk_row3_frame1.png",
+          "walk_row3_frame2.png",
+          "walk_row3_frame3.png",
+          "walk_row3_frame4.png",
+          "walk_row3_frame5.png",
+          "walk_row3_frame6.png",
+          "walk_row3_frame7.png"
+        ]
+      ]
+    },
+    {
+      "id": 1,
+      "path": "face_01",
+      "ear_path": "ear_01",
+      "source_cell": {
+        "row": 0,
+        "column": 1
+      },
+      "factors": {
+        "eye_shape": "round",
+        "blush": true
+      },
+      "ear_factor": "large_round",
+      "front_only": true,
+      "frames": [
+        [
+          "walk_row0_frame0.png",
+          "walk_row0_frame1.png",
+          "walk_row0_frame2.png",
+          "walk_row0_frame3.png",
+          "walk_row0_frame4.png",
+          "walk_row0_frame5.png",
+          "walk_row0_frame6.png",
+          "walk_row0_frame7.png"
+        ],
+        [
+          "walk_row1_frame0.png",
+          "walk_row1_frame1.png",
+          "walk_row1_frame2.png",
+          "walk_row1_frame3.png",
+          "walk_row1_frame4.png",
+          "walk_row1_frame5.png",
+          "walk_row1_frame6.png",
+          "walk_row1_frame7.png"
+        ],
+        [
+          "walk_row2_frame0.png",
+          "walk_row2_frame1.png",
+          "walk_row2_frame2.png",
+          "walk_row2_frame3.png",
+          "walk_row2_frame4.png",
+          "walk_row2_frame5.png",
+          "walk_row2_frame6.png",
+          "walk_row2_frame7.png"
+        ],
+        [
+          "walk_row3_frame0.png",
+          "walk_row3_frame1.png",
+          "walk_row3_frame2.png",
+          "walk_row3_frame3.png",
+          "walk_row3_frame4.png",
+          "walk_row3_frame5.png",
+          "walk_row3_frame6.png",
+          "walk_row3_frame7.png"
+        ]
+      ]
+    },
+    {
+      "id": 2,
+      "path": "face_02",
+      "ear_path": "ear_02",
+      "source_cell": {
+        "row": 0,
+        "column": 2
+      },
+      "factors": {
+        "eye_shape": "narrow_confident",
+        "blush": false
+      },
+      "ear_factor": "subtle_elf",
+      "front_only": true,
+      "frames": [
+        [
+          "walk_row0_frame0.png",
+          "walk_row0_frame1.png",
+          "walk_row0_frame2.png",
+          "walk_row0_frame3.png",
+          "walk_row0_frame4.png",
+          "walk_row0_frame5.png",
+          "walk_row0_frame6.png",
+          "walk_row0_frame7.png"
+        ],
+        [
+          "walk_row1_frame0.png",
+          "walk_row1_frame1.png",
+          "walk_row1_frame2.png",
+          "walk_row1_frame3.png",
+          "walk_row1_frame4.png",
+          "walk_row1_frame5.png",
+          "walk_row1_frame6.png",
+          "walk_row1_frame7.png"
+        ],
+        [
+          "walk_row2_frame0.png",
+          "walk_row2_frame1.png",
+          "walk_row2_frame2.png",
+          "walk_row2_frame3.png",
+          "walk_row2_frame4.png",
+          "walk_row2_frame5.png",
+          "walk_row2_frame6.png",
+          "walk_row2_frame7.png"
+        ],
+        [
+          "walk_row3_frame0.png",
+          "walk_row3_frame1.png",
+          "walk_row3_frame2.png",
+          "walk_row3_frame3.png",
+          "walk_row3_frame4.png",
+          "walk_row3_frame5.png",
+          "walk_row3_frame6.png",
+          "walk_row3_frame7.png"
+        ]
+      ]
+    },
+    {
+      "id": 3,
+      "path": "face_03",
+      "ear_path": "ear_03",
+      "source_cell": {
+        "row": 0,
+        "column": 3
+      },
+      "factors": {
+        "eye_shape": "sleepy",
+        "blush": true
+      },
+      "ear_factor": "long_elf",
+      "front_only": true,
+      "frames": [
+        [
+          "walk_row0_frame0.png",
+          "walk_row0_frame1.png",
+          "walk_row0_frame2.png",
+          "walk_row0_frame3.png",
+          "walk_row0_frame4.png",
+          "walk_row0_frame5.png",
+          "walk_row0_frame6.png",
+          "walk_row0_frame7.png"
+        ],
+        [
+          "walk_row1_frame0.png",
+          "walk_row1_frame1.png",
+          "walk_row1_frame2.png",
+          "walk_row1_frame3.png",
+          "walk_row1_frame4.png",
+          "walk_row1_frame5.png",
+          "walk_row1_frame6.png",
+          "walk_row1_frame7.png"
+        ],
+        [
+          "walk_row2_frame0.png",
+          "walk_row2_frame1.png",
+          "walk_row2_frame2.png",
+          "walk_row2_frame3.png",
+          "walk_row2_frame4.png",
+          "walk_row2_frame5.png",
+          "walk_row2_frame6.png",
+          "walk_row2_frame7.png"
+        ],
+        [
+          "walk_row3_frame0.png",
+          "walk_row3_frame1.png",
+          "walk_row3_frame2.png",
+          "walk_row3_frame3.png",
+          "walk_row3_frame4.png",
+          "walk_row3_frame5.png",
+          "walk_row3_frame6.png",
+          "walk_row3_frame7.png"
+        ]
+      ]
+    },
+    {
+      "id": 4,
+      "path": "face_04",
+      "ear_path": "ear_04",
+      "source_cell": {
+        "row": 1,
+        "column": 0
+      },
+      "factors": {
+        "eye_shape": "large_sparkle",
+        "blush": false
+      },
+      "ear_factor": "pointed_earring",
+      "front_only": true,
+      "frames": [
+        [
+          "walk_row0_frame0.png",
+          "walk_row0_frame1.png",
+          "walk_row0_frame2.png",
+          "walk_row0_frame3.png",
+          "walk_row0_frame4.png",
+          "walk_row0_frame5.png",
+          "walk_row0_frame6.png",
+          "walk_row0_frame7.png"
+        ],
+        [
+          "walk_row1_frame0.png",
+          "walk_row1_frame1.png",
+          "walk_row1_frame2.png",
+          "walk_row1_frame3.png",
+          "walk_row1_frame4.png",
+          "walk_row1_frame5.png",
+          "walk_row1_frame6.png",
+          "walk_row1_frame7.png"
+        ],
+        [
+          "walk_row2_frame0.png",
+          "walk_row2_frame1.png",
+          "walk_row2_frame2.png",
+          "walk_row2_frame3.png",
+          "walk_row2_frame4.png",
+          "walk_row2_frame5.png",
+          "walk_row2_frame6.png",
+          "walk_row2_frame7.png"
+        ],
+        [
+          "walk_row3_frame0.png",
+          "walk_row3_frame1.png",
+          "walk_row3_frame2.png",
+          "walk_row3_frame3.png",
+          "walk_row3_frame4.png",
+          "walk_row3_frame5.png",
+          "walk_row3_frame6.png",
+          "walk_row3_frame7.png"
+        ]
+      ]
+    },
+    {
+      "id": 5,
+      "path": "face_05",
+      "ear_path": "ear_05",
+      "source_cell": {
+        "row": 1,
+        "column": 1
+      },
+      "factors": {
+        "eye_shape": "determined",
+        "blush": true
+      },
+      "ear_factor": "round_earring",
+      "front_only": true,
+      "frames": [
+        [
+          "walk_row0_frame0.png",
+          "walk_row0_frame1.png",
+          "walk_row0_frame2.png",
+          "walk_row0_frame3.png",
+          "walk_row0_frame4.png",
+          "walk_row0_frame5.png",
+          "walk_row0_frame6.png",
+          "walk_row0_frame7.png"
+        ],
+        [
+          "walk_row1_frame0.png",
+          "walk_row1_frame1.png",
+          "walk_row1_frame2.png",
+          "walk_row1_frame3.png",
+          "walk_row1_frame4.png",
+          "walk_row1_frame5.png",
+          "walk_row1_frame6.png",
+          "walk_row1_frame7.png"
+        ],
+        [
+          "walk_row2_frame0.png",
+          "walk_row2_frame1.png",
+          "walk_row2_frame2.png",
+          "walk_row2_frame3.png",
+          "walk_row2_frame4.png",
+          "walk_row2_frame5.png",
+          "walk_row2_frame6.png",
+          "walk_row2_frame7.png"
+        ],
+        [
+          "walk_row3_frame0.png",
+          "walk_row3_frame1.png",
+          "walk_row3_frame2.png",
+          "walk_row3_frame3.png",
+          "walk_row3_frame4.png",
+          "walk_row3_frame5.png",
+          "walk_row3_frame6.png",
+          "walk_row3_frame7.png"
+        ]
+      ]
+    },
+    {
+      "id": 6,
+      "path": "face_06",
+      "ear_path": "ear_06",
+      "source_cell": {
+        "row": 1,
+        "column": 2
+      },
+      "factors": {
+        "eye_shape": "dot",
+        "blush": false
+      },
+      "ear_factor": "angular_fantasy",
+      "front_only": true,
+      "frames": [
+        [
+          "walk_row0_frame0.png",
+          "walk_row0_frame1.png",
+          "walk_row0_frame2.png",
+          "walk_row0_frame3.png",
+          "walk_row0_frame4.png",
+          "walk_row0_frame5.png",
+          "walk_row0_frame6.png",
+          "walk_row0_frame7.png"
+        ],
+        [
+          "walk_row1_frame0.png",
+          "walk_row1_frame1.png",
+          "walk_row1_frame2.png",
+          "walk_row1_frame3.png",
+          "walk_row1_frame4.png",
+          "walk_row1_frame5.png",
+          "walk_row1_frame6.png",
+          "walk_row1_frame7.png"
+        ],
+        [
+          "walk_row2_frame0.png",
+          "walk_row2_frame1.png",
+          "walk_row2_frame2.png",
+          "walk_row2_frame3.png",
+          "walk_row2_frame4.png",
+          "walk_row2_frame5.png",
+          "walk_row2_frame6.png",
+          "walk_row2_frame7.png"
+        ],
+        [
+          "walk_row3_frame0.png",
+          "walk_row3_frame1.png",
+          "walk_row3_frame2.png",
+          "walk_row3_frame3.png",
+          "walk_row3_frame4.png",
+          "walk_row3_frame5.png",
+          "walk_row3_frame6.png",
+          "walk_row3_frame7.png"
+        ]
+      ]
+    },
+    {
+      "id": 7,
+      "path": "face_07",
+      "ear_path": "ear_07",
+      "source_cell": {
+        "row": 1,
+        "column": 3
+      },
+      "factors": {
+        "eye_shape": "cheerful_curve",
+        "blush": true
+      },
+      "ear_factor": "soft_round_accent",
+      "front_only": true,
+      "frames": [
+        [
+          "walk_row0_frame0.png",
+          "walk_row0_frame1.png",
+          "walk_row0_frame2.png",
+          "walk_row0_frame3.png",
+          "walk_row0_frame4.png",
+          "walk_row0_frame5.png",
+          "walk_row0_frame6.png",
+          "walk_row0_frame7.png"
+        ],
+        [
+          "walk_row1_frame0.png",
+          "walk_row1_frame1.png",
+          "walk_row1_frame2.png",
+          "walk_row1_frame3.png",
+          "walk_row1_frame4.png",
+          "walk_row1_frame5.png",
+          "walk_row1_frame6.png",
+          "walk_row1_frame7.png"
+        ],
+        [
+          "walk_row2_frame0.png",
+          "walk_row2_frame1.png",
+          "walk_row2_frame2.png",
+          "walk_row2_frame3.png",
+          "walk_row2_frame4.png",
+          "walk_row2_frame5.png",
+          "walk_row2_frame6.png",
+          "walk_row2_frame7.png"
+        ],
+        [
+          "walk_row3_frame0.png",
+          "walk_row3_frame1.png",
+          "walk_row3_frame2.png",
+          "walk_row3_frame3.png",
+          "walk_row3_frame4.png",
+          "walk_row3_frame5.png",
+          "walk_row3_frame6.png",
+          "walk_row3_frame7.png"
+        ]
+      ]
+    }
+  ]
+}
