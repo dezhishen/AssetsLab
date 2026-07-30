@@ -1,6 +1,6 @@
 {
   "generator": "process_base_features.py",
-  "generator_version": 4,
+  "generator_version": 6,
   "sources": {
     "face": "prototype/assets/characters/generated/raw_face_base_v1_4x4.png",
     "ear": "prototype/assets/characters/generated/raw_ear_base_v1_4x4.png"
@@ -23,6 +23,8 @@
   "head_registration": "per_gender_per_direction_per_frame_alpha_bbox",
   "feature_y_anchor": "head_top_plus_15_plus_layer_direction_offset",
   "face_scale_mode": "fixed_target_size_for_view_consistency",
+  "front_face_layout": "mirrored_left_half_centered",
+  "side_ear_layout": "inset_under_head_edge_with_ear_layer_above_head",
   "feature_y_offsets": {
     "face_front": 5,
     "face_side": 1,
@@ -33,8 +35,8 @@
   },
   "face_limits": {
     "front": [
-      24,
-      9
+      20,
+      8
     ],
     "side": [
       7,
@@ -47,16 +49,16 @@
   },
   "ear_limits": {
     "front": [
-      38,
-      14
+      32,
+      12
     ],
     "back": [
-      34,
-      14
+      30,
+      12
     ],
     "side": [
-      9,
-      13
+      8,
+      12
     ]
   },
   "no_nose": true,

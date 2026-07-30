@@ -23,7 +23,7 @@ HEAD_SPLIT_RATIO = 0.50
 LOWER_BODY_SPLIT_RATIO = 0.66
 SEAM_OVERLAP = 2
 SIDE_LIMB_SCALE_X = 0.84
-HEAD_REAR_EXPAND_X = 3
+HEAD_REAR_EXPAND_X = 5
 
 
 def chroma_alpha(cell: Image.Image) -> Image.Image:

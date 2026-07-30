@@ -68,7 +68,7 @@
     ]
   ],
   "side_limb_scale_x": 0.84,
-  "head_rear_expand_x": 3,
+  "head_rear_expand_x": 5,
   "head_split_ratio": 0.5,
   "lower_body_split_ratio": 0.66,
   "frames": {

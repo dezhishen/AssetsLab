@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from PIL import Image
+from PIL import Image, ImageOps
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -64,6 +64,7 @@ def fit_to_anchor(
     center: tuple[float, float],
     male: bool = False,
     force_size: bool = False,
+    symmetric_front: bool = False,
 ) -> Image.Image:
     keyed = chroma_key(source_cell)
     if male:
@@ -72,6 +73,14 @@ def fit_to_anchor(
     if bbox is None:
         return Image.new("RGBA", (CELL_SIZE, CELL_SIZE), (0, 0, 0, 0))
     cropped = keyed.crop(bbox)
+    if symmetric_front:
+        half_width = max(1, cropped.width // 2)
+        left_half = cropped.crop((0, 0, half_width, cropped.height))
+        mirrored = ImageOps.mirror(left_half)
+        symmetric = Image.new("RGBA", (half_width * 2, cropped.height), (0, 0, 0, 0))
+        symmetric.alpha_composite(left_half, (0, 0))
+        symmetric.alpha_composite(mirrored, (half_width, 0))
+        cropped = symmetric
     if force_size:
         resized = cropped.resize((target_width, target_height), Image.Resampling.LANCZOS)
     else:
@@ -111,16 +120,20 @@ def feature_anchor(layer: str, row: int, bbox: tuple[int, int, int, int]) -> tup
         if row == 2:
             return None
         if row == 0:
-            return (center_x, feature_y), (24, 9)
+            return (center_x, feature_y), (20, 8)
         if row == 1:
             return (right - 6, feature_y), (7, 9)
         return (left + 6, feature_y), (7, 9)
     if row in (0, 2):
-        ear_width = 38 if row == 0 else 34
-        return (center_x, feature_y), (ear_width, 14)
+        ear_width = 32 if row == 0 else 30
+        return (center_x, feature_y), (ear_width, 12)
     if row == 1:
-        return (left + 3, feature_y), (9, 13)
-    return (right - 3, feature_y), (9, 13)
+        # Right-facing profile: keep the ear inside the head so the rear
+        # silhouette remains readable instead of turning the ear into the
+        # apparent back edge.
+        return (left + 10, feature_y), (8, 12)
+    # Left-facing profile mirrors the same inset from the rear edge.
+    return (right - 10, feature_y), (8, 12)
 
 
 def process_layer(source: Image.Image, gender: str, layer: str) -> list[list[str]]:
@@ -144,6 +157,7 @@ def process_layer(source: Image.Image, gender: str, layer: str) -> list[list[str
                     anchor[0],
                     male=male,
                     force_size=layer == "face",
+                    symmetric_front=layer == "face" and row == 0,
                 )
             name = f"walk_row{row}_frame{frame}.png"
             image.save(output_root / name)
@@ -163,7 +177,7 @@ def main() -> int:
     ear_source = Image.open(EAR_SOURCE).convert("RGB")
     manifest = {
         "generator": "process_base_features.py",
-        "generator_version": 4,
+        "generator_version": 6,
         "sources": {
             "face": FACE_SOURCE.relative_to(ROOT).as_posix(),
             "ear": EAR_SOURCE.relative_to(ROOT).as_posix(),
@@ -175,6 +189,8 @@ def main() -> int:
         "head_registration": "per_gender_per_direction_per_frame_alpha_bbox",
         "feature_y_anchor": "head_top_plus_15_plus_layer_direction_offset",
         "face_scale_mode": "fixed_target_size_for_view_consistency",
+        "front_face_layout": "mirrored_left_half_centered",
+        "side_ear_layout": "inset_under_head_edge_with_ear_layer_above_head",
         "feature_y_offsets": {
             "face_front": 5,
             "face_side": 1,
@@ -183,8 +199,8 @@ def main() -> int:
             "ear_side": 4,
             "ear_back": 5
         },
-        "face_limits": {"front": [24, 9], "side": [7, 9], "back": [0, 0]},
-        "ear_limits": {"front": [38, 14], "back": [34, 14], "side": [9, 13]},
+        "face_limits": {"front": [20, 8], "side": [7, 9], "back": [0, 0]},
+        "ear_limits": {"front": [32, 12], "back": [30, 12], "side": [8, 12]},
         "no_nose": True,
         "no_mouth": True,
         "randomization_ready": False,

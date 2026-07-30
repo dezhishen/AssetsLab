@@ -39,14 +39,14 @@ def validate_layer(gender: str, layer: str) -> int:
                 width = bbox[2] - bbox[0]
                 height = bbox[3] - bbox[1]
                 if layer == "face":
-                    max_width, max_height = ((24, 9) if row == 0 else (7, 9))
+                    max_width, max_height = ((20, 8) if row == 0 else (7, 9))
                 else:
                     if row == 0:
-                        max_width, max_height = (38, 14)
+                        max_width, max_height = (32, 12)
                     elif row == 2:
-                        max_width, max_height = (34, 14)
+                        max_width, max_height = (30, 12)
                     else:
-                        max_width, max_height = (9, 13)
+                        max_width, max_height = (8, 12)
                 if width > max_width or height > max_height:
                     raise ValueError(f"base feature exceeds anchor limit: {path} bbox={bbox}")
             total += 1

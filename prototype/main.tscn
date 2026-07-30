@@ -42,16 +42,19 @@ texture_filter = 1
 
 [node name="EarSprite" type="Sprite2D" parent="Player"]
 position = Vector2(0, -26)
+z_index = 1
 texture = ExtResource("8_ear")
 texture_filter = 1
 
 [node name="HeadSprite" type="Sprite2D" parent="Player"]
 position = Vector2(0, -26)
+z_index = 0
 texture = ExtResource("4_head")
 texture_filter = 1
 
 [node name="FaceSprite" type="Sprite2D" parent="Player"]
 position = Vector2(0, -26)
+z_index = 2
 texture = ExtResource("9_face")
 texture_filter = 1
 
