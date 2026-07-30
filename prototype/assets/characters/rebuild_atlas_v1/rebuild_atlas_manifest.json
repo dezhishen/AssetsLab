@@ -1,0 +1,79 @@
+{
+  "generator": "process_rebuild_atlas.py",
+  "generator_version": 1,
+  "base_source": "prototype/assets/characters/generated/neutral_face_base_rebuild_v1_male.png",
+  "feature_source": "prototype/assets/characters/generated/facial_feature_atlas_rebuild_v1_male.png",
+  "directions": [
+    "front",
+    "right",
+    "back",
+    "left"
+  ],
+  "cell_layout": "2x2_front_right_back_left",
+  "canvas": [
+    256,
+    256
+  ],
+  "baseline_y": 238,
+  "layers": [
+    "face_base",
+    "eyes",
+    "eyebrows",
+    "ears"
+  ],
+  "reconstruction_status": "independent_base_and_feature_atlas",
+  "randomization_ready": false,
+  "directional_feature_policy": {
+    "front": {
+      "eyes": 2,
+      "eyebrows": 2,
+      "ears": 2
+    },
+    "right": {
+      "eyes": 1,
+      "eyebrows": 1,
+      "ears": 1
+    },
+    "back": {
+      "eyes": 0,
+      "eyebrows": 0,
+      "ears": 2
+    },
+    "left": {
+      "eyes": 1,
+      "eyebrows": 1,
+      "ears": 1
+    }
+  },
+  "horizontal_feature_source_map": {
+    "right": "left",
+    "left": "right"
+  },
+  "notes": "The face base and facial features are generated independently. Horizontal feature sources are intentionally exchanged at runtime (output right uses source left and output left uses source right) to correct the source atlas 2/4 order; no implicit horizontal mirror is applied. The first atlas omitted the left ear, so the left ear currently mirrors the right ear as a temporary anchor placeholder. Hair remains a separate reconstruction layer.",
+  "frames": {
+    "front": {
+      "face_base": "prototype/assets/characters/rebuild_atlas_v1/face_base/front.png",
+      "eyes": "prototype/assets/characters/rebuild_atlas_v1/eyes/front.png",
+      "eyebrows": "prototype/assets/characters/rebuild_atlas_v1/eyebrows/front.png",
+      "ears": "prototype/assets/characters/rebuild_atlas_v1/ears/front.png"
+    },
+    "right": {
+      "face_base": "prototype/assets/characters/rebuild_atlas_v1/face_base/right.png",
+      "eyes": "prototype/assets/characters/rebuild_atlas_v1/eyes/right.png",
+      "eyebrows": "prototype/assets/characters/rebuild_atlas_v1/eyebrows/right.png",
+      "ears": "prototype/assets/characters/rebuild_atlas_v1/ears/right.png"
+    },
+    "back": {
+      "face_base": "prototype/assets/characters/rebuild_atlas_v1/face_base/back.png",
+      "eyes": "prototype/assets/characters/rebuild_atlas_v1/eyes/back.png",
+      "eyebrows": "prototype/assets/characters/rebuild_atlas_v1/eyebrows/back.png",
+      "ears": "prototype/assets/characters/rebuild_atlas_v1/ears/back.png"
+    },
+    "left": {
+      "face_base": "prototype/assets/characters/rebuild_atlas_v1/face_base/left.png",
+      "eyes": "prototype/assets/characters/rebuild_atlas_v1/eyes/left.png",
+      "eyebrows": "prototype/assets/characters/rebuild_atlas_v1/eyebrows/left.png",
+      "ears": "prototype/assets/characters/rebuild_atlas_v1/ears/left.png"
+    }
+  }
+}

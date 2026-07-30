@@ -44,7 +44,7 @@ def validate_layer(gender: str, layer: str) -> int:
                     if row == 0:
                         max_width, max_height = (32, 12)
                     elif row == 2:
-                        max_width, max_height = (30, 12)
+                        max_width, max_height = (34, 12)
                     else:
                         max_width, max_height = (8, 12)
                 if width > max_width or height > max_height:

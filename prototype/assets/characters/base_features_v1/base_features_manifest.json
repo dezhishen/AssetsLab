@@ -1,6 +1,6 @@
 {
   "generator": "process_base_features.py",
-  "generator_version": 6,
+  "generator_version": 8,
   "sources": {
     "face": "prototype/assets/characters/generated/raw_face_base_v1_4x4.png",
     "ear": "prototype/assets/characters/generated/raw_ear_base_v1_4x4.png"
@@ -24,6 +24,8 @@
   "feature_y_anchor": "head_top_plus_15_plus_layer_direction_offset",
   "face_scale_mode": "fixed_target_size_for_view_consistency",
   "front_face_layout": "mirrored_left_half_centered",
+  "front_back_ear_layout": "mirrored_left_half_centered_at_head_edges",
+  "source_frame_policy": "canonical_direction_cell_repeated_across_walk_frames",
   "side_ear_layout": "inset_under_head_edge_with_ear_layer_above_head",
   "feature_y_offsets": {
     "face_front": 5,
@@ -53,7 +55,7 @@
       12
     ],
     "back": [
-      30,
+      34,
       12
     ],
     "side": [

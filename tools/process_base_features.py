@@ -17,6 +17,10 @@ OUTPUT_COLUMNS = 8
 CELL_SIZE = 64
 DIRECTIONS = ["front", "right", "back", "left"]
 HEAD_VARIANTS = ["male", "female"]
+# The generated 4x4 sheets contain experimental variants, not reliable walk
+# poses. Use one canonical source cell per direction and repeat its geometry
+# across the eight body frames until dedicated eye sublayers exist.
+CANONICAL_SOURCE_COLUMNS = {0: 0, 1: 0, 2: 0, 3: 0}
 # The first pass placed features at head_top + 15.  That made the front-facing
 # eyes and ears read too high and left too little room for future hair layers.
 # Keep side views slightly tighter because their feature bounds are taller.
@@ -145,7 +149,7 @@ def process_layer(source: Image.Image, gender: str, layer: str) -> list[list[str
     for row in range(ROWS):
         row_names: list[str] = []
         for frame in range(OUTPUT_COLUMNS):
-            source_column = frame % SOURCE_COLUMNS
+            source_column = CANONICAL_SOURCE_COLUMNS[row]
             anchor = feature_anchor(layer, row, head_bbox(gender, row, frame))
             if anchor is None:
                 image = Image.new("RGBA", (CELL_SIZE, CELL_SIZE), (0, 0, 0, 0))
@@ -157,7 +161,7 @@ def process_layer(source: Image.Image, gender: str, layer: str) -> list[list[str
                     anchor[0],
                     male=male,
                     force_size=layer == "face",
-                    symmetric_front=layer == "face" and row == 0,
+                    symmetric_front=layer in ("face", "ear") and row in (0, 2),
                 )
             name = f"walk_row{row}_frame{frame}.png"
             image.save(output_root / name)
@@ -177,7 +181,7 @@ def main() -> int:
     ear_source = Image.open(EAR_SOURCE).convert("RGB")
     manifest = {
         "generator": "process_base_features.py",
-        "generator_version": 6,
+        "generator_version": 8,
         "sources": {
             "face": FACE_SOURCE.relative_to(ROOT).as_posix(),
             "ear": EAR_SOURCE.relative_to(ROOT).as_posix(),
@@ -190,6 +194,8 @@ def main() -> int:
         "feature_y_anchor": "head_top_plus_15_plus_layer_direction_offset",
         "face_scale_mode": "fixed_target_size_for_view_consistency",
         "front_face_layout": "mirrored_left_half_centered",
+        "front_back_ear_layout": "mirrored_left_half_centered_at_head_edges",
+        "source_frame_policy": "canonical_direction_cell_repeated_across_walk_frames",
         "side_ear_layout": "inset_under_head_edge_with_ear_layer_above_head",
         "feature_y_offsets": {
             "face_front": 5,
@@ -200,7 +206,7 @@ def main() -> int:
             "ear_back": 5
         },
         "face_limits": {"front": [20, 8], "side": [7, 9], "back": [0, 0]},
-        "ear_limits": {"front": [32, 12], "back": [30, 12], "side": [8, 12]},
+        "ear_limits": {"front": [32, 12], "back": [34, 12], "side": [8, 12]},
         "no_nose": True,
         "no_mouth": True,
         "randomization_ready": False,

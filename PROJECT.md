@@ -40,6 +40,51 @@ The neutral base has no hair, ears, eyes, nose, mouth, clothing, underwear, acce
 - `base-mannequin-4way-female-sheet.png` - female-presenting neutral four-direction base sheet.
 - `walk-base-4way-male-4frame-sheet.png` - male-presenting neutral four-direction walk-cycle reference.
 - `walk-base-4way-female-4frame-sheet.png` - female-presenting neutral four-direction walk-cycle reference.
+- `prototype/assets/characters/generated/character_turnaround_v1_male.png` - first male-presenting four-direction character turnaround generated from the male front anchor.
+- `prototype/assets/characters/turnaround_v1/` - rough aligned split of the turnaround into `face_base`, `eyes`, `eyebrows`, `ears`, and `hair` layers, with a `full` reference layer for comparison.
+- `prototype/assets/characters/generated/character_head_rebuild_v1_male.png` - clean head-only four-direction reference used to begin component reconstruction.
+- `prototype/assets/characters/rebuilt_head_v1/` - intermediate head-only reconstruction reference; retained for comparison, not the preferred runtime input.
+- `prototype/assets/characters/generated/neutral_face_base_rebuild_v1_male.png` - independently generated featureless four-direction face base.
+- `prototype/assets/characters/generated/facial_feature_atlas_rebuild_v1_male.png` - independently generated eyes, eyebrows, and ears atlas.
+- `prototype/assets/characters/generated/hair_atlas_rebuild_v1_male.png` - independently generated hair atlas, currently provisional because its fit still needs anchor correction.
+- `prototype/assets/characters/rebuild_atlas_v1/` - fixed-frame components produced from the independent base and feature atlases.
+- `prototype/assets/characters/rebuild_atlas_v1_runtime/male/` - 64 x 64 runtime sheets used by the silent `--rebuild-head` Godot test; hair is intentionally excluded until its fit is approved.
+- `prototype/preview/index.html` - persistent local preview page; it uses tracked project assets rather than temporary test output.
+
+The turnaround split is an alignment study, not production-ready randomization
+art. Its manifest records the directional feature policy: two eyes on the
+front, one eye on each side, and no eyes or eyebrows on the back. The source
+is intentionally kept as a complete visual reference until the masks are
+redrawn and manually checked.
+
+The head rebuild separates the problem from body and clothing occlusion. The
+current preferred direction is independent reconstruction: the neutral face
+base, facial feature atlas, and hair atlas are generated as separate inputs.
+All component layers use one union frame per direction; they must not be
+scaled independently. `rebuild_atlas_v1` remains a reference reconstruction
+until the component edges and attachment anchors receive manual art review.
+
+The Godot smoke test can load the reconstructed face layers with
+`tools/run_headless_tests.ps1 -RebuildHead`. It reuses the existing body and
+walk animation, repeats the static reconstructed face across eight body frames,
+and leaves hair disabled while its coverage is being corrected.
+
+### Anchor-Based Component Registration
+
+Runtime component placement now uses `head_contour_anchors_v1` in
+`rebuild_atlas_v1_runtime/male/runtime_manifest.json`. The neutral head alpha
+provides the direction-specific contour, center, top, neck, and side-edge
+anchors. Face and ear layers declare their target anchors in the same 64 x 64
+runtime space, and the builder computes the required registration shift from
+the component alpha center. Front and rear ears use separate left/right
+anchors; side views use one visible-ear anchor. This is the intended contract
+for future hair and clothing layers.
+
+The reconstructed runtime keeps the Godot movement rows explicit: row 1 is the
+right-facing base and row 3 is the left-facing base. The detachable side face
+and ear sources are exchanged 2/4 at build time without an additional
+horizontal mirror, because the generated source atlas had those side features
+reversed.
 
 ### Appearance Pipeline Status
 

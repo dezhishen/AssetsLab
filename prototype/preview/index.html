@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#161827">
+  <title>AssetsLab Preview</title>
+  <style>
+    :root { color-scheme: dark; --bg:#161827; --panel:#22253a; --line:#3a3e5a; --text:#f2f1ee; --muted:#b5b7c8; --accent:#8fd3ff; }
+    * { box-sizing: border-box; }
+    body { margin:0; background:linear-gradient(160deg,#151725,#20243a); color:var(--text); font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif; }
+    main { width:min(1180px,100%); margin:auto; padding:20px 14px 48px; }
+    h1 { margin:0 0 4px; font-size:clamp(24px,5vw,38px); }
+    h2 { margin:0 0 12px; font-size:21px; }
+    h3 { margin:0 0 8px; font-size:17px; color:var(--accent); }
+    p { margin:6px 0 12px; color:var(--muted); }
+    .status { color:#c9f5c9; }
+    .panel { margin:16px 0; padding:16px; border:1px solid var(--line); border-radius:16px; background:rgba(34,37,58,.9); box-shadow:0 8px 28px #090a1222; }
+    .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:12px; }
+    figure { margin:0; padding:10px; border:1px solid var(--line); border-radius:12px; background:#0c0d16; }
+    figure img { display:block; width:100%; max-height:360px; object-fit:contain; image-rendering:auto; background:#0b0c13; border-radius:8px; }
+    figcaption { margin-top:8px; color:var(--muted); font-size:14px; }
+    .pixel img { image-rendering:pixelated; }
+    table { width:100%; border-collapse:collapse; font-size:14px; }
+    th,td { padding:9px 8px; text-align:left; border-bottom:1px solid var(--line); }
+    th { color:var(--accent); font-weight:600; }
+    code { color:#d8f1ff; word-break:break-word; }
+    details { margin-top:10px; }
+    summary { cursor:pointer; color:var(--accent); }
+    .small { font-size:13px; }
+    .warning { color:#ffd39a; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>AssetsLab 美术素材预览</h1>
+  <p class="status">当前版本：重建头部 v1 · 4 方向 · 8 行走帧 · 静态文件预览</p>
+  <p>本页只引用项目内文件，不依赖临时 <code>test_output</code>，因此预览不会因为测试输出清理而消失。重新生成资源后刷新本页即可。</p>
+
+  <section class="panel">
+    <h2>方向约定</h2>
+    <table>
+      <thead><tr><th>方向行</th><th>方向</th><th>输入</th><th>头部基底</th><th>侧脸特征来源</th></tr></thead>
+      <tbody>
+        <tr><td>0</td><td>正脸 / front</td><td>S / 下</td><td>front</td><td>front</td></tr>
+        <tr><td>1</td><td>右侧脸 / right</td><td>D / 右</td><td>right</td><td>source left（2/4 交换）</td></tr>
+        <tr><td>2</td><td>背脸 / back</td><td>W / 上</td><td>back</td><td>back（无眼睛眉毛）</td></tr>
+        <tr><td>3</td><td>左侧脸 / left</td><td>A / 左</td><td>left</td><td>source right（2/4 交换）</td></tr>
+      </tbody>
+    </table>
+    <p class="small warning">这里的“交换”是资源来源映射，不再额外做隐含水平翻转；Godot 的 D/A 输入仍然对应右/左基底。</p>
+  </section>
+
+  <section class="panel">
+    <h2>整体与独立重建输入</h2>
+    <div class="grid">
+      <figure><img src="../assets/characters/generated/character_turnaround_v1_male.png" alt="原始四方向整体参考"><figcaption>整体四方向参考图</figcaption></figure>
+      <figure><img src="../assets/characters/generated/neutral_face_base_rebuild_v1_male.png" alt="无五官头部基底"><figcaption>独立生成的无五官头部基底</figcaption></figure>
+      <figure><img src="../assets/characters/generated/facial_feature_atlas_rebuild_v1_male.png" alt="眼睛眉毛耳朵特征源"><figcaption>眼睛、眉毛、耳朵源图（用于方向映射验证）</figcaption></figure>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>当前 Godot 运行图集</h2>
+    <div class="grid pixel">
+      <figure><img src="../assets/characters/rebuild_atlas_v1_runtime/male/face_base_walk_4way.png" alt="四方向头部基底运行图集"><figcaption>face_base_walk_4way.png</figcaption></figure>
+      <figure><img src="../assets/characters/rebuild_atlas_v1_runtime/male/face_walk_4way.png" alt="四方向眼睛眉毛运行图集"><figcaption>face_walk_4way.png（侧脸 2/4 已显式交换）</figcaption></figure>
+      <figure><img src="../assets/characters/rebuild_atlas_v1_runtime/male/ears_walk_4way.png" alt="四方向耳朵运行图集"><figcaption>ears_walk_4way.png</figcaption></figure>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>逐方向叠加预览</h2>
+    <div class="grid">
+      <figure><img src="assets/rebuild_front.png" alt="正脸叠加预览"><figcaption>0 · 正脸</figcaption></figure>
+      <figure><img src="assets/rebuild_right.png" alt="右侧脸叠加预览"><figcaption>1 · 右侧脸（D / 右）</figcaption></figure>
+      <figure><img src="assets/rebuild_back.png" alt="背脸叠加预览"><figcaption>2 · 背脸（W / 上）</figcaption></figure>
+      <figure><img src="assets/rebuild_left.png" alt="左侧脸叠加预览"><figcaption>3 · 左侧脸（A / 左）</figcaption></figure>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>实现位置</h2>
+    <p><code>tools/process_rebuild_atlas.py</code> 负责独立基底与特征图层处理；<code>tools/build_rebuild_runtime_assets.py</code> 负责 Godot 运行图集与方向来源映射；<code>prototype/scripts/player.gd</code> 负责 D/A/W/S 到方向行的选择。</p>
+    <details><summary>查看当前测试命令</summary><p><code>.\tools\run_headless_tests.ps1 -RebuildHead -AppearanceSeed 20260730</code></p></details>
+  </section>
+</main>
+</body>
+</html>

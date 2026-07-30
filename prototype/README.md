@@ -66,3 +66,30 @@ under `assets/characters/chibi/` are the runtime inputs for this prototype. The
 runtime stack is independent `Feet` + `LowerBody` + `Arms` + `Torso` + `Ear` +
 male/female `Head` + `Face` layers. The first appearance pass has no nose or
 mouth; hair and clothing remain future layers.
+
+Open `preview/index.html` for the persistent local asset preview. It uses
+project-tracked files instead of `test_output/`, so the page remains usable
+after temporary test artifacts are cleaned.
+
+Publish a timestamped snapshot and start a read-only LAN server for phone
+review from the repository root:
+
+```powershell
+.\tools\serve_preview.ps1 -SnapshotName rear_ear_fix
+```
+
+The command prints one or more `http://<LAN-IP>:8765/snapshots/<snapshot>/`
+addresses. Each run creates a separate snapshot under the ignored
+`prototype/preview/snapshots/` directory, so a previous change can be compared
+later without being overwritten.
+
+Stop the background preview server with:
+
+```powershell
+.\tools\stop_preview.ps1
+```
+
+Use the interactive component calibration page at
+`http://<Tailscale-IP>:8765/calibrate.html`. It can move the face and ear
+parts independently for all four directions and save the calibration JSON to
+`prototype/preview/calibration/latest.json`.

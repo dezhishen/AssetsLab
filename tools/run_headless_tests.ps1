@@ -4,6 +4,7 @@ param(
     [switch]$Female,
     [switch]$Compact,
     [switch]$BaseFeatures,
+    [switch]$RebuildHead,
     [int]$AppearanceSeed
 )
 
@@ -89,6 +90,12 @@ $previousChibiAssetRoot = $env:CHIBI_ASSET_ROOT
 $env:PYTHONPATH = $pythonModules
 $env:CHIBI_ASSET_ROOT = $assetVariant
 try {
+    if ($RebuildHead) {
+        & $pythonPath (Join-Path $assetsLabRoot "tools\validate_rebuild_runtime_anchors.py")
+        if ($LASTEXITCODE -ne 0) {
+            throw "Rebuild runtime anchor validation failed with exit code $LASTEXITCODE"
+        }
+    }
     & $pythonPath (Join-Path $assetsLabRoot "tools\validate_chibi_frames.py")
     if ($LASTEXITCODE -ne 0) {
         throw "Chibi frame validation failed with exit code $LASTEXITCODE"
@@ -138,6 +145,13 @@ function Invoke-SmokeTest {
             $arguments += "--appearance-seed=$appearanceSeed"
         } else {
             $arguments += @("--", "--appearance-seed=$appearanceSeed")
+        }
+    }
+    if ($RebuildHead) {
+        if ($arguments -contains "--") {
+            $arguments += "--rebuild-head"
+        } else {
+            $arguments += @("--", "--rebuild-head")
         }
     }
 

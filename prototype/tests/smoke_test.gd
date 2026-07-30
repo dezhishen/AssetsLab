@@ -32,6 +32,9 @@ func _run() -> void:
 	if player.torso_frame_textures.size() != 32 or player.arms_frame_textures.size() != 32 or player.lower_body_frame_textures.size() != 32 or player.feet_frame_textures.size() != 32 or player.head_frame_textures.size() != 32 or player.ear_frame_textures.size() != 32 or player.face_frame_textures.size() != 32:
 		_fail("all body and appearance frame sets are not loaded as 32 separate frames")
 		return
+	if "--rebuild-head" in OS.get_cmdline_args() and not player.rebuild_head:
+		_fail("rebuild head mode was not enabled")
+		return
 	var appearance_a: int = player.appearance_variant_for_seed(123456)
 	var appearance_b: int = player.appearance_variant_for_seed(123456)
 	if appearance_a != appearance_b:

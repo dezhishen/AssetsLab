@@ -12,6 +12,7 @@ var space_was_down := false
 var variant := "male"
 var asset_root := "chibi"
 var base_features := false
+var rebuild_head := false
 var appearance_seed: int = 20260730
 var appearance_variant: int = 0
 var torso_frame_textures: Array[Texture2D] = []
@@ -34,6 +35,7 @@ func _ready() -> void:
 	variant = "female" if "--female" in OS.get_cmdline_args() else "male"
 	asset_root = "chibi_compact" if "--compact" in OS.get_cmdline_args() else "chibi"
 	base_features = "--base-features" in OS.get_cmdline_args()
+	rebuild_head = "--rebuild-head" in OS.get_cmdline_args()
 	appearance_seed = _read_appearance_seed()
 	appearance_variant = appearance_variant_for_seed(appearance_seed, variant == "female")
 	_load_frame_textures()
@@ -71,7 +73,12 @@ func _load_frame_textures() -> void:
 			var head_path := base_path + "head_%s_frames/walk_row%d_frame%d.png" % [variant, row, column]
 			var ear_path: String
 			var face_path: String
-			if base_features:
+			if rebuild_head:
+				var rebuild_base := "res://assets/characters/rebuild_atlas_v1_runtime/male/"
+				head_path = rebuild_base + "face_base_walk_4way.png"
+				ear_path = rebuild_base + "ears_walk_4way.png"
+				face_path = rebuild_base + "face_walk_4way.png"
+			elif base_features:
 				var feature_base := "res://assets/characters/base_features_v1/%s/" % variant
 				ear_path = feature_base + "ear_frames/walk_row%d_frame%d.png" % [row, column]
 				face_path = feature_base + "face_frames/walk_row%d_frame%d.png" % [row, column]
