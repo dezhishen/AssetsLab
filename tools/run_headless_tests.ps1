@@ -16,6 +16,55 @@ $godotPath = Resolve-GodotExecutable -RequestedPath $GodotPath -AssetsLabRoot $a
 $pythonPath = Resolve-PythonExecutable -RequestedPath $PythonPath -AssetsLabRoot $assetsLabRoot
 $pythonModules = Join-Path $assetsLabRoot ".tools\python"
 $assetVariant = if ($Compact) { "chibi_compact" } else { "chibi" }
+$randomAppearanceRoot = Join-Path $prototypeRoot "test_output\random_appearance"
+
+$previousGeneratorPythonPath = $env:PYTHONPATH
+$env:PYTHONPATH = $pythonModules
+try {
+    $generatorOutputRoot = if ($Female) { $randomAppearanceRoot } else { Join-Path $randomAppearanceRoot "male" }
+    $generatorArguments = @(
+        (Join-Path $assetsLabRoot "tools\generate_random_appearance.py"),
+        "--output", $generatorOutputRoot
+    )
+    if ($Female) {
+        $generatorArguments += "--both"
+    }
+    if ($Compact) {
+        $generatorArguments += "--compact"
+    }
+    if ($PSBoundParameters.ContainsKey("AppearanceSeed")) {
+        $generatorArguments += @("--seed", "$AppearanceSeed")
+    }
+    $generatorOutput = & $pythonPath @generatorArguments 2>&1
+    $generatorExitCode = $LASTEXITCODE
+    $generatorOutput | ForEach-Object { Write-Output $_ }
+    if ($generatorExitCode -ne 0) {
+        throw "Random appearance generation failed with exit code $generatorExitCode"
+    }
+    $seedLine = $generatorOutput | Where-Object { "$_" -match "^RANDOM_APPEARANCE_SEED=" } | Select-Object -Last 1
+    if ($null -eq $seedLine) {
+        throw "Random appearance generator did not return a seed"
+    }
+    $appearanceSeed = [int]("$seedLine" -replace "^RANDOM_APPEARANCE_SEED=", "")
+    $validationArguments = @(
+        (Join-Path $assetsLabRoot "tools\validate_random_appearance.py"),
+        "--root", $randomAppearanceRoot
+    )
+    if ($Female) {
+        $validationArguments += "--both"
+    } else {
+        $validationArguments[2] = $generatorOutputRoot
+    }
+    $validationOutput = & $pythonPath @validationArguments 2>&1
+    $validationExitCode = $LASTEXITCODE
+    $validationOutput | ForEach-Object { Write-Output $_ }
+    if ($validationExitCode -ne 0) {
+        throw "Random appearance validation failed with exit code $validationExitCode"
+    }
+}
+finally {
+    $env:PYTHONPATH = $previousGeneratorPythonPath
+}
 
 $importLogPath = Join-Path $assetsLabRoot "prototype\test_output\headless_import.log"
 New-Item -ItemType Directory -Force -Path (Split-Path $importLogPath) | Out-Null
@@ -69,12 +118,10 @@ function Invoke-SmokeTest {
             $arguments += @("--", "--compact")
         }
     }
-    if ($PSBoundParameters.ContainsKey("AppearanceSeed")) {
-        if ($arguments -contains "--") {
-            $arguments += "--appearance-seed=$AppearanceSeed"
-        } else {
-            $arguments += @("--", "--appearance-seed=$AppearanceSeed")
-        }
+    if ($arguments -contains "--") {
+        $arguments += "--appearance-seed=$appearanceSeed"
+    } else {
+        $arguments += @("--", "--appearance-seed=$appearanceSeed")
     }
 
     Write-Output ("Running headless smoke test ({0}) with {1}" -f ($(if ($UseFemale) { "female" } else { "male" }), $godotPath))

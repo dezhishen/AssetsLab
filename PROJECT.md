@@ -177,4 +177,10 @@ reference sheets into transparent 64 x 64 layers and writes
 `-AppearanceSeed 12345` with the headless runner to verify a repeatable
 appearance selection.
 
+The random appearance test package is generated at each test startup under
+`prototype/test_output/random_appearance/`. It contains composited 4 x 8
+runtime frames and a manifest, and is ignored by Git. The package uses the same
+seed passed to Godot, so the generated preview and the original movement/GIF
+test exercise the same face, ears, and base layers.
+
 `tools/capture_walk_gif.ps1` resolves Python from `-PythonPath`, `$env:PYTHON_BIN`, PATH, or the local `.venv`/sibling fallback. Pillow is required for GIF conversion.

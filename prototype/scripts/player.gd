@@ -114,15 +114,14 @@ func _read_appearance_seed() -> int:
 
 
 func appearance_variant_for_seed(seed: int, female_presenting: bool = false) -> int:
-	var random := RandomNumberGenerator.new()
-	random.seed = seed
+	var state: int = posmod(seed * 1103515245 + 12345, 2147483647)
 	var candidates: Array[int] = [0, 1, 2, 3, 4, 5, 6, 7]
 	if not female_presenting:
 		# Blush variants are reserved for the female-presenting base in this
 		# experiment so the two bases remain visually distinguishable without
 		# introducing gendered body geometry.
 		candidates = [0, 2, 4, 6]
-	return candidates[random.randi_range(0, candidates.size() - 1)]
+	return candidates[state % candidates.size()]
 
 
 func _read_keyboard_vector() -> Vector2:

@@ -38,7 +38,16 @@ Generate a hidden-window W/A/S/D capture and GIF from the repository root:
 
 Add `-Female` to capture the female-presenting base, or `-Compact` to capture the compact-stride candidate.
 
+Both test entry points generate a fresh random appearance package under
+`prototype/test_output/random_appearance/` before starting Godot. The package
+contains the selected seed, a composited 4 x 8 walk atlas, individual frames,
+and a preview. Pass `-AppearanceSeed 12345` to reproduce one package exactly.
+
 The capture script resolves Python from `-PythonPath`, `PYTHON_BIN`, PATH, or the local `.venv`/sibling fallback. Pillow is required for GIF conversion.
+
+`tools/generate_random_appearance.py` creates the ignored per-run package;
+`tools/validate_random_appearance.py` verifies that the package frames are
+complete, composited, and consistent with the seed/gender rule.
 
 The Godot process uses the normal OpenGL renderer but is launched hidden, so no editor or game window is presented. PNG frames and the GIF are written to `prototype/test_output/`; this directory is ignored by Git. The GIF is `prototype/test_output/movement_walk.gif`.
 

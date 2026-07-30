@@ -1,5 +1,6 @@
 .tools/
 prototype/.godot/
 prototype/test_output/
+prototype/test_output/random_appearance/
 *.import
 __pycache__/
