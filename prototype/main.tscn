@@ -1,10 +1,12 @@
-[gd_scene load_steps=8 format=3]
+[gd_scene load_steps=10 format=3]
 
 [ext_resource type="Script" path="res://scripts/main.gd" id="1_main"]
 [ext_resource type="Script" path="res://scripts/player.gd" id="2_player"]
-[ext_resource type="Texture2D" path="res://assets/characters/chibi/body_walk_4way.png" id="3_body"]
+[ext_resource type="Texture2D" path="res://assets/characters/chibi/torso_walk_4way.png" id="3_torso"]
 [ext_resource type="Texture2D" path="res://assets/characters/chibi/head_male_walk_4way.png" id="4_head"]
-[ext_resource type="Texture2D" path="res://assets/characters/chibi/leg_walk_4way.png" id="5_leg"]
+[ext_resource type="Texture2D" path="res://assets/characters/chibi/lower_body_walk_4way.png" id="5_lower_body"]
+[ext_resource type="Texture2D" path="res://assets/characters/chibi/arms_walk_4way.png" id="6_arms"]
+[ext_resource type="Texture2D" path="res://assets/characters/chibi/feet_walk_4way.png" id="7_feet"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_player"]
 size = Vector2(34, 24)
@@ -16,14 +18,24 @@ script = ExtResource("1_main")
 position = Vector2(128, 96)
 script = ExtResource("2_player")
 
-[node name="LegSprite" type="Sprite2D" parent="Player"]
+[node name="FeetSprite" type="Sprite2D" parent="Player"]
 position = Vector2(0, -26)
-texture = ExtResource("5_leg")
+texture = ExtResource("7_feet")
+texture_filter = 1
+
+[node name="LowerBodySprite" type="Sprite2D" parent="Player"]
+position = Vector2(0, -26)
+texture = ExtResource("5_lower_body")
+texture_filter = 1
+
+[node name="ArmsSprite" type="Sprite2D" parent="Player"]
+position = Vector2(0, -26)
+texture = ExtResource("6_arms")
 texture_filter = 1
 
 [node name="BodySprite" type="Sprite2D" parent="Player"]
 position = Vector2(0, -26)
-texture = ExtResource("3_body")
+texture = ExtResource("3_torso")
 texture_filter = 1
 
 [node name="HeadSprite" type="Sprite2D" parent="Player"]

@@ -2,7 +2,7 @@
 
 ## Working Directory
 
-`E:\WorkProject\AssetsLab`
+`D:\Apps\CodeXApp\Tests\AssetsLab`
 
 All project work and project files must be kept within this directory.
 
@@ -55,7 +55,7 @@ Do not build the random face, hair, or clothing generation pipeline yet. First v
 - Motion: small readable leg stride, opposite arm swing, restrained body bob, and a stable head anchor.
 - Layout: one 4 x 8 sheet per presentation variant; rows are directions and columns are frames.
 - Base content: no hair, ears, eyes, nose, mouth, clothing, underwear, accessories, or anatomical detail.
-- Runtime composition: one shared torso layer, an independent shared leg layer, and a male or female blank-head layer. Female blush remains a separate optional face overlay.
+- Runtime composition: shared `Torso`, `Arms`, `LowerBody`, and `Feet` layers, plus a male or female blank-head layer. Female blush remains a separate optional face overlay.
 
 ### Execution Steps
 
@@ -85,9 +85,9 @@ Use one gameplay root and one synchronized visual stack:
 - `CharacterBody2D` or the project's existing character root handles movement and collision.
 - A `CharacterVisual` child owns the visual layers.
 - Each layer is a `Sprite2D` using the same cell size, origin, 4-column frame grid, and 4-row direction grid.
-- Suggested layers: `Leg`, `Body`, `Head`/`Face`, `Hair`, `Clothing`, and optional `Accessory`.
-- The reference BomboAdvanture assets use six walk frames per direction with an independent `Leg` component. The prototype keeps eight stronger keyframes but now follows the same independent-leg structure.
-- Head motion is implemented as a small per-frame Sprite2D offset; the reference resource mostly relies on per-frame component textures and small anchor differences rather than a large head transform.
+- Suggested layers: `Feet`, `LowerBody`, `Arms`, `Torso`, `Head`/`Face`, `Hair`, `Clothing`, and optional `Accessory`.
+- The reference BomboAdvanture assets use per-component walk textures. The prototype keeps eight stronger keyframes and applies one synchronized frame index to every layer.
+- Head motion currently uses a fixed shared anchor; source-frame registration must be stable before adding any bob or clothing offsets.
 - One controller stores `direction` and `walk_frame`, then applies the same `frame_coords` to every layer. This prevents random layers from drifting out of sync.
 - Use `AnimatedSprite2D` with `SpriteFrames` when a character is already flattened into a single composite animation.
 
@@ -95,17 +95,18 @@ This layered `Sprite2D` approach is preferred for the planned random face, hair,
 
 ### Asset Handoff Rule
 
-The current walk sheets are reference sheets, not runtime-ready atlases: they contain a neutral background and guide grid. The next art-processing step must isolate each cell, remove the guide/background, preserve a common origin, and export layer-specific sheets before creating Godot resources.
+The source walk sheets are reference sheets, not runtime-ready atlases: they contain a neutral background and guide grid. The processor isolates each cell, removes the guide/background, preserves one fixed registration box per direction, and exports layer-specific sheets before Godot import.
 
-Recommended animation names are `idle_front`, `idle_right`, `idle_back`, `idle_left`, `walk_front`, `walk_right`, `walk_back`, and `walk_left`. The current walk-cycle reference uses four frames per `walk_*` animation.
+Recommended animation names are `idle_front`, `idle_right`, `idle_back`, `idle_left`, `walk_front`, `walk_right`, `walk_back`, and `walk_left`. The current runtime walk cycle uses eight frames per `walk_*` animation.
 
 ## Minimal Prototype Status
 
 The current runtime processing pass is complete for the QQTang-style neutral layers:
 
 - The generated 4 x 8 sheets are split into 64 x 64 runtime cells with a 52-pixel subject envelope and a shared foot baseline.
-- Magenta background was removed with local image processing; head and body layers overlap slightly at the neck to prevent seams.
-- Transparent body, male-head, and female-head atlases, individual frames, and a JSON manifest were created under `prototype/assets/characters/chibi/`.
+- Magenta background was removed with local image processing; adjacent neutral layers overlap slightly at seams to prevent gaps.
+- Transparent `Torso`, `Arms`, `LowerBody`, `Feet`, male-head, and female-head atlases, individual frames, and a JSON manifest were created under `prototype/assets/characters/chibi/`.
+- The generated `chibi_compact` variant is kept beside the default assets for comparison; it is selected only with the `--compact` test argument.
 - `prototype/` contains a UI-free Godot test project with movement, collision walls, eight-frame four-direction walk animation, and a simplified bomb fuse/blast feedback.
 - The same prototype can select the female base with the `--female` command-line argument.
 
@@ -120,20 +121,34 @@ Verified commands:
 - female smoke test: `SMOKE_TEST_PASS`;
 - two-second headless main-scene launch: passed.
 
-The current prototype validates the movement and asset handoff path. It is not yet the production character system and does not include random face, hair, or clothing layers.
+The current prototype validates the movement and modular asset handoff path. It is not yet the production character system and does not include random face, hair, or clothing content layers.
 
 ### Prototype Iteration 1 Fixes
 
 - Corrected the generated side-view row mapping so left and right movement face the expected direction.
 - Switched runtime playback to isolated 64 x 64 frame PNGs, preventing adjacent-frame bleed and the stray head fragment visible when moving upward.
-- Replaced the small-head source with a QQTang-style oversized head, removed ears from every directional view, and split the runtime into shared body plus male/female head layers.
+- Replaced the small-head source with a QQTang-style oversized head, removed ears from every directional view, and split the runtime into four neutral body slots plus male/female head layers.
 - Confirmed that the walk timer advances the actual texture frame while movement continues.
 - Reprocessed transparent frames with edge-color extrusion to reduce filtered halos and particle-like edge noise.
+
+### Prototype Iteration 2 Registration Pass
+
+- Replaced per-frame foreground cropping and resizing with one fixed union registration box per direction, shared by every visual layer.
+- Tightened magenta removal so dark-magenta background pixels cannot become one-frame foreground noise.
+- Removed runtime head bob until the source poses and seam anchors are stable.
+- Preserved the current walk phase when movement stops, preventing a visible reset to frame zero.
+- Added `tools/validate_chibi_frames.py` to check 64 x 64 frame size, layer seams, and foot baseline before headless tests; it validates 192 frames across six layers.
+
+### Prototype Iteration 3 Outfit-Ready Layers
+
+- Split the neutral mannequin into `Torso`, `Arms`, `LowerBody`, and `Feet` slots with deliberate seam overlap.
+- Kept the old `body` and `leg` files as legacy outputs; the runtime now uses the five-layer stack so future clothing can replace or cover individual regions.
+- Added `-Compact` to the headless runner and GIF capture so candidate walk sources can be evaluated without changing the default runtime assets.
 
 ### Automated Visual Capture
 
 `tools/capture_walk_gif.ps1` runs `prototype/tests/capture_test.gd` with internal W/A/S/D key events, captures the rendered viewport at 12 FPS, and uses the local Pillow tool environment to produce `prototype/test_output/movement_walk.gif`. Godot is launched as a hidden process with the normal OpenGL renderer because Godot's dummy `--headless` renderer has no readable viewport texture on this machine. The test still runs without presenting an editor or game window.
 
-`tools/run_headless_tests.ps1` runs the male smoke test and optionally the female smoke test with `--headless`. Set `$env:GODOT_BIN` (or `$env:GODOT_PATH`) or pass `-GodotPath` when Godot is installed in a different directory.
+`tools/run_headless_tests.ps1` runs the male smoke test and optionally the female smoke test with `--headless`; add `-Compact` to test the compact asset variant. Set `$env:GODOT_BIN` (or `$env:GODOT_PATH`) or pass `-GodotPath` when Godot is installed in a different directory.
 
-`tools/capture_walk_gif.ps1` resolves Python from `-PythonPath`, `$env:PYTHON_BIN`, PATH, or the local `E:\env\venv\Scripts\python.exe` fallback.
+`tools/capture_walk_gif.ps1` resolves Python from `-PythonPath`, `$env:PYTHON_BIN`, PATH, or the local `.venv`/sibling fallback. Pillow is required for GIF conversion.

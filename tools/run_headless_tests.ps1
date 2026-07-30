@@ -1,6 +1,8 @@
 param(
     [string]$GodotPath,
-    [switch]$Female
+    [string]$PythonPath,
+    [switch]$Female,
+    [switch]$Compact
 )
 
 $ErrorActionPreference = "Stop"
@@ -9,13 +11,33 @@ $assetsLabRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $prototypeRoot = Join-Path $assetsLabRoot "prototype"
 . (Join-Path $PSScriptRoot "resolve_godot.ps1")
 $godotPath = Resolve-GodotExecutable -RequestedPath $GodotPath -AssetsLabRoot $assetsLabRoot
+. (Join-Path $PSScriptRoot "resolve_python.ps1")
+$pythonPath = Resolve-PythonExecutable -RequestedPath $PythonPath -AssetsLabRoot $assetsLabRoot
+$pythonModules = Join-Path $assetsLabRoot ".tools\python"
+$assetVariant = if ($Compact) { "chibi_compact" } else { "chibi" }
+
+$previousPythonPath = $env:PYTHONPATH
+$previousChibiAssetRoot = $env:CHIBI_ASSET_ROOT
+$env:PYTHONPATH = $pythonModules
+$env:CHIBI_ASSET_ROOT = $assetVariant
+try {
+    & $pythonPath (Join-Path $assetsLabRoot "tools\validate_chibi_frames.py")
+    if ($LASTEXITCODE -ne 0) {
+        throw "Chibi frame validation failed with exit code $LASTEXITCODE"
+    }
+}
+finally {
+    $env:PYTHONPATH = $previousPythonPath
+    $env:CHIBI_ASSET_ROOT = $previousChibiAssetRoot
+}
 
 function Invoke-SmokeTest {
     param([switch]$UseFemale)
 
     $logDirectory = Join-Path $assetsLabRoot "prototype\test_output"
     New-Item -ItemType Directory -Force -Path $logDirectory | Out-Null
-    $logName = if ($UseFemale) { "headless_female.log" } else { "headless_male.log" }
+    $logPrefix = if ($Compact) { "headless_compact" } else { "headless" }
+    $logName = if ($UseFemale) { "$logPrefix`_female.log" } else { "$logPrefix`_male.log" }
     $logPath = Join-Path $logDirectory $logName
     $arguments = @(
         "--headless",
@@ -25,6 +47,13 @@ function Invoke-SmokeTest {
     )
     if ($UseFemale) {
         $arguments += @("--", "--female")
+    }
+    if ($Compact) {
+        if ($arguments -contains "--") {
+            $arguments += "--compact"
+        } else {
+            $arguments += @("--", "--compact")
+        }
     }
 
     Write-Output ("Running headless smoke test ({0}) with {1}" -f ($(if ($UseFemale) { "female" } else { "male" }), $godotPath))

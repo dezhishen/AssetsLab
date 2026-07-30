@@ -8,7 +8,7 @@ This prototype is intentionally UI-free. It is a command-line validated gameplay
 - eight-frame walk animation;
 - collision against arena walls;
 - one bomb with a short fuse and blast feedback;
-- QQTang-style oversized-head neutral base as the current runtime skin: shared body plus male/female head layer.
+- QQTang-style oversized-head neutral base as the current runtime skin: shared torso, arms, lower-body, feet, plus male/female head layers.
 
 Controls:
 
@@ -16,6 +16,7 @@ Controls:
 - `Space`: place one bomb.
 
 Append `--female` to run the same prototype with the female-presenting base.
+Append `--compact` to use the isolated compact-stride candidate assets.
 
 Run from the repository root. The test scripts resolve Godot in this order: `-GodotPath`, `GODOT_BIN`/`GODOT_PATH`, `godot`/`godot4` on `PATH`, then the legacy adjacent `Godot-4.6.2` directory:
 
@@ -33,10 +34,12 @@ Generate a hidden-window W/A/S/D capture and GIF from the repository root:
 .\tools\capture_walk_gif.ps1
 ```
 
-Add `-Female` to capture the female-presenting base.
+Add `-Female` to capture the female-presenting base, or `-Compact` to capture the compact-stride candidate.
 
-The capture script resolves Python from `-PythonPath`, `PYTHON_BIN`, PATH, or the local `E:\env\venv\Scripts\python.exe` fallback.
+The capture script resolves Python from `-PythonPath`, `PYTHON_BIN`, PATH, or the local `.venv`/sibling fallback. Pillow is required for GIF conversion.
 
 The Godot process uses the normal OpenGL renderer but is launched hidden, so no editor or game window is presented. PNG frames and the GIF are written to `prototype/test_output/`; this directory is ignored by Git. The GIF is `prototype/test_output/movement_walk.gif`.
 
-The generated walk sheets are source assets. The processed transparent atlases under `assets/characters/chibi/` are the runtime inputs for this prototype. The runtime stack is independent `Leg` + `Body` + male/female `Head` layers, with a small per-frame head offset. The mannequin has no ears, facial features, hair, or clothing; female blush is reserved for a later independent face overlay.
+The headless test runner validates all 192 frames across six chibi layers before launching Godot. It checks fixed frame size, layer seam ranges, and the shared foot baseline. Add `-Compact` to validate and run the compact variant.
+
+The generated walk sheets are source assets. The processed transparent atlases under `assets/characters/chibi/` are the runtime inputs for this prototype. The runtime stack is independent `Feet` + `LowerBody` + `Arms` + `Torso` + male/female `Head` layers. The mannequin has no ears, facial features, hair, or clothing; female blush is reserved for a later independent face overlay.

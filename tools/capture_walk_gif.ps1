@@ -1,5 +1,6 @@
 param(
     [switch]$Female,
+    [switch]$Compact,
     [string]$GodotPath,
     [string]$PythonPath
 )
@@ -14,7 +15,8 @@ $godotPath = Resolve-GodotExecutable -RequestedPath $GodotPath -AssetsLabRoot $a
 $pythonPath = Resolve-PythonExecutable -RequestedPath $PythonPath -AssetsLabRoot $assetsLabRoot
 $pythonModules = Join-Path $assetsLabRoot ".tools\python"
 $frameDirectory = Join-Path $prototypeRoot "test_output\capture_frames"
-$gifPath = Join-Path $prototypeRoot "test_output\movement_walk.gif"
+$gifName = if ($Compact) { "movement_walk_compact.gif" } else { "movement_walk.gif" }
+$gifPath = Join-Path $prototypeRoot "test_output\$gifName"
 $logPath = Join-Path $prototypeRoot "test_output\capture.log"
 
 $godotArguments = @(
@@ -28,6 +30,9 @@ $godotArguments = @(
 )
 if ($Female) {
     $godotArguments += "--female"
+}
+if ($Compact) {
+    $godotArguments += "--compact"
 }
 $godotProcess = Start-Process -FilePath $godotPath -ArgumentList $godotArguments -WindowStyle Hidden -PassThru -Wait
 if (Test-Path -LiteralPath $logPath) {

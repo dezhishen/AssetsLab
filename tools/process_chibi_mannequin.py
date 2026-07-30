@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 
 from PIL import Image
@@ -19,8 +20,9 @@ TARGET_HEIGHT = 52
 BASELINE_Y = 58
 CENTER_X = CELL_SIZE // 2
 HEAD_SPLIT_RATIO = 0.50
-LEG_SPLIT_RATIO = 0.66
+LOWER_BODY_SPLIT_RATIO = 0.66
 SEAM_OVERLAP = 2
+SIDE_LIMB_SCALE_X = 0.84
 
 
 def chroma_alpha(cell: Image.Image) -> Image.Image:
@@ -32,50 +34,99 @@ def chroma_alpha(cell: Image.Image) -> Image.Image:
     for y in range(rgb.height):
         for x in range(rgb.width):
             red, green, blue = source[x, y]
-            is_magenta = red > 170 and blue > 130 and green < 100 and blue > green * 1.5
+            # The generated background has both bright and dark magenta pixels.
+            # Use a color-distance rule instead of a single red threshold so
+            # dark edge pixels cannot become stray foreground in one frame.
+            magenta_energy = red + blue - 2 * green
+            is_magenta = (
+                red > 120
+                and blue > 100
+                and green < 120
+                and magenta_energy > 180
+            )
             if not is_magenta:
                 target[x, y] = 255
     return alpha
 
 
-def split_subject(cell: Image.Image) -> tuple[Image.Image, Image.Image, Image.Image]:
-    alpha = chroma_alpha(cell)
-    bbox = alpha.getbbox()
-    if bbox is None:
-        raise ValueError("Generated frame has no foreground")
+def row_registration_boxes(source: Image.Image) -> list[tuple[int, int, int, int]]:
+    """Find one fixed registration box per direction across all eight frames."""
+    registrations: list[tuple[int, int, int, int]] = []
+    for row in range(ROWS):
+        union: tuple[int, int, int, int] | None = None
+        for column in range(COLUMNS):
+            cell = source.crop(frame_bounds(source, row, column))
+            bbox = chroma_alpha(cell).getbbox()
+            if bbox is None:
+                raise ValueError(f"Frame {row},{column} has no foreground")
+            if union is None:
+                union = bbox
+            else:
+                union = (
+                    min(union[0], bbox[0]),
+                    min(union[1], bbox[1]),
+                    max(union[2], bbox[2]),
+                    max(union[3], bbox[3]),
+                )
+        if union is None:
+            raise ValueError(f"Direction row {row} has no foreground")
+        registrations.append(union)
+    return registrations
 
-    subject = cell.crop(bbox).convert("RGBA")
-    subject.putalpha(alpha.crop(bbox))
-    scaled_width = max(1, round(subject.width * TARGET_HEIGHT / subject.height))
+
+def build_range_mask(alpha: Image.Image, start_y: int, end_y: int) -> Image.Image:
+    mask = Image.new("L", alpha.size, 0)
+    mask.paste(alpha.crop((0, start_y, alpha.width, end_y)), (0, start_y))
+    return mask
+
+
+def split_subject(
+    cell: Image.Image,
+    registration_box: tuple[int, int, int, int],
+) -> dict[str, Image.Image]:
+    alpha = chroma_alpha(cell)
+    subject = cell.crop(registration_box).convert("RGBA")
+    subject.putalpha(alpha.crop(registration_box))
+    registration_width = registration_box[2] - registration_box[0]
+    registration_height = registration_box[3] - registration_box[1]
+    scaled_width = max(1, round(registration_width * TARGET_HEIGHT / registration_height))
     subject = subject.resize((scaled_width, TARGET_HEIGHT), Image.Resampling.NEAREST)
     subject_alpha = subject.getchannel("A")
 
     split_y = round(TARGET_HEIGHT * HEAD_SPLIT_RATIO)
-    leg_split_y = round(TARGET_HEIGHT * LEG_SPLIT_RATIO)
-    head_end = min(TARGET_HEIGHT, split_y + SEAM_OVERLAP)
-    body_start = max(0, split_y - SEAM_OVERLAP)
-    body_end = min(TARGET_HEIGHT, leg_split_y + SEAM_OVERLAP)
-    leg_start = max(0, leg_split_y - SEAM_OVERLAP)
-    head_alpha = Image.new("L", subject.size, 0)
-    body_alpha = Image.new("L", subject.size, 0)
-    leg_alpha = Image.new("L", subject.size, 0)
-    head_alpha.paste(subject_alpha.crop((0, 0, scaled_width, head_end)), (0, 0))
-    body_alpha.paste(
-        subject_alpha.crop((0, body_start, scaled_width, body_end)),
-        (0, body_start),
-    )
-    leg_alpha.paste(
-        subject_alpha.crop((0, leg_start, scaled_width, TARGET_HEIGHT)),
-        (0, leg_start),
-    )
-
-    head = Image.new("RGBA", subject.size, (0, 0, 0, 0))
-    body = Image.new("RGBA", subject.size, (0, 0, 0, 0))
-    leg = Image.new("RGBA", subject.size, (0, 0, 0, 0))
-    head.paste(subject, (0, 0), head_alpha)
-    body.paste(subject, (0, 0), body_alpha)
-    leg.paste(subject, (0, 0), leg_alpha)
-    return head, body, leg
+    lower_body_split_y = round(TARGET_HEIGHT * LOWER_BODY_SPLIT_RATIO)
+    # Clothing slots use overlapping horizontal regions. They are not meant
+    # to be anatomical masks; overlap prevents seams and allows future outfit
+    # layers to cover upper and lower parts independently.
+    masks = {
+        "head": build_range_mask(subject_alpha, 0, min(TARGET_HEIGHT, split_y + SEAM_OVERLAP)),
+        "torso": build_range_mask(
+            subject_alpha,
+            max(0, split_y - SEAM_OVERLAP),
+            min(TARGET_HEIGHT, round(TARGET_HEIGHT * 0.74)),
+        ),
+        "arms": build_range_mask(
+            subject_alpha,
+            max(0, round(TARGET_HEIGHT * 0.58) - SEAM_OVERLAP),
+            min(TARGET_HEIGHT, round(TARGET_HEIGHT * 0.88)),
+        ),
+        "lower_body": build_range_mask(
+            subject_alpha,
+            max(0, lower_body_split_y - SEAM_OVERLAP),
+            min(TARGET_HEIGHT, round(TARGET_HEIGHT * 0.98)),
+        ),
+        "feet": build_range_mask(
+            subject_alpha,
+            max(0, round(TARGET_HEIGHT * 0.84) - SEAM_OVERLAP),
+            TARGET_HEIGHT,
+        ),
+    }
+    layers: dict[str, Image.Image] = {}
+    for layer, mask in masks.items():
+        image = Image.new("RGBA", subject.size, (0, 0, 0, 0))
+        image.paste(subject, (0, 0), mask)
+        layers[layer] = image
+    return layers
 
 
 def frame_bounds(source: Image.Image, row: int, column: int) -> tuple[int, int, int, int]:
@@ -86,7 +137,11 @@ def frame_bounds(source: Image.Image, row: int, column: int) -> tuple[int, int, 
     return x0, y0, x1, y1
 
 
-def process_sheet(source: Image.Image, layer: str) -> tuple[Image.Image, list[list[str]]]:
+def process_sheet(
+    source: Image.Image,
+    layer: str,
+    registrations: list[tuple[int, int, int, int]],
+) -> tuple[Image.Image, list[list[str]]]:
     atlas = Image.new("RGBA", (COLUMNS * CELL_SIZE, ROWS * CELL_SIZE), (0, 0, 0, 0))
     frame_names: list[list[str]] = []
     frame_dir = OUTPUT / f"{layer}_frames"
@@ -96,13 +151,19 @@ def process_sheet(source: Image.Image, layer: str) -> tuple[Image.Image, list[li
         row_names: list[str] = []
         for column in range(COLUMNS):
             cell = source.crop(frame_bounds(source, row, column))
-            head, body, leg = split_subject(cell)
+            layers = split_subject(cell, registrations[row])
             if layer.startswith("head"):
-                frame = head
-            elif layer == "leg":
-                frame = leg
+                frame = layers["head"]
             else:
-                frame = body
+                frame = layers[layer]
+            if layer in {"torso", "arms", "lower_body", "feet"} and row in {1, 3}:
+                # The generated side poses use a wider stride than the
+                # intended compact chibi silhouette. Keep the head untouched
+                # and apply one uniform width reduction to both lower layers.
+                scaled_layer_width = max(1, round(frame.width * SIDE_LIMB_SCALE_X))
+                frame = frame.resize(
+                    (scaled_layer_width, frame.height), Image.Resampling.NEAREST
+                )
             canvas = Image.new("RGBA", (CELL_SIZE, CELL_SIZE), (0, 0, 0, 0))
             x = CENTER_X - frame.width // 2
             y = BASELINE_Y - TARGET_HEIGHT
@@ -116,6 +177,14 @@ def process_sheet(source: Image.Image, layer: str) -> tuple[Image.Image, list[li
 
 
 def main() -> None:
+    global SHARED_SOURCE, OUTPUT
+    shared_override = os.environ.get("CHIBI_SHARED_SOURCE")
+    output_override = os.environ.get("CHIBI_OUTPUT_ROOT")
+    if shared_override:
+        SHARED_SOURCE = Path(shared_override).resolve()
+    if output_override:
+        OUTPUT = Path(output_override).resolve()
+
     for source in (SHARED_SOURCE, MALE_HEAD_SOURCE, FEMALE_HEAD_SOURCE):
         if not source.exists():
             raise FileNotFoundError(source)
@@ -125,13 +194,23 @@ def main() -> None:
     male = Image.open(MALE_HEAD_SOURCE).convert("RGB")
     female = Image.open(FEMALE_HEAD_SOURCE).convert("RGB")
 
-    # The body always comes from the shared neutral source. Only the head varies.
-    body_atlas, body_frames = process_sheet(shared, "body")
-    leg_atlas, leg_frames = process_sheet(shared, "leg")
-    male_atlas, male_frames = process_sheet(male, "head_male")
-    female_atlas, female_frames = process_sheet(female, "head_female")
-    body_atlas.save(OUTPUT / "body_walk_4way.png")
-    leg_atlas.save(OUTPUT / "leg_walk_4way.png")
+    # Register every layer against the shared full-body source. This keeps all
+    # clothing slots on the same scale even when a source frame is shorter or
+    # wider than its neighbors.
+    registrations = row_registration_boxes(shared)
+
+    # The neutral body always comes from the shared source. Heads vary by
+    # character, while the remaining slots are intentionally outfit-ready.
+    layer_atlases: dict[str, Image.Image] = {}
+    layer_frames: dict[str, list[list[str]]] = {}
+    for layer in ("torso", "arms", "lower_body", "feet"):
+        layer_atlases[layer], layer_frames[layer] = process_sheet(
+            shared, layer, registrations
+        )
+    male_atlas, male_frames = process_sheet(male, "head_male", registrations)
+    female_atlas, female_frames = process_sheet(female, "head_female", registrations)
+    for layer, atlas in layer_atlases.items():
+        atlas.save(OUTPUT / f"{layer}_walk_4way.png")
     male_atlas.save(OUTPUT / "head_male_walk_4way.png")
     female_atlas.save(OUTPUT / "head_female_walk_4way.png")
 
@@ -147,25 +226,31 @@ def main() -> None:
         "rows": ROWS,
         "frame_count_per_direction": COLUMNS,
         "row_directions": ["front", "right", "back", "left"],
-        "body_atlas": (OUTPUT / "body_walk_4way.png").relative_to(ROOT).as_posix(),
-        "leg_atlas": (OUTPUT / "leg_walk_4way.png").relative_to(ROOT).as_posix(),
+        "layer_atlases": {
+            layer: (OUTPUT / f"{layer}_walk_4way.png").relative_to(ROOT).as_posix()
+            for layer in layer_atlases
+        },
         "head_atlases": {
             "male": (OUTPUT / "head_male_walk_4way.png").relative_to(ROOT).as_posix(),
             "female": (OUTPUT / "head_female_walk_4way.png").relative_to(ROOT).as_posix(),
         },
-        "body_frame_directory": (OUTPUT / "body_frames").relative_to(ROOT).as_posix(),
-        "leg_frame_directory": (OUTPUT / "leg_frames").relative_to(ROOT).as_posix(),
+        "layer_frame_directories": {
+            layer: (OUTPUT / f"{layer}_frames").relative_to(ROOT).as_posix()
+            for layer in layer_atlases
+        },
         "head_frame_directories": {
             "male": (OUTPUT / "head_male_frames").relative_to(ROOT).as_posix(),
             "female": (OUTPUT / "head_female_frames").relative_to(ROOT).as_posix(),
         },
         "target_subject_height": TARGET_HEIGHT,
         "baseline_y": BASELINE_Y,
+        "registration_mode": "fixed_union_box_per_direction",
+        "registration_boxes": registrations,
+        "side_limb_scale_x": SIDE_LIMB_SCALE_X,
         "head_split_ratio": HEAD_SPLIT_RATIO,
-        "leg_split_ratio": LEG_SPLIT_RATIO,
+        "lower_body_split_ratio": LOWER_BODY_SPLIT_RATIO,
         "frames": {
-            "body": body_frames,
-            "leg": leg_frames,
+            **layer_frames,
             "head_male": male_frames,
             "head_female": female_frames,
         },

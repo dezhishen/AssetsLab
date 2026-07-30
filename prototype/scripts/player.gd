@@ -3,29 +3,29 @@ extends CharacterBody2D
 signal bomb_requested
 
 @export var move_speed: float = 180.0
-@export var walk_fps: float = 10.0
+@export var walk_fps: float = 8.0
 
 var spawn_position := Vector2.ZERO
 var direction_row := 0
 var walk_phase := 0.0
 var space_was_down := false
 var variant := "male"
-var body_frame_textures: Array[Texture2D] = []
-var leg_frame_textures: Array[Texture2D] = []
+var asset_root := "chibi"
+var torso_frame_textures: Array[Texture2D] = []
+var arms_frame_textures: Array[Texture2D] = []
+var lower_body_frame_textures: Array[Texture2D] = []
+var feet_frame_textures: Array[Texture2D] = []
 var head_frame_textures: Array[Texture2D] = []
 
-@onready var body_sprite: Sprite2D = $BodySprite
-@onready var leg_sprite: Sprite2D = $LegSprite
+@onready var torso_sprite: Sprite2D = $BodySprite
+@onready var arms_sprite: Sprite2D = $ArmsSprite
+@onready var lower_body_sprite: Sprite2D = $LowerBodySprite
+@onready var feet_sprite: Sprite2D = $FeetSprite
 @onready var head_sprite: Sprite2D = $HeadSprite
-
-const HEAD_BOB_OFFSETS := [
-	Vector2(0, 0), Vector2(0, -1), Vector2(1, -1), Vector2(0, 0),
-	Vector2(0, 1), Vector2(-1, 1), Vector2(0, 0), Vector2(0, -1),
-]
-
 
 func _ready() -> void:
 	variant = "female" if "--female" in OS.get_cmdline_args() else "male"
+	asset_root = "chibi_compact" if "--compact" in OS.get_cmdline_args() else "chibi"
 	_load_frame_textures()
 	spawn_position = global_position
 	_apply_frame(0)
@@ -44,25 +44,40 @@ func _physics_process(delta: float) -> void:
 
 
 func _load_frame_textures() -> void:
-	body_frame_textures.clear()
-	leg_frame_textures.clear()
+	torso_frame_textures.clear()
+	arms_frame_textures.clear()
+	lower_body_frame_textures.clear()
+	feet_frame_textures.clear()
 	head_frame_textures.clear()
 	for row in range(4):
 		for column in range(8):
-			var body_path := "res://assets/characters/chibi/body_frames/walk_row%d_frame%d.png" % [row, column]
-			var leg_path := "res://assets/characters/chibi/leg_frames/walk_row%d_frame%d.png" % [row, column]
-			var head_path := "res://assets/characters/chibi/head_%s_frames/walk_row%d_frame%d.png" % [variant, row, column]
-			var body_texture := load(body_path) as Texture2D
-			var leg_texture := load(leg_path) as Texture2D
+			var base_path := "res://assets/characters/%s/" % asset_root
+			var torso_path := base_path + "torso_frames/walk_row%d_frame%d.png" % [row, column]
+			var arms_path := base_path + "arms_frames/walk_row%d_frame%d.png" % [row, column]
+			var lower_body_path := base_path + "lower_body_frames/walk_row%d_frame%d.png" % [row, column]
+			var feet_path := base_path + "feet_frames/walk_row%d_frame%d.png" % [row, column]
+			var head_path := base_path + "head_%s_frames/walk_row%d_frame%d.png" % [variant, row, column]
+			var torso_texture := load(torso_path) as Texture2D
+			var arms_texture := load(arms_path) as Texture2D
+			var lower_body_texture := load(lower_body_path) as Texture2D
+			var feet_texture := load(feet_path) as Texture2D
 			var head_texture := load(head_path) as Texture2D
-			if body_texture == null:
-				push_error("Missing character body frame: " + body_path)
+			if torso_texture == null:
+				push_error("Missing character torso frame: " + torso_path)
 			else:
-				body_frame_textures.append(body_texture)
-			if leg_texture == null:
-				push_error("Missing character leg frame: " + leg_path)
+				torso_frame_textures.append(torso_texture)
+			if arms_texture == null:
+				push_error("Missing character arms frame: " + arms_path)
 			else:
-				leg_frame_textures.append(leg_texture)
+				arms_frame_textures.append(arms_texture)
+			if lower_body_texture == null:
+				push_error("Missing character lower body frame: " + lower_body_path)
+			else:
+				lower_body_frame_textures.append(lower_body_texture)
+			if feet_texture == null:
+				push_error("Missing character feet frame: " + feet_path)
+			else:
+				feet_frame_textures.append(feet_texture)
 			if head_texture == null:
 				push_error("Missing character head frame: " + head_path)
 			else:
@@ -96,19 +111,22 @@ func _update_direction(input_vector: Vector2) -> void:
 func _update_walk_frame(delta: float, is_moving: bool) -> void:
 	if is_moving:
 		walk_phase = fmod(walk_phase + delta * walk_fps, 8.0)
-	else:
-		walk_phase = 0.0
 	_apply_frame(int(walk_phase))
 
 
 func _apply_frame(frame: int) -> void:
-	if body_frame_textures.is_empty() or leg_frame_textures.is_empty() or head_frame_textures.is_empty():
+	if torso_frame_textures.is_empty() or arms_frame_textures.is_empty() or lower_body_frame_textures.is_empty() or feet_frame_textures.is_empty() or head_frame_textures.is_empty():
 		return
 	var index := direction_row * 8 + posmod(frame, 8)
-	body_sprite.texture = body_frame_textures[index]
-	leg_sprite.texture = leg_frame_textures[index]
+	torso_sprite.texture = torso_frame_textures[index]
+	arms_sprite.texture = arms_frame_textures[index]
+	lower_body_sprite.texture = lower_body_frame_textures[index]
+	feet_sprite.texture = feet_frame_textures[index]
 	head_sprite.texture = head_frame_textures[index]
-	head_sprite.position = Vector2(0, -26) + HEAD_BOB_OFFSETS[posmod(frame, HEAD_BOB_OFFSETS.size())]
+	# Keep the head on the shared registration point until the source poses
+	# themselves have been validated. This prevents a runtime transform from
+	# disguising a source-frame alignment error as motion.
+	head_sprite.position = Vector2(0, -26)
 
 
 func _update_bomb_input() -> void:

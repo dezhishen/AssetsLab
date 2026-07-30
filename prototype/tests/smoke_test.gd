@@ -17,15 +17,18 @@ func _run() -> void:
 
 	var player := instance.get_node_or_null("Player") as CharacterBody2D
 	var body_sprite := instance.get_node_or_null("Player/BodySprite") as Sprite2D
-	var leg_sprite := instance.get_node_or_null("Player/LegSprite") as Sprite2D
+	var arms_sprite := instance.get_node_or_null("Player/ArmsSprite") as Sprite2D
+	var lower_body_sprite := instance.get_node_or_null("Player/LowerBodySprite") as Sprite2D
+	var feet_sprite := instance.get_node_or_null("Player/FeetSprite") as Sprite2D
 	var head_sprite := instance.get_node_or_null("Player/HeadSprite") as Sprite2D
-	if player == null or body_sprite == null or leg_sprite == null or head_sprite == null:
+	if player == null or body_sprite == null or arms_sprite == null or lower_body_sprite == null or feet_sprite == null or head_sprite == null:
 		_fail("player scene nodes are missing")
 		return
-	if body_sprite.texture == null or leg_sprite.texture == null or head_sprite.texture == null:
-		_fail("body/head frame textures are not loaded")
-	if player.body_frame_textures.size() != 32 or player.leg_frame_textures.size() != 32 or player.head_frame_textures.size() != 32:
-		_fail("body/leg/head frame sets are not loaded as 32 separate frames")
+	if body_sprite.texture == null or arms_sprite.texture == null or lower_body_sprite.texture == null or feet_sprite.texture == null or head_sprite.texture == null:
+		_fail("layer frame textures are not loaded")
+		return
+	if player.torso_frame_textures.size() != 32 or player.arms_frame_textures.size() != 32 or player.lower_body_frame_textures.size() != 32 or player.feet_frame_textures.size() != 32 or player.head_frame_textures.size() != 32:
+		_fail("all five layer frame sets are not loaded as 32 separate frames")
 		return
 
 	player._update_direction(Vector2.RIGHT)
@@ -47,6 +50,14 @@ func _run() -> void:
 	player._update_walk_frame(0.2, true)
 	if body_sprite.texture == first_frame:
 		_fail("walk frame did not advance while moving")
+		return
+	var phase_before_idle: float = player.walk_phase
+	player._update_walk_frame(0.0, false)
+	if player.walk_phase != phase_before_idle:
+		_fail("walk phase reset when movement stopped")
+		return
+	if head_sprite.position != Vector2(0, -26):
+		_fail("head anchor drifted during frame application")
 		return
 
 	var original_position := player.global_position

@@ -18,24 +18,60 @@
     "back",
     "left"
   ],
-  "body_atlas": "prototype/assets/characters/chibi/body_walk_4way.png",
-  "leg_atlas": "prototype/assets/characters/chibi/leg_walk_4way.png",
+  "layer_atlases": {
+    "torso": "prototype/assets/characters/chibi/torso_walk_4way.png",
+    "arms": "prototype/assets/characters/chibi/arms_walk_4way.png",
+    "lower_body": "prototype/assets/characters/chibi/lower_body_walk_4way.png",
+    "feet": "prototype/assets/characters/chibi/feet_walk_4way.png"
+  },
   "head_atlases": {
     "male": "prototype/assets/characters/chibi/head_male_walk_4way.png",
     "female": "prototype/assets/characters/chibi/head_female_walk_4way.png"
   },
-  "body_frame_directory": "prototype/assets/characters/chibi/body_frames",
-  "leg_frame_directory": "prototype/assets/characters/chibi/leg_frames",
+  "layer_frame_directories": {
+    "torso": "prototype/assets/characters/chibi/torso_frames",
+    "arms": "prototype/assets/characters/chibi/arms_frames",
+    "lower_body": "prototype/assets/characters/chibi/lower_body_frames",
+    "feet": "prototype/assets/characters/chibi/feet_frames"
+  },
   "head_frame_directories": {
     "male": "prototype/assets/characters/chibi/head_male_frames",
     "female": "prototype/assets/characters/chibi/head_female_frames"
   },
   "target_subject_height": 52,
   "baseline_y": 58,
+  "registration_mode": "fixed_union_box_per_direction",
+  "registration_boxes": [
+    [
+      59,
+      67,
+      160,
+      218
+    ],
+    [
+      57,
+      53,
+      170,
+      213
+    ],
+    [
+      58,
+      41,
+      160,
+      192
+    ],
+    [
+      57,
+      23,
+      172,
+      179
+    ]
+  ],
+  "side_limb_scale_x": 0.84,
   "head_split_ratio": 0.5,
-  "leg_split_ratio": 0.66,
+  "lower_body_split_ratio": 0.66,
   "frames": {
-    "body": [
+    "torso": [
       [
         "walk_row0_frame0.png",
         "walk_row0_frame1.png",
@@ -77,7 +113,91 @@
         "walk_row3_frame7.png"
       ]
     ],
-    "leg": [
+    "arms": [
+      [
+        "walk_row0_frame0.png",
+        "walk_row0_frame1.png",
+        "walk_row0_frame2.png",
+        "walk_row0_frame3.png",
+        "walk_row0_frame4.png",
+        "walk_row0_frame5.png",
+        "walk_row0_frame6.png",
+        "walk_row0_frame7.png"
+      ],
+      [
+        "walk_row1_frame0.png",
+        "walk_row1_frame1.png",
+        "walk_row1_frame2.png",
+        "walk_row1_frame3.png",
+        "walk_row1_frame4.png",
+        "walk_row1_frame5.png",
+        "walk_row1_frame6.png",
+        "walk_row1_frame7.png"
+      ],
+      [
+        "walk_row2_frame0.png",
+        "walk_row2_frame1.png",
+        "walk_row2_frame2.png",
+        "walk_row2_frame3.png",
+        "walk_row2_frame4.png",
+        "walk_row2_frame5.png",
+        "walk_row2_frame6.png",
+        "walk_row2_frame7.png"
+      ],
+      [
+        "walk_row3_frame0.png",
+        "walk_row3_frame1.png",
+        "walk_row3_frame2.png",
+        "walk_row3_frame3.png",
+        "walk_row3_frame4.png",
+        "walk_row3_frame5.png",
+        "walk_row3_frame6.png",
+        "walk_row3_frame7.png"
+      ]
+    ],
+    "lower_body": [
+      [
+        "walk_row0_frame0.png",
+        "walk_row0_frame1.png",
+        "walk_row0_frame2.png",
+        "walk_row0_frame3.png",
+        "walk_row0_frame4.png",
+        "walk_row0_frame5.png",
+        "walk_row0_frame6.png",
+        "walk_row0_frame7.png"
+      ],
+      [
+        "walk_row1_frame0.png",
+        "walk_row1_frame1.png",
+        "walk_row1_frame2.png",
+        "walk_row1_frame3.png",
+        "walk_row1_frame4.png",
+        "walk_row1_frame5.png",
+        "walk_row1_frame6.png",
+        "walk_row1_frame7.png"
+      ],
+      [
+        "walk_row2_frame0.png",
+        "walk_row2_frame1.png",
+        "walk_row2_frame2.png",
+        "walk_row2_frame3.png",
+        "walk_row2_frame4.png",
+        "walk_row2_frame5.png",
+        "walk_row2_frame6.png",
+        "walk_row2_frame7.png"
+      ],
+      [
+        "walk_row3_frame0.png",
+        "walk_row3_frame1.png",
+        "walk_row3_frame2.png",
+        "walk_row3_frame3.png",
+        "walk_row3_frame4.png",
+        "walk_row3_frame5.png",
+        "walk_row3_frame6.png",
+        "walk_row3_frame7.png"
+      ]
+    ],
+    "feet": [
       [
         "walk_row0_frame0.png",
         "walk_row0_frame1.png",
