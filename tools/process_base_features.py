@@ -17,6 +17,10 @@ OUTPUT_COLUMNS = 8
 CELL_SIZE = 64
 DIRECTIONS = ["front", "right", "back", "left"]
 HEAD_VARIANTS = ["male", "female"]
+# The first pass placed features at head_top + 15.  That made the front-facing
+# eyes and ears read too high and left too little room for future hair layers.
+# Keep side views slightly tighter because their feature bounds are taller.
+FEATURE_Y_OFFSETS = {"face": {0: 5, 1: 4, 2: 5, 3: 4}, "ear": {0: 5, 1: 4, 2: 5, 3: 4}}
 
 
 def frame_bounds(source: Image.Image, row: int, column: int) -> tuple[int, int, int, int]:
@@ -98,20 +102,20 @@ def head_bbox(gender: str, row: int, frame: int) -> tuple[int, int, int, int]:
 def feature_anchor(layer: str, row: int, bbox: tuple[int, int, int, int]) -> tuple[tuple[float, float], tuple[int, int]] | None:
     left, top, right, bottom = bbox
     center_x = (left + right - 1) / 2
-    face_y = top + 15
+    feature_y = top + 15 + FEATURE_Y_OFFSETS[layer][row]
     if layer == "face":
         if row == 2:
             return None
         if row == 0:
-            return (center_x, face_y), (20, 10)
+            return (center_x, feature_y), (20, 10)
         if row == 1:
-            return (right - 6, face_y), (8, 11)
-        return (left + 6, face_y), (8, 11)
+            return (right - 6, feature_y), (8, 11)
+        return (left + 6, feature_y), (8, 11)
     if row in (0, 2):
-        return (center_x, face_y), (34, 14)
+        return (center_x, feature_y), (34, 14)
     if row == 1:
-        return (left + 3, face_y), (9, 13)
-    return (right - 3, face_y), (9, 13)
+        return (left + 3, feature_y), (9, 13)
+    return (right - 3, feature_y), (9, 13)
 
 
 def process_layer(source: Image.Image, gender: str, layer: str) -> list[list[str]]:
@@ -148,7 +152,7 @@ def main() -> int:
     ear_source = Image.open(EAR_SOURCE).convert("RGB")
     manifest = {
         "generator": "process_base_features.py",
-        "generator_version": 1,
+        "generator_version": 2,
         "sources": {
             "face": FACE_SOURCE.relative_to(ROOT).as_posix(),
             "ear": EAR_SOURCE.relative_to(ROOT).as_posix(),
@@ -158,6 +162,13 @@ def main() -> int:
         "frame_count_per_direction": OUTPUT_COLUMNS,
         "layers": ["ear", "face"],
         "head_registration": "per_gender_per_direction_per_frame_alpha_bbox",
+        "feature_y_anchor": "head_top_plus_15_plus_direction_offset",
+        "feature_y_offsets": {
+            "front": 5,
+            "right": 4,
+            "back": 5,
+            "left": 4
+        },
         "face_limits": {"front": [20, 10], "side": [8, 11], "back": [0, 0]},
         "ear_limits": {"front_back": [34, 14], "side": [9, 13]},
         "no_nose": True,

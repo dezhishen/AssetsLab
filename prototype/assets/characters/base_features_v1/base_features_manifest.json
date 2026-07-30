@@ -1,6 +1,6 @@
 {
   "generator": "process_base_features.py",
-  "generator_version": 1,
+  "generator_version": 2,
   "sources": {
     "face": "prototype/assets/characters/generated/raw_face_base_v1_4x4.png",
     "ear": "prototype/assets/characters/generated/raw_ear_base_v1_4x4.png"
@@ -21,6 +21,13 @@
     "face"
   ],
   "head_registration": "per_gender_per_direction_per_frame_alpha_bbox",
+  "feature_y_anchor": "head_top_plus_15_plus_direction_offset",
+  "feature_y_offsets": {
+    "front": 5,
+    "right": 4,
+    "back": 5,
+    "left": 4
+  },
   "face_limits": {
     "front": [
       20,
