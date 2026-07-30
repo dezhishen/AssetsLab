@@ -1,0 +1,126 @@
+{
+  "generator": "process_rebuild_body.py",
+  "generator_version": 1,
+  "source": "prototype/assets/characters/generated/body_base_rebuild_v2_male.png",
+  "directions": [
+    "front",
+    "right",
+    "back",
+    "left"
+  ],
+  "cell_size": [
+    64,
+    64
+  ],
+  "frames_per_direction": 8,
+  "target_body_height": 29,
+  "baseline_y": 58,
+  "status": "procedural_compact_walk_reference",
+  "walk_offsets": [
+    0,
+    -1,
+    -2,
+    -2,
+    0,
+    1,
+    2,
+    2
+  ],
+  "layer_order": [
+    "feet",
+    "lower_body",
+    "arms",
+    "torso",
+    "body_base"
+  ],
+  "frames": {
+    "front": {
+      "torso": {
+        "sheet": "prototype/assets/characters/rebuild_body_v2/torso/front_walk_8.png",
+        "frame_directory": "prototype/assets/characters/rebuild_body_v2/torso"
+      },
+      "arms": {
+        "sheet": "prototype/assets/characters/rebuild_body_v2/arms/front_walk_8.png",
+        "frame_directory": "prototype/assets/characters/rebuild_body_v2/arms"
+      },
+      "lower_body": {
+        "sheet": "prototype/assets/characters/rebuild_body_v2/lower_body/front_walk_8.png",
+        "frame_directory": "prototype/assets/characters/rebuild_body_v2/lower_body"
+      },
+      "feet": {
+        "sheet": "prototype/assets/characters/rebuild_body_v2/feet/front_walk_8.png",
+        "frame_directory": "prototype/assets/characters/rebuild_body_v2/feet"
+      },
+      "body_base": {
+        "sheet": "prototype/assets/characters/rebuild_body_v2/body_base/front_walk_8.png",
+        "frame_directory": "prototype/assets/characters/rebuild_body_v2/body_base"
+      }
+    },
+    "right": {
+      "torso": {
+        "sheet": "prototype/assets/characters/rebuild_body_v2/torso/right_walk_8.png",
+        "frame_directory": "prototype/assets/characters/rebuild_body_v2/torso"
+      },
+      "arms": {
+        "sheet": "prototype/assets/characters/rebuild_body_v2/arms/right_walk_8.png",
+        "frame_directory": "prototype/assets/characters/rebuild_body_v2/arms"
+      },
+      "lower_body": {
+        "sheet": "prototype/assets/characters/rebuild_body_v2/lower_body/right_walk_8.png",
+        "frame_directory": "prototype/assets/characters/rebuild_body_v2/lower_body"
+      },
+      "feet": {
+        "sheet": "prototype/assets/characters/rebuild_body_v2/feet/right_walk_8.png",
+        "frame_directory": "prototype/assets/characters/rebuild_body_v2/feet"
+      },
+      "body_base": {
+        "sheet": "prototype/assets/characters/rebuild_body_v2/body_base/right_walk_8.png",
+        "frame_directory": "prototype/assets/characters/rebuild_body_v2/body_base"
+      }
+    },
+    "back": {
+      "torso": {
+        "sheet": "prototype/assets/characters/rebuild_body_v2/torso/back_walk_8.png",
+        "frame_directory": "prototype/assets/characters/rebuild_body_v2/torso"
+      },
+      "arms": {
+        "sheet": "prototype/assets/characters/rebuild_body_v2/arms/back_walk_8.png",
+        "frame_directory": "prototype/assets/characters/rebuild_body_v2/arms"
+      },
+      "lower_body": {
+        "sheet": "prototype/assets/characters/rebuild_body_v2/lower_body/back_walk_8.png",
+        "frame_directory": "prototype/assets/characters/rebuild_body_v2/lower_body"
+      },
+      "feet": {
+        "sheet": "prototype/assets/characters/rebuild_body_v2/feet/back_walk_8.png",
+        "frame_directory": "prototype/assets/characters/rebuild_body_v2/feet"
+      },
+      "body_base": {
+        "sheet": "prototype/assets/characters/rebuild_body_v2/body_base/back_walk_8.png",
+        "frame_directory": "prototype/assets/characters/rebuild_body_v2/body_base"
+      }
+    },
+    "left": {
+      "torso": {
+        "sheet": "prototype/assets/characters/rebuild_body_v2/torso/left_walk_8.png",
+        "frame_directory": "prototype/assets/characters/rebuild_body_v2/torso"
+      },
+      "arms": {
+        "sheet": "prototype/assets/characters/rebuild_body_v2/arms/left_walk_8.png",
+        "frame_directory": "prototype/assets/characters/rebuild_body_v2/arms"
+      },
+      "lower_body": {
+        "sheet": "prototype/assets/characters/rebuild_body_v2/lower_body/left_walk_8.png",
+        "frame_directory": "prototype/assets/characters/rebuild_body_v2/lower_body"
+      },
+      "feet": {
+        "sheet": "prototype/assets/characters/rebuild_body_v2/feet/left_walk_8.png",
+        "frame_directory": "prototype/assets/characters/rebuild_body_v2/feet"
+      },
+      "body_base": {
+        "sheet": "prototype/assets/characters/rebuild_body_v2/body_base/left_walk_8.png",
+        "frame_directory": "prototype/assets/characters/rebuild_body_v2/body_base"
+      }
+    }
+  }
+}

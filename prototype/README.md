@@ -32,13 +32,24 @@ $env:GODOT_BIN = 'E:\Path\To\Godot_v4.6.2-stable_win64_console.exe'
 .\tools\run_headless_tests.ps1 -GodotPath 'E:\Other\Godot\godot.exe' -Female
 ```
 
+The verified CC0 RGS right-facing walk reference can be loaded into the Godot
+smoke test with:
+
+```powershell
+.\tools\run_headless_tests.ps1 -RebuildHead -RebuildBody -RgsWalkReference -AppearanceSeed 20260730
+```
+
+`-RgsWalkReference` activates the eight-frame RGS motion reference through an
+isolated runtime slot. It is not the final character style; the next body pass
+will redraw our own art against its pose timing.
+
 Generate a hidden-window W/A/S/D capture and GIF from the repository root:
 
 ```powershell
 .\tools\capture_walk_gif.ps1
 ```
 
-Add `-Female` to capture the female-presenting base, or `-Compact` to capture the compact-stride candidate.
+Add `-Female` to capture the female-presenting base, `-Compact` to capture the compact-stride candidate, or `-RgsWalkReference` to capture the open-source motion reference.
 
 Both test entry points generate a fresh random appearance package under
 `prototype/test_output/random_appearance/` before starting Godot. The package
@@ -88,6 +99,13 @@ Stop the background preview server with:
 ```powershell
 .\tools\stop_preview.ps1
 ```
+
+Preview access rule: when a person needs to inspect a visual result, use the
+Tailscale URL printed by the preview server. Local file links, `localhost`,
+and temporary chat attachments are not reliable as the only access method.
+Whenever Tailscale is used, proactively include the complete preview URL in
+the response. If nobody requests visual review, do not generate an additional
+preview.
 
 Use the interactive component calibration page at
 `http://<Tailscale-IP>:8765/calibrate.html`. It can move the face and ear

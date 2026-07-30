@@ -4,5 +4,8 @@ prototype/test_output/
 prototype/test_output/random_appearance/
 prototype/preview/snapshots/
 prototype/preview/calibration/*.json
+third_party/rgs_modular_animated_characters/
+prototype/archive/retired_keyframe_rig/
+prototype/archive/retired_walk_candidates/
 *.import
 __pycache__/

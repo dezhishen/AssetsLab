@@ -208,7 +208,11 @@ def transformed_layer(source: Image.Image, mask: Image.Image, bbox: tuple[int, i
     for y in range(crop.height):
         for x in range(crop.width):
             red, green, blue, opacity = pixels[x, y]
-            if opacity and is_magenta(red, green, blue):
+            # LANCZOS creates a few almost-transparent colored pixels outside
+            # the contour. On the dark preview/GIF background they read as a
+            # noisy halo, so discard the fringe while retaining the solid
+            # outline and skin edge.
+            if opacity < 32 or (opacity and is_magenta(red, green, blue)):
                 pixels[x, y] = (red, green, blue, 0)
     canvas = Image.new("RGBA", (CELL_SIZE, CELL_SIZE), (0, 0, 0, 0))
     canvas.alpha_composite(crop, ((CELL_SIZE - width) // 2, BASELINE_Y - TARGET_HEIGHT))

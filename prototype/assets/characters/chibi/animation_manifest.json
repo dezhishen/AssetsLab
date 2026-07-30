@@ -40,7 +40,11 @@
   },
   "target_subject_height": 52,
   "baseline_y": 58,
-  "registration_mode": "fixed_union_box_per_direction",
+  "registration_mode": "fixed_union_box_plus_torso_anchor_per_direction",
+  "torso_anchor_offsets": {
+    "description": "per-frame shifts applied consistently to all body layers",
+    "reference_frame": 0
+  },
   "registration_boxes": [
     [
       59,
@@ -49,13 +53,13 @@
       218
     ],
     [
-      57,
+      58,
       53,
-      170,
-      213
+      169,
+      212
     ],
     [
-      58,
+      59,
       41,
       160,
       192

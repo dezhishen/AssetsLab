@@ -111,6 +111,7 @@ function drawSubPart(ctx,image,sourceY,sourceX,width,move,scale) {
 }
 function drawAnchors(ctx,direction,scale) {
   const reg = registrations[direction];
+  ctx.strokeStyle='#66e3a7'; ctx.lineWidth=Math.max(1,scale/2); ctx.beginPath(); ctx.moveTo(0,22*scale); ctx.lineTo(64*scale,22*scale); ctx.stroke();
   ctx.strokeStyle='#5bdcff'; ctx.lineWidth=1*scale; const b=reg.head.bbox; ctx.strokeRect(b[0]*scale,b[1]*scale,(b[2]-b[0])*scale,(b[3]-b[1])*scale);
   const t=targets[direction];
   for (const key of ['face_center','ear_left','ear_right','ear']) if (t[key]) { const color=key==='face_center'?'#ff53be':'#ffd54d'; ctx.strokeStyle=color; ctx.beginPath(); ctx.arc(t[key][0]*scale,t[key][1]*scale,2.5*scale,0,Math.PI*2); ctx.stroke(); }

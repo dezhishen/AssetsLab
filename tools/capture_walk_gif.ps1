@@ -2,6 +2,7 @@ param(
     [switch]$Female,
     [switch]$Compact,
     [switch]$BaseFeatures,
+    [switch]$RgsWalkReference,
     [string]$GodotPath,
     [string]$PythonPath,
     [int]$AppearanceSeed
@@ -18,7 +19,9 @@ $pythonPath = Resolve-PythonExecutable -RequestedPath $PythonPath -AssetsLabRoot
 $pythonModules = Join-Path $assetsLabRoot ".tools\python"
 $frameDirectory = Join-Path $prototypeRoot "test_output\capture_frames"
 $randomAppearanceRoot = Join-Path $prototypeRoot "test_output\random_appearance"
-$gifName = if ($BaseFeatures) {
+$gifName = if ($RgsWalkReference) {
+    "movement_rgs_reference.gif"
+} elseif ($BaseFeatures) {
     "movement_walk_base_features_v1.gif"
 } elseif ($Compact) {
     "movement_walk_compact.gif"
@@ -78,11 +81,15 @@ $godotArguments = @(
     "--display-driver", "windows",
     "--rendering-driver", "opengl3",
     "--rendering-method", "gl_compatibility",
+    "--audio-driver", "Dummy",
     "--fixed-fps", "12",
     "--path", $prototypeRoot,
     "--script", "res://tests/capture_test.gd",
     "--log-file", $logPath
 )
+# Everything after this separator is forwarded to OS.get_cmdline_user_args()
+# and is consumed by player.gd as a test-only runtime mode.
+$godotArguments += "--"
 if ($Female) {
     $godotArguments += "--female"
 }
@@ -93,6 +100,9 @@ if ($BaseFeatures) {
     $godotArguments += "--base-features"
 } else {
     $godotArguments += "--appearance-seed=$appearanceSeed"
+}
+if ($RgsWalkReference) {
+    $godotArguments += "--rgs-walk-reference"
 }
 $godotProcess = Start-Process -FilePath $godotPath -ArgumentList $godotArguments -WindowStyle Hidden -PassThru -Wait
 if (Test-Path -LiteralPath $logPath) {
@@ -111,6 +121,9 @@ try {
     & $pythonPath (Join-Path $assetsLabRoot "tools\make_gif.py") --input $frameDirectory --output $gifPath --fps 12
     if ($LASTEXITCODE -ne 0) {
         throw "GIF conversion failed with exit code $LASTEXITCODE"
+    }
+    if ($RgsWalkReference) {
+        Copy-Item -LiteralPath $gifPath -Destination (Join-Path $assetsLabRoot "prototype\preview\assets\movement_rgs_reference.gif") -Force
     }
 }
 finally {

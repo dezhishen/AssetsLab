@@ -1,0 +1,37 @@
+{
+  "schema": "open_source_walk_reference_v1",
+  "source": "RGS Dev Free CC0 Modular Animated Vector Characters 2D",
+  "license_file": "third_party/rgs_modular_animated_characters/Free 2D Animated Vector Game Character Sprites/License.txt",
+  "direction": "right_reference",
+  "frames": 8,
+  "cell_size": [
+    64,
+    64
+  ],
+  "selected_parts": [
+    "body1",
+    "head3",
+    "eyes7",
+    "footL1",
+    "footR1",
+    "handL1",
+    "handR1"
+  ],
+  "omitted_parts": [
+    "mouth",
+    "hair",
+    "horns",
+    "weapons"
+  ],
+  "status": "verified_walk_reference_not_final_style",
+  "runtime_files": [
+    "rgs_right_frame0.png",
+    "rgs_right_frame1.png",
+    "rgs_right_frame2.png",
+    "rgs_right_frame3.png",
+    "rgs_right_frame4.png",
+    "rgs_right_frame5.png",
+    "rgs_right_frame6.png",
+    "rgs_right_frame7.png"
+  ]
+}

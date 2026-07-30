@@ -26,6 +26,18 @@ SIDE_LIMB_SCALE_X = 0.84
 HEAD_REAR_EXPAND_X = 5
 
 
+def is_chroma_fringe(red: int, green: int, blue: int) -> bool:
+    """Detect both bright and dark magenta remnants from the source key."""
+    return (
+        red > 70
+        and blue > 60
+        and green < 135
+        and red > green * 1.25
+        and blue > green * 1.15
+        and red + blue - 2 * green > 50
+    )
+
+
 def chroma_alpha(cell: Image.Image) -> Image.Image:
     """Remove generated magenta while preserving the neutral ivory mannequin."""
     rgb = cell.convert("RGB")
@@ -38,16 +50,23 @@ def chroma_alpha(cell: Image.Image) -> Image.Image:
             # The generated background has both bright and dark magenta pixels.
             # Use a color-distance rule instead of a single red threshold so
             # dark edge pixels cannot become stray foreground in one frame.
-            magenta_energy = red + blue - 2 * green
-            is_magenta = (
-                red > 120
-                and blue > 100
-                and green < 120
-                and magenta_energy > 180
-            )
-            if not is_magenta:
+            if not is_chroma_fringe(red, green, blue):
                 target[x, y] = 255
     return alpha
+
+
+def remove_chroma_fringe(image: Image.Image) -> Image.Image:
+    """Remove residual magenta pixels introduced by nearest-neighbour scaling."""
+    result = image.copy().convert("RGBA")
+    pixels = result.load()
+    for y in range(result.height):
+        for x in range(result.width):
+            red, green, blue, alpha = pixels[x, y]
+            if alpha == 0:
+                continue
+            if is_chroma_fringe(red, green, blue):
+                pixels[x, y] = (red, green, blue, 0)
+    return result
 
 
 def row_registration_boxes(source: Image.Image) -> list[tuple[int, int, int, int]]:
@@ -92,6 +111,7 @@ def split_subject(
     registration_height = registration_box[3] - registration_box[1]
     scaled_width = max(1, round(registration_width * TARGET_HEIGHT / registration_height))
     subject = subject.resize((scaled_width, TARGET_HEIGHT), Image.Resampling.NEAREST)
+    subject = remove_chroma_fringe(subject)
     subject_alpha = subject.getchannel("A")
 
     split_y = round(TARGET_HEIGHT * HEAD_SPLIT_RATIO)
@@ -138,6 +158,49 @@ def frame_bounds(source: Image.Image, row: int, column: int) -> tuple[int, int, 
     return x0, y0, x1, y1
 
 
+def shift_same_size(image: Image.Image, dx: int, dy: int = 0) -> Image.Image:
+    """Translate a layer inside its fixed registration canvas."""
+    shifted = Image.new("RGBA", image.size, (0, 0, 0, 0))
+    source_box = (
+        max(0, -dx),
+        max(0, -dy),
+        min(image.width, image.width - dx),
+        min(image.height, image.height - dy),
+    )
+    target = (max(0, dx), max(0, dy))
+    if source_box[2] > source_box[0] and source_box[3] > source_box[1]:
+        shifted.alpha_composite(image.crop(source_box), target)
+    return shifted
+
+
+def body_torso_offsets(
+    source: Image.Image,
+    row: int,
+    registration_box: tuple[int, int, int, int],
+) -> list[tuple[int, int]]:
+    """Return per-frame shifts that keep the torso registration stable.
+
+    The generated walk atlas contains an unintended whole-body slide to the
+    left over the eight frames. Keep the torso's center/top fixed, while the
+    arms, legs and feet retain their local pose changes.
+    """
+    anchors: list[tuple[float, float]] = []
+    for column in range(COLUMNS):
+        cell = source.crop(frame_bounds(source, row, column))
+        torso = split_subject(cell, registration_box)["torso"]
+        if row in {1, 3}:
+            torso = torso.resize(
+                (max(1, round(torso.width * SIDE_LIMB_SCALE_X)), torso.height),
+                Image.Resampling.NEAREST,
+            )
+        bbox = torso.getchannel("A").getbbox()
+        if bbox is None:
+            raise ValueError(f"empty torso registration at row={row}, column={column}")
+        anchors.append(((bbox[0] + bbox[2]) / 2, bbox[1]))
+    target_x, target_y = anchors[0]
+    return [(round(target_x - x), round(target_y - y)) for x, y in anchors]
+
+
 def process_sheet(
     source: Image.Image,
     layer: str,
@@ -147,6 +210,12 @@ def process_sheet(
     frame_names: list[list[str]] = []
     frame_dir = OUTPUT / f"{layer}_frames"
     frame_dir.mkdir(parents=True, exist_ok=True)
+    offsets = [
+        body_torso_offsets(source, row, registrations[row])
+        if layer in {"torso", "arms", "lower_body", "feet"}
+        else [(0, 0)] * COLUMNS
+        for row in range(ROWS)
+    ]
 
     for row in range(ROWS):
         row_names: list[str] = []
@@ -171,6 +240,8 @@ def process_sheet(
                 frame = frame.resize(
                     (scaled_layer_width, frame.height), Image.Resampling.NEAREST
                 )
+            if layer in {"torso", "arms", "lower_body", "feet"}:
+                frame = shift_same_size(frame, *offsets[row][column])
             canvas = Image.new("RGBA", (CELL_SIZE, CELL_SIZE), (0, 0, 0, 0))
             if layer.startswith("head") and row in {1, 3}:
                 original_x = CENTER_X - original_width // 2
@@ -257,7 +328,11 @@ def main() -> None:
         },
         "target_subject_height": TARGET_HEIGHT,
         "baseline_y": BASELINE_Y,
-        "registration_mode": "fixed_union_box_per_direction",
+        "registration_mode": "fixed_union_box_plus_torso_anchor_per_direction",
+        "torso_anchor_offsets": {
+            "description": "per-frame shifts applied consistently to all body layers",
+            "reference_frame": 0,
+        },
         "registration_boxes": registrations,
         "side_limb_scale_x": SIDE_LIMB_SCALE_X,
         "head_rear_expand_x": HEAD_REAR_EXPAND_X,

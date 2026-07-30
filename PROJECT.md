@@ -10,6 +10,49 @@ All project work and project files must be kept within this directory.
 
 Use English names for all files.
 
+## Preview Access Principle
+
+When a developer or reviewer needs to see a generated preview, publish it
+through the Tailscale address of the local preview server. Do not rely on a
+local file link, `localhost`, or a temporary chat attachment as the only
+preview channel. Whenever Tailscale is used, proactively provide the complete
+preview URL in the response. If preview review is not requested or needed, do
+not spend time generating or publishing an additional preview; silent
+headless tests remain sufficient.
+
+## Development Status
+
+Last updated: 2026-07-30.
+
+### Current Production Candidate
+
+- Runtime animation uses synchronized per-frame `Sprite2D` layers in Godot 4.6.2.
+- The first production experiment remains four directions: front, right, back, left.
+- The verified CC0 RGS modular character is integrated only as an eight-frame
+  right-facing motion reference under `prototype/assets/characters/open_source/`.
+- The next art task is to redraw our own QQTang-style body against the same eight
+  pose phases. The RGS pixels are not the final art style.
+- Hair and clothing remain deferred until the body cycle and anchors are stable.
+
+### Failed Candidates Retired From Runtime
+
+- Skeleton2D/Polygon2D keyframe rig: retired because bitmap parts warped and
+  produced unclear leg motion, head drift, and particle-like edge artifacts.
+- `WalkReadyRight` baked training sample: retired because it was a single
+  generated direction and did not provide a coherent four-direction base.
+- Walk-motion proxy and full-walk generated samples: no longer part of the
+  runtime, test runner, or published preview.
+- The reusable lesson from these candidates is pose timing and contact-frame
+  structure, not their generated pixels.
+
+### Verification Progress
+
+- Random appearance package: passed with deterministic seed validation.
+- Godot 4.6.2 import and smoke tests: passed.
+- RGS reference loading: passed with eight runtime frames.
+- Hidden W/A/S/D capture: passed with 36 frames and GIF conversion.
+- GitHub synchronization: pending this cleanup and verification pass.
+
 ## Art Experiment Workflow
 
 ### Current Direction Decision
@@ -122,10 +165,11 @@ AI service.
 
 ### Execution Steps
 
-1. Generate the male-presenting neutral walk-cycle sheet from the existing male mannequin as the alignment reference.
-2. Generate the female-presenting neutral walk-cycle sheet from the existing female mannequin while preserving the same frame bounds, baseline, head anchor, and collision footprint.
-3. Check that every frame keeps the same total height, head diameter, torso attachment, foot baseline, and direction order.
-4. Use the sheets as animation references first. Only after the key poses are accepted should they be sliced, retimed, and converted into runtime sprites.
+1. Use the verified RGS eight-frame cycle as a pose and timing reference.
+2. Redraw a male-presenting QQTang-style body for the eight phases while preserving shared frame bounds, baseline, head anchor, and collision footprint.
+3. Validate the right-facing body in hidden Godot capture before creating the mirrored left-facing body.
+4. Draw front and back cycles separately, then attach the existing head/ear anchors and validate the complete four-direction loop.
+5. Only after the base cycle is accepted should hair, clothing, and randomization consume its slots.
 
 ### Acceptance Criteria
 
@@ -160,7 +204,7 @@ This layered `Sprite2D` approach is preferred for the planned random face, hair,
 
 The source walk sheets are reference sheets, not runtime-ready atlases: they contain a neutral background and guide grid. The processor isolates each cell, removes the guide/background, preserves one fixed registration box per direction, and exports layer-specific sheets before Godot import.
 
-Recommended animation names are `idle_front`, `idle_right`, `idle_back`, `idle_left`, `walk_front`, `walk_right`, `walk_back`, and `walk_left`. The current runtime walk cycle uses eight frames per `walk_*` animation.
+Recommended animation names are `idle_front`, `idle_right`, `idle_back`, `idle_left`, `walk_front`, `walk_right`, `walk_back`, and `walk_left`. The current runtime walk cycle uses eight frames per `walk_*` animation. The RGS reference is loaded only with `--rgs-walk-reference` in the silent test/capture pipeline.
 
 ## Minimal Prototype Status
 
@@ -184,9 +228,9 @@ Verified commands:
 - female smoke test: `SMOKE_TEST_PASS`;
 - two-second headless main-scene launch: passed.
 
-The current prototype validates the movement and modular asset handoff path and
-now includes the first deterministic face/ear content layer. It is not yet the
-production character system and does not include random hair or clothing.
+The current prototype validates the movement and modular asset handoff path,
+the deterministic face/ear layer, and the isolated RGS walk reference. It is not
+yet the production character system and does not include random hair or clothing.
 
 ### Prototype Iteration 1 Fixes
 
@@ -212,7 +256,7 @@ production character system and does not include random hair or clothing.
 
 ### Automated Visual Capture
 
-`tools/capture_walk_gif.ps1` runs `prototype/tests/capture_test.gd` with internal W/A/S/D key events, captures the rendered viewport at 12 FPS, and uses the local Pillow tool environment to produce `prototype/test_output/movement_walk.gif`. Godot is launched as a hidden process with the normal OpenGL renderer because Godot's dummy `--headless` renderer has no readable viewport texture on this machine. The test still runs without presenting an editor or game window.
+`tools/capture_walk_gif.ps1` runs `prototype/tests/capture_test.gd` with internal W/A/S/D key events, captures the rendered viewport at 12 FPS, and uses the local Pillow tool environment to produce a GIF. Add `-RgsWalkReference` to capture `movement_rgs_reference.gif`. Godot is launched as a hidden process with the normal OpenGL renderer because Godot's dummy `--headless` renderer has no readable viewport texture on this machine. The test still runs without presenting an editor or game window.
 
 `tools/run_headless_tests.ps1` runs the male smoke test and optionally the female smoke test with `--headless`; add `-Compact` to test the compact asset variant. Set `$env:GODOT_BIN` (or `$env:GODOT_PATH`) or pass `-GodotPath` when Godot is installed in a different directory.
 

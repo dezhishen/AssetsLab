@@ -13,8 +13,11 @@ var variant := "male"
 var asset_root := "chibi"
 var base_features := false
 var rebuild_head := false
+var rebuild_body := false
+var rgs_walk_reference := false
 var appearance_seed: int = 20260730
 var appearance_variant: int = 0
+var body_anchor_offsets: Dictionary = {}
 var torso_frame_textures: Array[Texture2D] = []
 var arms_frame_textures: Array[Texture2D] = []
 var lower_body_frame_textures: Array[Texture2D] = []
@@ -22,6 +25,7 @@ var feet_frame_textures: Array[Texture2D] = []
 var head_frame_textures: Array[Texture2D] = []
 var ear_frame_textures: Array[Texture2D] = []
 var face_frame_textures: Array[Texture2D] = []
+var rgs_walk_reference_frame_textures: Array[Texture2D] = []
 
 @onready var torso_sprite: Sprite2D = $BodySprite
 @onready var arms_sprite: Sprite2D = $ArmsSprite
@@ -30,15 +34,21 @@ var face_frame_textures: Array[Texture2D] = []
 @onready var ear_sprite: Sprite2D = $EarSprite
 @onready var head_sprite: Sprite2D = $HeadSprite
 @onready var face_sprite: Sprite2D = $FaceSprite
+@onready var rgs_walk_reference_sprite: Sprite2D = $RgsWalkReferenceSprite
 
 func _ready() -> void:
-	variant = "female" if "--female" in OS.get_cmdline_args() else "male"
-	asset_root = "chibi_compact" if "--compact" in OS.get_cmdline_args() else "chibi"
-	base_features = "--base-features" in OS.get_cmdline_args()
-	rebuild_head = "--rebuild-head" in OS.get_cmdline_args()
+	var user_args := OS.get_cmdline_user_args()
+	variant = "female" if "--female" in user_args else "male"
+	asset_root = "chibi_compact" if "--compact" in user_args else "chibi"
+	base_features = "--base-features" in user_args
+	rebuild_head = "--rebuild-head" in user_args
+	rebuild_body = "--rebuild-body" in user_args
+	rgs_walk_reference = "--rgs-walk-reference" in user_args
 	appearance_seed = _read_appearance_seed()
 	appearance_variant = appearance_variant_for_seed(appearance_seed, variant == "female")
 	_load_frame_textures()
+	_load_rgs_walk_reference_frames()
+	_load_body_anchor_offsets()
 	spawn_position = global_position
 	_apply_frame(0)
 
@@ -65,19 +75,32 @@ func _load_frame_textures() -> void:
 	face_frame_textures.clear()
 	for row in range(4):
 		for column in range(8):
+			var direction_names: Array[String] = ["front", "right", "back", "left"]
+			var direction_name: String = direction_names[row]
 			var base_path := "res://assets/characters/%s/" % asset_root
-			var torso_path := base_path + "torso_frames/walk_row%d_frame%d.png" % [row, column]
-			var arms_path := base_path + "arms_frames/walk_row%d_frame%d.png" % [row, column]
-			var lower_body_path := base_path + "lower_body_frames/walk_row%d_frame%d.png" % [row, column]
-			var feet_path := base_path + "feet_frames/walk_row%d_frame%d.png" % [row, column]
+			var torso_path: String
+			var arms_path: String
+			var lower_body_path: String
+			var feet_path: String
+			if rebuild_body:
+				var rebuild_body_path := "res://assets/characters/rebuild_body_v2/"
+				torso_path = rebuild_body_path + "torso/%s_frame%d.png" % [direction_name, column]
+				arms_path = rebuild_body_path + "arms/%s_frame%d.png" % [direction_name, column]
+				lower_body_path = rebuild_body_path + "lower_body/%s_frame%d.png" % [direction_name, column]
+				feet_path = rebuild_body_path + "feet/%s_frame%d.png" % [direction_name, column]
+			else:
+				torso_path = base_path + "torso_frames/walk_row%d_frame%d.png" % [row, column]
+				arms_path = base_path + "arms_frames/walk_row%d_frame%d.png" % [row, column]
+				lower_body_path = base_path + "lower_body_frames/walk_row%d_frame%d.png" % [row, column]
+				feet_path = base_path + "feet_frames/walk_row%d_frame%d.png" % [row, column]
 			var head_path := base_path + "head_%s_frames/walk_row%d_frame%d.png" % [variant, row, column]
 			var ear_path: String
 			var face_path: String
 			if rebuild_head:
 				var rebuild_base := "res://assets/characters/rebuild_atlas_v1_runtime/male/"
-				head_path = rebuild_base + "face_base_walk_4way.png"
-				ear_path = rebuild_base + "ears_walk_4way.png"
-				face_path = rebuild_base + "face_walk_4way.png"
+				head_path = rebuild_base + "face_base_frames/walk_row%d_frame%d.png" % [row, column]
+				ear_path = rebuild_base + "ears_frames/walk_row%d_frame%d.png" % [row, column]
+				face_path = rebuild_base + "face_frames/walk_row%d_frame%d.png" % [row, column]
 			elif base_features:
 				var feature_base := "res://assets/characters/base_features_v1/%s/" % variant
 				ear_path = feature_base + "ear_frames/walk_row%d_frame%d.png" % [row, column]
@@ -123,10 +146,48 @@ func _load_frame_textures() -> void:
 
 
 func _read_appearance_seed() -> int:
-	for argument in OS.get_cmdline_args():
+	for argument in OS.get_cmdline_user_args():
 		if argument.begins_with("--appearance-seed="):
 			return argument.trim_prefix("--appearance-seed=").to_int()
 	return appearance_seed
+
+
+func _load_body_anchor_offsets() -> void:
+	body_anchor_offsets.clear()
+	if not rebuild_head:
+		return
+	var file := FileAccess.open("res://assets/characters/rebuild_atlas_v1_runtime/male/runtime_manifest.json", FileAccess.READ)
+	if file == null:
+		return
+	var payload = JSON.parse_string(file.get_as_text())
+	if not payload is Dictionary:
+		return
+	var offsets = payload.get("body_anchor_offsets", {})
+	if offsets is Dictionary:
+		body_anchor_offsets = offsets
+
+
+func _load_rgs_walk_reference_frames() -> void:
+	rgs_walk_reference_frame_textures.clear()
+	if not rgs_walk_reference:
+		return
+	for frame in range(8):
+		var path := "res://assets/characters/open_source/rgs_walk_reference/rgs_right_frame%d.png" % frame
+		var texture := load(path) as Texture2D
+		if texture == null:
+			push_error("Missing RGS walk reference frame: " + path)
+		else:
+			rgs_walk_reference_frame_textures.append(texture)
+
+
+func _current_body_anchor_offset() -> Vector2:
+	if not rebuild_head:
+		return Vector2.ZERO
+	var names := ["front", "right", "back", "left"]
+	var value = body_anchor_offsets.get(names[direction_row], [0, 0])
+	if value is Array and value.size() >= 2:
+		return Vector2(float(value[0]), float(value[1]))
+	return Vector2.ZERO
 
 
 func appearance_variant_for_seed(seed: int, female_presenting: bool = false) -> int:
@@ -173,6 +234,15 @@ func _update_walk_frame(delta: float, is_moving: bool) -> void:
 func _apply_frame(frame: int) -> void:
 	if torso_frame_textures.is_empty() or arms_frame_textures.is_empty() or lower_body_frame_textures.is_empty() or feet_frame_textures.is_empty() or head_frame_textures.is_empty() or ear_frame_textures.is_empty() or face_frame_textures.is_empty():
 		return
+	var use_rgs_reference := rgs_walk_reference and direction_row == 1 and rgs_walk_reference_frame_textures.size() == 8
+	rgs_walk_reference_sprite.visible = use_rgs_reference
+	if use_rgs_reference:
+		rgs_walk_reference_sprite.texture = rgs_walk_reference_frame_textures[posmod(frame, 8)]
+		for sprite in [torso_sprite, arms_sprite, lower_body_sprite, feet_sprite, ear_sprite, head_sprite, face_sprite]:
+			sprite.visible = false
+		return
+	for sprite in [torso_sprite, arms_sprite, lower_body_sprite, feet_sprite, ear_sprite, head_sprite, face_sprite]:
+		sprite.visible = true
 	var index := direction_row * 8 + posmod(frame, 8)
 	torso_sprite.texture = torso_frame_textures[index]
 	arms_sprite.texture = arms_frame_textures[index]
@@ -181,12 +251,13 @@ func _apply_frame(frame: int) -> void:
 	ear_sprite.texture = ear_frame_textures[index]
 	head_sprite.texture = head_frame_textures[index]
 	face_sprite.texture = face_frame_textures[index]
-	# Keep the head on the shared registration point until the source poses
-	# themselves have been validated. This prevents a runtime transform from
-	# disguising a source-frame alignment error as motion.
-	head_sprite.position = Vector2(0, -26)
-	ear_sprite.position = Vector2(0, -26)
-	face_sprite.position = Vector2(0, -26)
+	# The body anchor page stores one shared offset per direction. All head
+	# sublayers move together so calibration cannot separate ears from the face.
+	var body_offset := _current_body_anchor_offset()
+	var registered_position := Vector2(body_offset.x, -26.0 + body_offset.y)
+	head_sprite.position = registered_position
+	ear_sprite.position = registered_position
+	face_sprite.position = registered_position
 
 
 func _update_bomb_input() -> void:

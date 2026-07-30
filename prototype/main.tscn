@@ -58,6 +58,12 @@ z_index = 2
 texture = ExtResource("9_face")
 texture_filter = 1
 
+[node name="RgsWalkReferenceSprite" type="Sprite2D" parent="Player"]
+position = Vector2(0, -26)
+z_index = 3
+texture_filter = 1
+visible = false
+
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Player"]
 position = Vector2(0, -12)
 shape = SubResource("RectangleShape2D_player")

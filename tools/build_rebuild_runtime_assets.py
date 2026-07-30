@@ -10,6 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "prototype" / "assets" / "characters" / "rebuild_atlas_v1"
 OUTPUT = ROOT / "prototype" / "assets" / "characters" / "rebuild_atlas_v1_runtime" / "male"
 CALIBRATION_PATH = ROOT / "prototype" / "preview" / "calibration" / "latest.json"
+BODY_CALIBRATION_PATH = ROOT / "prototype" / "preview" / "calibration" / "body_latest.json"
 DIRECTIONS = ("front", "right", "back", "left")
 LAYERS = ("face_base", "face", "ears")
 CELL_SIZE = 64
@@ -48,6 +49,19 @@ FEATURE_SOURCE_DIRECTION = {
 }
 
 
+def body_anchor_offsets() -> tuple[dict[str, tuple[int, int]], dict | None]:
+    offsets = {direction: (0, 0) for direction in DIRECTIONS}
+    if not BODY_CALIBRATION_PATH.exists():
+        return offsets, None
+    payload = json.loads(BODY_CALIBRATION_PATH.read_text(encoding="utf-8"))
+    if payload.get("schema") != "body_anchor_calibration_v1":
+        raise ValueError(f"unsupported body calibration schema: {payload.get('schema')}")
+    for direction in DIRECTIONS:
+        value = payload.get("calibration", {}).get(direction, {})
+        offsets[direction] = (round(value.get("x", 0)), round(value.get("y", 0)))
+    return offsets, payload
+
+
 def layer_image(direction: str, layer: str) -> Image.Image:
     source_direction = FEATURE_SOURCE_DIRECTION[direction] if layer in ("face", "ears") else direction
     if layer == "face":
@@ -82,6 +96,16 @@ def fit_to_runtime(image: Image.Image, frame_bbox: tuple[int, int, int, int]) ->
     scale = TARGET_FRAME_HEIGHT / (frame_bbox[3] - frame_bbox[1])
     width = max(1, round(crop.width * scale))
     crop = crop.resize((width, TARGET_FRAME_HEIGHT), Image.Resampling.LANCZOS)
+    # Resampling transparent raster art creates tiny colored alpha pixels
+    # outside the contour. They become a visible noisy halo in the GIF and
+    # in Godot's nearest-neighbour preview, so remove only the near-zero
+    # fringe and keep the solid contour intact.
+    pixels = crop.load()
+    for y in range(crop.height):
+        for x in range(crop.width):
+            red, green, blue, alpha = pixels[x, y]
+            if alpha < 32:
+                pixels[x, y] = (red, green, blue, 0)
     output = Image.new("RGBA", (CELL_SIZE, CELL_SIZE), (0, 0, 0, 0))
     output.alpha_composite(crop, ((CELL_SIZE - width) // 2, TARGET_BASELINE_Y - TARGET_FRAME_HEIGHT))
     return output
@@ -235,9 +259,12 @@ def prepare_direction(direction: str, anchor_targets: dict[str, dict[str, tuple[
 
 def build_sheet(layer: str, prepared: dict[str, dict[str, Image.Image]]) -> Path:
     sheet = Image.new("RGBA", (CELL_SIZE * FRAMES_PER_DIRECTION, CELL_SIZE * len(DIRECTIONS)), (0, 0, 0, 0))
+    frame_dir = OUTPUT / f"{layer}_frames"
+    frame_dir.mkdir(parents=True, exist_ok=True)
     for row, direction in enumerate(DIRECTIONS):
         image = prepared[direction][layer]
         for frame in range(FRAMES_PER_DIRECTION):
+            image.save(frame_dir / f"walk_row{row}_frame{frame}.png")
             sheet.alpha_composite(image, (frame * CELL_SIZE, row * CELL_SIZE))
     path = OUTPUT / f"{layer}_walk_4way.png"
     sheet.save(path)
@@ -249,6 +276,7 @@ def main() -> int:
         raise FileNotFoundError(SOURCE)
     OUTPUT.mkdir(parents=True, exist_ok=True)
     anchor_targets, calibration_payload = calibrated_anchor_targets()
+    head_body_offsets, body_calibration_payload = body_anchor_offsets()
     prepared: dict[str, dict[str, Image.Image]] = {}
     registrations: dict[str, dict] = {}
     for direction in DIRECTIONS:
@@ -267,6 +295,8 @@ def main() -> int:
         "anchor_space": "runtime_64x64",
         "anchor_targets": anchor_targets,
         "calibration_source": CALIBRATION_PATH.relative_to(ROOT).as_posix() if calibration_payload is not None else None,
+        "body_calibration_source": BODY_CALIBRATION_PATH.relative_to(ROOT).as_posix() if body_calibration_payload is not None else None,
+        "body_anchor_offsets": {direction: list(head_body_offsets[direction]) for direction in DIRECTIONS},
         "mirror_policy": "right_left_anchor_average_around_x32",
         "feature_source_direction": FEATURE_SOURCE_DIRECTION,
         "registrations": registrations,

@@ -5,6 +5,8 @@ param(
     [switch]$Compact,
     [switch]$BaseFeatures,
     [switch]$RebuildHead,
+    [switch]$RebuildBody,
+    [switch]$RgsWalkReference,
     [int]$AppearanceSeed
 )
 
@@ -85,6 +87,22 @@ if ($importExitCode -ne 0) {
     throw "Godot headless asset import failed with exit code $importExitCode"
 }
 
+function Invoke-GodotScriptTest {
+    param([string]$ScriptName)
+
+    $scriptArguments = @(
+        "--headless",
+        "--path", $prototypeRoot,
+        "--script", "res://tests/$ScriptName"
+    )
+    $scriptOutput = & $godotPath @scriptArguments 2>&1
+    $scriptExitCode = $LASTEXITCODE
+    $scriptOutput | ForEach-Object { Write-Output $_ }
+    if ($scriptExitCode -ne 0) {
+        throw "Godot test $ScriptName failed with exit code $scriptExitCode"
+    }
+}
+
 $previousPythonPath = $env:PYTHONPATH
 $previousChibiAssetRoot = $env:CHIBI_ASSET_ROOT
 $env:PYTHONPATH = $pythonModules
@@ -152,6 +170,20 @@ function Invoke-SmokeTest {
             $arguments += "--rebuild-head"
         } else {
             $arguments += @("--", "--rebuild-head")
+        }
+    }
+    if ($RebuildBody) {
+        if ($arguments -contains "--") {
+            $arguments += "--rebuild-body"
+        } else {
+            $arguments += @("--", "--rebuild-body")
+        }
+    }
+    if ($RgsWalkReference) {
+        if ($arguments -contains "--") {
+            $arguments += "--rgs-walk-reference"
+        } else {
+            $arguments += @("--", "--rgs-walk-reference")
         }
     }
 
