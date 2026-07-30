@@ -20,7 +20,7 @@ HEAD_VARIANTS = ["male", "female"]
 # The first pass placed features at head_top + 15.  That made the front-facing
 # eyes and ears read too high and left too little room for future hair layers.
 # Keep side views slightly tighter because their feature bounds are taller.
-FEATURE_Y_OFFSETS = {"face": {0: 5, 1: 4, 2: 5, 3: 4}, "ear": {0: 5, 1: 4, 2: 5, 3: 4}}
+FEATURE_Y_OFFSETS = {"face": {0: 5, 1: 1, 2: 5, 3: 1}, "ear": {0: 5, 1: 4, 2: 5, 3: 4}}
 
 
 def frame_bounds(source: Image.Image, row: int, column: int) -> tuple[int, int, int, int]:
@@ -63,6 +63,7 @@ def fit_to_anchor(
     target_height: int,
     center: tuple[float, float],
     male: bool = False,
+    force_size: bool = False,
 ) -> Image.Image:
     keyed = chroma_key(source_cell)
     if male:
@@ -71,11 +72,14 @@ def fit_to_anchor(
     if bbox is None:
         return Image.new("RGBA", (CELL_SIZE, CELL_SIZE), (0, 0, 0, 0))
     cropped = keyed.crop(bbox)
-    scale = min(target_width / cropped.width, target_height / cropped.height, 1.0)
-    resized = cropped.resize(
-        (max(1, round(cropped.width * scale)), max(1, round(cropped.height * scale))),
-        Image.Resampling.LANCZOS,
-    )
+    if force_size:
+        resized = cropped.resize((target_width, target_height), Image.Resampling.LANCZOS)
+    else:
+        scale = min(target_width / cropped.width, target_height / cropped.height, 1.0)
+        resized = cropped.resize(
+            (max(1, round(cropped.width * scale)), max(1, round(cropped.height * scale))),
+            Image.Resampling.LANCZOS,
+        )
     pixels = resized.load()
     for y in range(resized.height):
         for x in range(resized.width):
@@ -107,12 +111,13 @@ def feature_anchor(layer: str, row: int, bbox: tuple[int, int, int, int]) -> tup
         if row == 2:
             return None
         if row == 0:
-            return (center_x, feature_y), (20, 10)
+            return (center_x, feature_y), (24, 9)
         if row == 1:
-            return (right - 6, feature_y), (8, 11)
-        return (left + 6, feature_y), (8, 11)
+            return (right - 6, feature_y), (7, 9)
+        return (left + 6, feature_y), (7, 9)
     if row in (0, 2):
-        return (center_x, feature_y), (34, 14)
+        ear_width = 38 if row == 0 else 34
+        return (center_x, feature_y), (ear_width, 14)
     if row == 1:
         return (left + 3, feature_y), (9, 13)
     return (right - 3, feature_y), (9, 13)
@@ -133,7 +138,13 @@ def process_layer(source: Image.Image, gender: str, layer: str) -> list[list[str
                 image = Image.new("RGBA", (CELL_SIZE, CELL_SIZE), (0, 0, 0, 0))
             else:
                 source_cell = source.crop(frame_bounds(source, row, source_column))
-                image = fit_to_anchor(source_cell, *anchor[1], anchor[0], male=male)
+                image = fit_to_anchor(
+                    source_cell,
+                    *anchor[1],
+                    anchor[0],
+                    male=male,
+                    force_size=layer == "face",
+                )
             name = f"walk_row{row}_frame{frame}.png"
             image.save(output_root / name)
             atlas.alpha_composite(image, (frame * CELL_SIZE, row * CELL_SIZE))
@@ -152,7 +163,7 @@ def main() -> int:
     ear_source = Image.open(EAR_SOURCE).convert("RGB")
     manifest = {
         "generator": "process_base_features.py",
-        "generator_version": 2,
+        "generator_version": 4,
         "sources": {
             "face": FACE_SOURCE.relative_to(ROOT).as_posix(),
             "ear": EAR_SOURCE.relative_to(ROOT).as_posix(),
@@ -162,15 +173,18 @@ def main() -> int:
         "frame_count_per_direction": OUTPUT_COLUMNS,
         "layers": ["ear", "face"],
         "head_registration": "per_gender_per_direction_per_frame_alpha_bbox",
-        "feature_y_anchor": "head_top_plus_15_plus_direction_offset",
+        "feature_y_anchor": "head_top_plus_15_plus_layer_direction_offset",
+        "face_scale_mode": "fixed_target_size_for_view_consistency",
         "feature_y_offsets": {
-            "front": 5,
-            "right": 4,
-            "back": 5,
-            "left": 4
+            "face_front": 5,
+            "face_side": 1,
+            "face_back": 5,
+            "ear_front": 5,
+            "ear_side": 4,
+            "ear_back": 5
         },
-        "face_limits": {"front": [20, 10], "side": [8, 11], "back": [0, 0]},
-        "ear_limits": {"front_back": [34, 14], "side": [9, 13]},
+        "face_limits": {"front": [24, 9], "side": [7, 9], "back": [0, 0]},
+        "ear_limits": {"front": [38, 14], "back": [34, 14], "side": [9, 13]},
         "no_nose": True,
         "no_mouth": True,
         "randomization_ready": False,

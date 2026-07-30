@@ -23,6 +23,7 @@ HEAD_SPLIT_RATIO = 0.50
 LOWER_BODY_SPLIT_RATIO = 0.66
 SEAM_OVERLAP = 2
 SIDE_LIMB_SCALE_X = 0.84
+HEAD_REAR_EXPAND_X = 3
 
 
 def chroma_alpha(cell: Image.Image) -> Image.Image:
@@ -154,6 +155,12 @@ def process_sheet(
             layers = split_subject(cell, registrations[row])
             if layer.startswith("head"):
                 frame = layers["head"]
+                if row in {1, 3} and HEAD_REAR_EXPAND_X > 0:
+                    original_width = frame.width
+                    frame = frame.resize(
+                        (original_width + HEAD_REAR_EXPAND_X, frame.height),
+                        Image.Resampling.NEAREST,
+                    )
             else:
                 frame = layers[layer]
             if layer in {"torso", "arms", "lower_body", "feet"} and row in {1, 3}:
@@ -165,7 +172,13 @@ def process_sheet(
                     (scaled_layer_width, frame.height), Image.Resampling.NEAREST
                 )
             canvas = Image.new("RGBA", (CELL_SIZE, CELL_SIZE), (0, 0, 0, 0))
-            x = CENTER_X - frame.width // 2
+            if layer.startswith("head") and row in {1, 3}:
+                original_x = CENTER_X - original_width // 2
+                # Preserve the face/front edge and spend the added width on
+                # the rear silhouette for each side-facing direction.
+                x = original_x - HEAD_REAR_EXPAND_X if row == 1 else original_x
+            else:
+                x = CENTER_X - frame.width // 2
             y = BASELINE_Y - TARGET_HEIGHT
             canvas.alpha_composite(frame, (x, y))
             name = f"walk_row{row}_frame{column}.png"
@@ -247,6 +260,7 @@ def main() -> None:
         "registration_mode": "fixed_union_box_per_direction",
         "registration_boxes": registrations,
         "side_limb_scale_x": SIDE_LIMB_SCALE_X,
+        "head_rear_expand_x": HEAD_REAR_EXPAND_X,
         "head_split_ratio": HEAD_SPLIT_RATIO,
         "lower_body_split_ratio": LOWER_BODY_SPLIT_RATIO,
         "frames": {
