@@ -1,0 +1,92 @@
+{
+  "schema": "skin_palette_variants_v1",
+  "status": "preview_pipeline_only",
+  "source": "prototype/assets/characters/generated/female_adventurer_reference_mannequin_v1_adapted/body_frames",
+  "preservation": {
+    "frame_count": 32,
+    "canvas": [
+      64,
+      64
+    ],
+    "alpha_and_coordinates": "validated identical for every output frame",
+    "method": "semantic tone remap only; no resize, crop, mirror, or geometry edit"
+  },
+  "palettes": [
+    {
+      "name": "light",
+      "colors": {
+        "outline": [
+          104,
+          74,
+          62
+        ],
+        "shadow": [
+          213,
+          157,
+          124
+        ],
+        "base": [
+          244,
+          211,
+          164
+        ],
+        "highlight": [
+          255,
+          236,
+          201
+        ]
+      }
+    },
+    {
+      "name": "warm",
+      "colors": {
+        "outline": [
+          94,
+          60,
+          48
+        ],
+        "shadow": [
+          193,
+          122,
+          88
+        ],
+        "base": [
+          231,
+          166,
+          113
+        ],
+        "highlight": [
+          255,
+          210,
+          161
+        ]
+      }
+    },
+    {
+      "name": "deep",
+      "colors": {
+        "outline": [
+          55,
+          38,
+          34
+        ],
+        "shadow": [
+          132,
+          79,
+          61
+        ],
+        "base": [
+          181,
+          112,
+          79
+        ],
+        "highlight": [
+          220,
+          159,
+          114
+        ]
+      }
+    }
+  ],
+  "runtime_policy": "not wired into the player until appearance selection is specified"
+}

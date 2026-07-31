@@ -33,6 +33,12 @@ Last updated: 2026-07-31.
 - The next art task is to redraw our own QQTang-style body against the same eight
   pose phases. The RGS pixels are not the final art style.
 - Hair and clothing remain deferred until the body cycle and anchors are stable.
+- A front/back vertical-walk strip has been generated as a review candidate;
+  it is not wired into the runtime until its motion and head registration pass
+  visual review.
+- Skin-tone variants are produced by deterministic palette remapping. The
+  remapper preserves frame dimensions, alpha, and every occupied coordinate;
+  it changes color only and is currently preview-pipeline-only.
 
 ### Failed Candidates Retired From Runtime
 
@@ -75,6 +81,43 @@ the calibrated head layers unchanged. Validate it with
 `tools/run_headless_tests.ps1 -RebuildHead` and
 `tools/capture_walk_gif.ps1 -RebuildHead -LatestGeneratedBody` before replacing
 the normal layered runtime.
+
+### Vertical Motion Candidate
+
+The missing front/back vertical motion is staged under:
+
+`prototype/assets/characters/generated/body_vertical_update_v1/`
+
+Its `front_source.png` and `back_source.png` are the generated 8-frame strips;
+`runtime/front_frames/` and `runtime/back_frames/` are normalized 64 x 64
+candidate frames with a shared foot baseline at y=60. They are intentionally
+separate from the authoritative body adapter. Build or rebuild them with:
+
+`python tools/build_body_vertical_update.py`
+
+The front/back free reference inputs used for timing are retained at
+`third_party/female_adventurer_free_reference/The Female Adventurer - Free/Walk/`.
+The complete reference package, including diagonal strips, remains available
+on `history0731` for later evaluation. The first production target remains
+four directions, so diagonals do not introduce a second registration contract
+before the current cycle is stable.
+
+### Structure-Preserving Skin Palettes
+
+`tools/recolor_body_palettes.py` creates `light`, `warm`, and `deep` preview
+variants below:
+
+`prototype/assets/characters/generated/female_adventurer_reference_mannequin_v1_adapted/skin_palette_variants_v1/`
+
+The input is the authoritative 32-frame body adapter. The tool performs a
+semantic tone lookup only; it does not resize, crop, mirror, or redraw frames.
+It fails if the alpha mask changes, which keeps future clothing and attachment
+anchors independent of skin color. Run it with:
+
+`python tools/recolor_body_palettes.py`
+
+These variants are not yet selected by Godot because appearance selection and
+the eventual clothing layer contract are still undecided.
 
 All earlier body resources are marked problematic and must not be used as
 production-art inputs: the default `chibi`/`chibi_compact` body, the

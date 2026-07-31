@@ -1,0 +1,43 @@
+{
+  "schema": "body_vertical_update_candidate_v1",
+  "status": "candidate_for_visual_review",
+  "source": {
+    "front": "prototype/assets/characters/generated/body_vertical_update_v1/front_transparent.png",
+    "back": "prototype/assets/characters/generated/body_vertical_update_v1/back_transparent.png"
+  },
+  "directions": {
+    "front": [
+      "frame0.png",
+      "frame1.png",
+      "frame2.png",
+      "frame3.png",
+      "frame4.png",
+      "frame5.png",
+      "frame6.png",
+      "frame7.png"
+    ],
+    "back": [
+      "frame0.png",
+      "frame1.png",
+      "frame2.png",
+      "frame3.png",
+      "frame4.png",
+      "frame5.png",
+      "frame6.png",
+      "frame7.png"
+    ]
+  },
+  "frame_count": 8,
+  "canvas": [
+    64,
+    64
+  ],
+  "body_bbox_target": [
+    null,
+    30,
+    null,
+    60
+  ],
+  "normalization": "alpha-group crop, nearest-neighbor scale to 30px height, baseline y=60",
+  "runtime_policy": "candidate only; do not replace the latest generated body adapter until review"
+}

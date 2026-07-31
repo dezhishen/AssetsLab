@@ -16,6 +16,12 @@ Body source rule: all new body adaptation work uses only
 Other body assets in the repository are legacy or problematic comparison
 fixtures and must not be selected for new production art.
 
+The generated front/back vertical movement candidate is kept separately at
+`assets/characters/generated/body_vertical_update_v1/runtime/`; it is a review
+candidate and does not replace the current runtime body. The complete reference
+package on the `history0731` branch contains diagonal timing strips, but the
+prototype remains four-direction until that contract is stable.
+
 Controls:
 
 - `WASD` or arrow keys: move.
@@ -68,6 +74,18 @@ When `-BaseFeatures` is used, the test additionally validates and runs the
 non-random base feature set.
 
 The capture script resolves Python from `-PythonPath`, `PYTHON_BIN`, PATH, or the local `.venv`/sibling fallback. Pillow is required for GIF conversion.
+
+Build the candidate vertical frames and structure-preserving skin previews from
+the repository root:
+
+```powershell
+python .\tools\build_body_vertical_update.py
+python .\tools\recolor_body_palettes.py
+```
+
+The palette tool writes `light`, `warm`, and `deep` variants while preserving
+the source frame size and alpha mask byte-for-byte. These are preview assets;
+they are not wired into the player yet.
 
 `tools/generate_random_appearance.py` creates the ignored per-run package;
 `tools/validate_random_appearance.py` verifies that the package frames are
