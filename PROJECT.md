@@ -104,13 +104,13 @@ next stage begins:
 6. back-view skeleton and back walk loop;
 7. body blocks, then head and modular character art.
 
-Stages 1–3 passed with `tools/capture_front_skeleton_stage.ps1`,
+Stages 1–4 passed with `tools/capture_front_skeleton_stage.ps1`,
 `tools/capture_front_leg_cycle_stage.ps1`, and
-`tools/capture_front_pelvis_bob_stage.ps1`. The current active stage is 4:
-`tools/capture_front_arm_swing_stage.ps1` captures and checks equal and
-opposite arm swings while preserving every accepted stage-3 lower-body key,
-floor contact, and front-leg order. Do not reuse a later-stage asset to
-compensate for an earlier-stage error.
+`tools/capture_front_pelvis_bob_stage.ps1`, and
+`tools/capture_front_arm_swing_stage.ps1`. The current active gate is 5A:
+`tools/capture_side_skeleton_stage.ps1` captures and checks the static,
+right-facing side profile before any side walk keys are introduced. Do not
+reuse a later-stage asset to compensate for an earlier-stage error.
 
 ### Resource Cleanup 2026-07-31
 

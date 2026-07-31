@@ -70,6 +70,16 @@ It writes eight captures plus `test_output/skeleton_pipeline/front_arm_swing.gif
 Hands must remain below their shoulders and on their own side of the center
 axis; all accepted stage-3 lower-body values remain unchanged.
 
+The first side-view gate is deliberately static:
+
+```powershell
+.\tools\capture_side_skeleton_stage.ps1
+```
+
+It writes `test_output/skeleton_pipeline/side_base.png`. The capture must show
+one right-facing profile, a shared foot baseline, and explicit front/rear limb
+depth before the side-view leg loop is created.
+
 Controls:
 
 - `WASD` or arrow keys: move.

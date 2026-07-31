@@ -1,0 +1,12 @@
+{
+  "schema": "skeleton_walk_pipeline_v1",
+  "stage": "side_base",
+  "status": "active_review",
+  "coordinate_space": [960, 600],
+  "facing": "right",
+  "registration_axis_x": 480,
+  "foot_baseline_y": 470,
+  "depth_policy": "Front shoulder, hip, hand, knee, and foot remain right of their rear equivalents in the static side profile.",
+  "gate": "The side skeleton must have one fixed right-facing profile, a shared foot baseline, and explicit front/rear limb depth before side movement begins.",
+  "next_stage": "side_legs_8_frames"
+}
