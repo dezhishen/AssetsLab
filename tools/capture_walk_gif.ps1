@@ -3,6 +3,7 @@ param(
     [switch]$Compact,
     [switch]$BaseFeatures,
     [switch]$RebuildHead,
+    [switch]$LatestGeneratedBody,
     [switch]$RgsBodyRight,
 	[switch]$BomboBodyRight,
 	[switch]$RgsWalkReference,
@@ -36,6 +37,8 @@ $gifName = if ($BomboBodyRight) {
     "movement_rgs_body_candidate.gif"
 } elseif ($RgsWalkReference) {
     "movement_rgs_reference.gif"
+} elseif ($LatestGeneratedBody) {
+    "movement_latest_generated_body.gif"
 } elseif ($RebuildHead) {
     "movement_rebuild_head.gif"
 } elseif ($MilestoneBodyRight) {
@@ -123,6 +126,9 @@ if ($BaseFeatures) {
 }
 if ($RebuildHead) {
     $godotArguments += "--rebuild-head"
+}
+if ($LatestGeneratedBody) {
+    $godotArguments += "--latest-generated-body"
 }
 if ($RgsWalkReference) {
 	$godotArguments += "--rgs-walk-reference"

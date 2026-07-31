@@ -58,6 +58,10 @@ func _run() -> void:
 		if not player.milestone_body_right or player.milestone_body_frame_textures.size() != 8:
 			_fail("milestone body frames were not loaded")
 			return
+	if "--latest-generated-body" in user_args:
+		if not player.latest_generated_body or player.latest_generated_body_frame_textures.size() != 32:
+			_fail("latest generated body frames were not loaded")
+			return
 	if "--rgs-walk-reference" in user_args:
 		if not player.rgs_walk_reference or player.rgs_walk_reference_frame_textures.size() != 8:
 			_fail("RGS walk reference frames were not loaded")

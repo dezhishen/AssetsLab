@@ -18,6 +18,7 @@ var rgs_body_right := false
 var bombo_body_right := false
 var rgs_walk_reference := false
 var milestone_body_right := false
+var latest_generated_body := false
 var appearance_seed: int = 20260730
 var appearance_variant: int = 0
 var body_anchor_offsets: Dictionary = {}
@@ -30,6 +31,7 @@ var ear_frame_textures: Array[Texture2D] = []
 var face_frame_textures: Array[Texture2D] = []
 var rgs_walk_reference_frame_textures: Array[Texture2D] = []
 var milestone_body_frame_textures: Array[Texture2D] = []
+var latest_generated_body_frame_textures: Array[Texture2D] = []
 
 @onready var torso_sprite: Sprite2D = $BodySprite
 @onready var arms_sprite: Sprite2D = $ArmsSprite
@@ -51,11 +53,13 @@ func _ready() -> void:
 	bombo_body_right = "--bombo-body-right" in user_args
 	rgs_walk_reference = "--rgs-walk-reference" in user_args
 	milestone_body_right = "--milestone-body-right" in user_args
+	latest_generated_body = "--latest-generated-body" in user_args
 	appearance_seed = _read_appearance_seed()
 	appearance_variant = appearance_variant_for_seed(appearance_seed, variant == "female")
 	_load_frame_textures()
 	_load_rgs_walk_reference_frames()
 	_load_milestone_body_frames()
+	_load_latest_generated_body_frames()
 	_load_body_anchor_offsets()
 	spawn_position = global_position
 	_apply_frame(0)
@@ -215,6 +219,21 @@ func _load_milestone_body_frames() -> void:
 			milestone_body_frame_textures.append(texture)
 
 
+func _load_latest_generated_body_frames() -> void:
+	latest_generated_body_frame_textures.clear()
+	if not latest_generated_body:
+		return
+	var root := "res://assets/characters/generated/female_adventurer_reference_mannequin_v1_adapted/body_frames/"
+	for row in range(4):
+		for frame in range(8):
+			var path := root + "walk_row%d_frame%d.png" % [row, frame]
+			var texture := load(path) as Texture2D
+			if texture == null:
+				push_error("Missing latest generated body frame: " + path)
+			else:
+				latest_generated_body_frame_textures.append(texture)
+
+
 func _current_body_anchor_offset() -> Vector2:
 	if not rebuild_head:
 		return Vector2.ZERO
@@ -276,6 +295,7 @@ func _apply_frame(frame: int) -> void:
 		for sprite in [torso_sprite, arms_sprite, lower_body_sprite, feet_sprite, ear_sprite, head_sprite, face_sprite]:
 			sprite.visible = false
 		return
+	var index := direction_row * 8 + posmod(frame, 8)
 	var use_milestone_body := milestone_body_right and direction_row == 1 and milestone_body_frame_textures.size() == 8
 	if use_milestone_body:
 		torso_sprite.visible = true
@@ -283,9 +303,26 @@ func _apply_frame(frame: int) -> void:
 		for sprite in [arms_sprite, lower_body_sprite, feet_sprite, ear_sprite, head_sprite, face_sprite]:
 			sprite.visible = false
 		return
+	var use_latest_generated_body := latest_generated_body and latest_generated_body_frame_textures.size() == 32
+	if use_latest_generated_body:
+		torso_sprite.visible = true
+		torso_sprite.texture = latest_generated_body_frame_textures[index]
+		for sprite in [arms_sprite, lower_body_sprite, feet_sprite]:
+			sprite.visible = false
+		ear_sprite.visible = true
+		head_sprite.visible = true
+		face_sprite.visible = true
+		ear_sprite.texture = ear_frame_textures[index]
+		head_sprite.texture = head_frame_textures[index]
+		face_sprite.texture = face_frame_textures[index]
+		var latest_body_offset := _current_body_anchor_offset()
+		var latest_registered_position := Vector2(latest_body_offset.x, -26.0 + latest_body_offset.y)
+		head_sprite.position = latest_registered_position
+		ear_sprite.position = latest_registered_position
+		face_sprite.position = latest_registered_position
+		return
 	for sprite in [torso_sprite, arms_sprite, lower_body_sprite, feet_sprite, ear_sprite, head_sprite, face_sprite]:
 		sprite.visible = true
-	var index := direction_row * 8 + posmod(frame, 8)
 	torso_sprite.texture = torso_frame_textures[index]
 	arms_sprite.texture = arms_frame_textures[index]
 	lower_body_sprite.texture = lower_body_frame_textures[index]

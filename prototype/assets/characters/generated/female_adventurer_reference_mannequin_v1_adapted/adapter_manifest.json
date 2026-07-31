@@ -1,0 +1,32 @@
+{
+  "schema": "latest_generated_body_head_adapter_v1",
+  "status": "adapter_candidate_for_head_review",
+  "cell_size": [
+    64,
+    64
+  ],
+  "frame_count": 8,
+  "directions": [
+    "front",
+    "right",
+    "back",
+    "left"
+  ],
+  "body_source": "prototype/assets/characters/generated/female_adventurer_reference_mannequin_v1",
+  "head_source": "prototype/assets/characters/rebuild_atlas_v1_runtime/male",
+  "body_cut_y": 30,
+  "body_baseline_y": 59,
+  "body_sheets": {
+    "front": "prototype/assets/characters/generated/female_adventurer_reference_mannequin_v1_adapted/body_walk_front.png",
+    "right": "prototype/assets/characters/generated/female_adventurer_reference_mannequin_v1_adapted/body_walk_right.png",
+    "back": "prototype/assets/characters/generated/female_adventurer_reference_mannequin_v1_adapted/body_walk_back.png",
+    "left": "prototype/assets/characters/generated/female_adventurer_reference_mannequin_v1_adapted/body_walk_left.png"
+  },
+  "calibrated_head_body_sheets": {
+    "front": "prototype/assets/characters/generated/female_adventurer_reference_mannequin_v1_adapted/calibrated_head_body_front.png",
+    "right": "prototype/assets/characters/generated/female_adventurer_reference_mannequin_v1_adapted/calibrated_head_body_right.png",
+    "back": "prototype/assets/characters/generated/female_adventurer_reference_mannequin_v1_adapted/calibrated_head_body_back.png",
+    "left": "prototype/assets/characters/generated/female_adventurer_reference_mannequin_v1_adapted/calibrated_head_body_left.png"
+  },
+  "notes": "The latest generated body is cut below its provisional head and composed with the calibrated runtime head. This output is for interface validation; it does not replace the calibrated head assets."
+}

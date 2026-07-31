@@ -40,6 +40,9 @@ Last updated: 2026-07-31.
   generated direction and did not provide a coherent four-direction base.
 - Walk-motion proxy and full-walk generated samples: no longer part of the
   runtime, test runner, or published preview.
+- The first style-update body strip was rejected: its generated frames did not
+  alternate both arms and both legs, so it repeated a same-side motion and was
+  archived without entering the body pipeline.
 - The reusable lesson from these candidates is pose timing and contact-frame
   structure, not their generated pixels.
 
@@ -64,6 +67,14 @@ This is the latest eight-frame, four-direction body generation derived from the
 selected external motion reference. Its `runtime_manifest.json`, direction
 folders, and 64 x 64 frame registration are the sole body input for the next
 head-to-body adaptation step.
+
+The first adapter output is generated under
+`prototype/assets/characters/generated/female_adventurer_reference_mannequin_v1_adapted/`.
+It removes the provisional generated head below `body_cut_y: 30`, then uses
+the calibrated head layers unchanged. Validate it with
+`tools/run_headless_tests.ps1 -RebuildHead` and
+`tools/capture_walk_gif.ps1 -RebuildHead -LatestGeneratedBody` before replacing
+the normal layered runtime.
 
 All earlier body resources are marked problematic and must not be used as
 production-art inputs: the default `chibi`/`chibi_compact` body, the

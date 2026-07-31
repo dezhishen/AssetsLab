@@ -56,6 +56,8 @@ Generate a hidden-window W/A/S/D capture and GIF from the repository root:
 
 Add `-Female` to capture the female-presenting base, `-Compact` to capture the compact-stride candidate, `-RgsWalkReference` to capture the open-source motion reference, or `-MilestoneBodyRight` to capture the frozen pixel-project milestone directly.
 Add `-RebuildHead` to capture the calibrated `rebuild_atlas_v1_runtime/male` head on the current body.
+Combine it with `-LatestGeneratedBody` to validate the latest generated body
+adapter under `assets/characters/generated/female_adventurer_reference_mannequin_v1_adapted/`.
 Add `-RightOnly` with `-MilestoneBodyRight` to capture only the eight-frame right-facing milestone loop and avoid mixing other direction assets.
 
 Both test entry points generate a fresh random appearance package under
