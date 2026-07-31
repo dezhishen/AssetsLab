@@ -7,6 +7,7 @@ param(
     [switch]$RebuildHead,
     [switch]$RebuildBody,
     [switch]$RgsBodyRight,
+    [switch]$BomboBodyRight,
     [switch]$RgsWalkReference,
     [int]$AppearanceSeed
 )
@@ -192,6 +193,13 @@ function Invoke-SmokeTest {
             $arguments += "--rgs-walk-reference"
         } else {
             $arguments += @("--", "--rgs-walk-reference")
+        }
+    }
+    if ($BomboBodyRight) {
+        if ($arguments -contains "--") {
+            $arguments += "--bombo-body-right"
+        } else {
+            $arguments += @("--", "--bombo-body-right")
         }
     }
 

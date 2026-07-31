@@ -11,6 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "prototype" / "assets" / "characters" / "rebuild_atlas_v1_runtime" / "male"
 BODY_SOURCE = ROOT / "prototype" / "assets" / "characters" / "rebuild_body_v2"
 BODY_CANDIDATE_SOURCE = ROOT / "prototype" / "assets" / "characters" / "rebuild_body_v5_rgs"
+BODY_BOMBO_CANDIDATE_SOURCE = ROOT / "prototype" / "assets" / "characters" / "rebuild_body_v6_bombo"
 OUTPUT = ROOT / "prototype" / "preview" / "assets"
 RUNTIME_OUTPUT = OUTPUT / "runtime"
 BODY_CALIBRATION_PATH = ROOT / "prototype" / "preview" / "calibration" / "body_latest.json"
@@ -64,6 +65,8 @@ def main() -> int:
     for preview_artifact in (
         "movement_rgs_body_candidate.gif",
         "movement_rgs_body_candidate_contact.png",
+        "movement_bombo_body_candidate.gif",
+        "movement_bombo_body_candidate_contact.png",
     ):
         artifact_path = ROOT / "prototype" / "test_output" / preview_artifact
         if artifact_path.exists():
@@ -78,6 +81,12 @@ def main() -> int:
             candidate_output.mkdir(parents=True, exist_ok=True)
             for frame in range(8):
                 shutil.copy2(candidate_layer / f"right_frame{frame}.png", candidate_output / f"right_frame{frame}.png")
+        bombo_layer = BODY_BOMBO_CANDIDATE_SOURCE / layer
+        bombo_output = OUTPUT / "body_candidate_v6" / layer
+        if bombo_layer.exists():
+            bombo_output.mkdir(parents=True, exist_ok=True)
+            for frame in range(8):
+                shutil.copy2(bombo_layer / f"right_frame{frame}.png", bombo_output / f"right_frame{frame}.png")
     body_offsets = load_body_offsets()
     manifest = json.loads((SOURCE / "runtime_manifest.json").read_text(encoding="utf-8"))
     debug = Image.new("RGBA", (1024, 256), (22, 24, 39, 255))

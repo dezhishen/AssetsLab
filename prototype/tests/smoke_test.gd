@@ -47,6 +47,13 @@ func _run() -> void:
 		if player.torso_frame_textures.size() <= 8 or not player.torso_frame_textures[8].resource_path.contains("rebuild_body_v5_rgs"):
 			_fail("RGS body candidate right-facing torso was not loaded")
 			return
+	if "--bombo-body-right" in user_args:
+		if not player.bombo_body_right:
+			_fail("Bombo body candidate mode was not enabled")
+			return
+		if player.torso_frame_textures.size() <= 8 or not player.torso_frame_textures[8].resource_path.contains("rebuild_body_v6_bombo"):
+			_fail("Bombo body candidate right-facing torso was not loaded")
+			return
 	if "--rgs-walk-reference" in user_args:
 		if not player.rgs_walk_reference or player.rgs_walk_reference_frame_textures.size() != 8:
 			_fail("RGS walk reference frames were not loaded")

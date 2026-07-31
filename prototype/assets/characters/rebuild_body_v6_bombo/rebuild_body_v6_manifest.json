@@ -1,0 +1,29 @@
+{
+  "schema": "rebuild_body_v6_bombo_pose_reference",
+  "source": "prototype/assets/characters/generated/walk_body_bombo_reference_v6_source.png",
+  "direction": "right",
+  "cell_size": [
+    64,
+    64
+  ],
+  "frames": 8,
+  "target_body_height": 30,
+  "baseline_y": 58,
+  "status": "candidate_requires_visual_review",
+  "motion_contract": {
+    "neutral_frames": [
+      0,
+      4
+    ],
+    "first_step_after_neutral": "viewer_right_leg",
+    "both_arms_participate": true,
+    "opposite_arm_swing": true
+  },
+  "layers": [
+    "torso",
+    "arms",
+    "lower_body",
+    "feet",
+    "body_base"
+  ]
+}

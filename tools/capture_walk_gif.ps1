@@ -3,6 +3,7 @@ param(
     [switch]$Compact,
     [switch]$BaseFeatures,
     [switch]$RgsBodyRight,
+    [switch]$BomboBodyRight,
     [switch]$RgsWalkReference,
     [string]$GodotPath,
     [string]$PythonPath,
@@ -20,7 +21,9 @@ $pythonPath = Resolve-PythonExecutable -RequestedPath $PythonPath -AssetsLabRoot
 $pythonModules = Join-Path $assetsLabRoot ".tools\python"
 $frameDirectory = Join-Path $prototypeRoot "test_output\capture_frames"
 $randomAppearanceRoot = Join-Path $prototypeRoot "test_output\random_appearance"
-$gifName = if ($RgsBodyRight) {
+$gifName = if ($BomboBodyRight) {
+    "movement_bombo_body_candidate.gif"
+} elseif ($RgsBodyRight) {
     "movement_rgs_body_candidate.gif"
 } elseif ($RgsWalkReference) {
     "movement_rgs_reference.gif"
@@ -110,6 +113,9 @@ if ($RgsWalkReference) {
 if ($RgsBodyRight) {
     $godotArguments += "--rgs-body-right"
 }
+if ($BomboBodyRight) {
+    $godotArguments += "--bombo-body-right"
+}
 $godotProcess = Start-Process -FilePath $godotPath -ArgumentList $godotArguments -WindowStyle Hidden -PassThru -Wait
 if (Test-Path -LiteralPath $logPath) {
     Get-Content -LiteralPath $logPath
@@ -133,6 +139,9 @@ try {
     }
     if ($RgsBodyRight) {
         Copy-Item -LiteralPath $gifPath -Destination (Join-Path $assetsLabRoot "prototype\preview\assets\movement_rgs_body_candidate.gif") -Force
+    }
+    if ($BomboBodyRight) {
+        Copy-Item -LiteralPath $gifPath -Destination (Join-Path $assetsLabRoot "prototype\preview\assets\movement_bombo_body_candidate.gif") -Force
     }
 }
 finally {
