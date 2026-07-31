@@ -80,6 +80,16 @@ It writes `test_output/skeleton_pipeline/side_base.png`. The capture must show
 one right-facing profile, a shared foot baseline, and explicit front/rear limb
 depth before the side-view leg loop is created.
 
+The next isolated side step is the leg-only loop:
+
+```powershell
+.\tools\capture_side_leg_cycle_stage.ps1
+```
+
+It writes eight captures plus `test_output/skeleton_pipeline/side_legs.gif`.
+F0/F4 are contact frames; only the rear leg lifts during F1–F3 and only the
+front leg lifts during F5–F7. The pelvis and arms remain static.
+
 Controls:
 
 - `WASD` or arrow keys: move.

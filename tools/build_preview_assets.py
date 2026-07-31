@@ -28,6 +28,8 @@ SKELETON_PELVIS_CAPTURE_GIF = ROOT / "prototype/test_output/skeleton_pipeline/fr
 SKELETON_ARM_CAPTURE_DIRECTORY = ROOT / "prototype/test_output/skeleton_pipeline/front_arm_swing"
 SKELETON_ARM_CAPTURE_GIF = ROOT / "prototype/test_output/skeleton_pipeline/front_arm_swing.gif"
 SKELETON_SIDE_BASE_CAPTURE = ROOT / "prototype/test_output/skeleton_pipeline/side_base.png"
+SKELETON_SIDE_LEG_CAPTURE_DIRECTORY = ROOT / "prototype/test_output/skeleton_pipeline/side_legs"
+SKELETON_SIDE_LEG_CAPTURE_GIF = ROOT / "prototype/test_output/skeleton_pipeline/side_legs.gif"
 STAGED_CAPTURE_GIF = OUTPUT / "movement_vertical_body_candidate.gif"
 DIRECTIONS = ("front", "right", "back", "left")
 
@@ -178,6 +180,11 @@ def main() -> int:
         shutil.copy2(SKELETON_ARM_CAPTURE_GIF, OUTPUT / "skeleton_front_arm_swing.gif")
     if SKELETON_SIDE_BASE_CAPTURE.exists():
         shutil.copy2(SKELETON_SIDE_BASE_CAPTURE, OUTPUT / "skeleton_side_base.png")
+    skeleton_side_leg_frames = [SKELETON_SIDE_LEG_CAPTURE_DIRECTORY / f"frame_{index:02d}.png" for index in range(8)]
+    if all(path.exists() for path in skeleton_side_leg_frames):
+        skeleton_contact_sheet(skeleton_side_leg_frames, OUTPUT / "skeleton_side_legs_8frames.png")
+    if SKELETON_SIDE_LEG_CAPTURE_GIF.exists():
+        shutil.copy2(SKELETON_SIDE_LEG_CAPTURE_GIF, OUTPUT / "skeleton_side_legs.gif")
 
     style_image = STYLE_ROOT / "turnaround_db16_transparent.png"
     if style_image.exists():
@@ -211,10 +218,10 @@ def main() -> int:
             "status": "candidate_for_visual_review",
         },
         "skeleton_walk_pipeline": {
-            "source": "prototype/assets/characters/generated/skeleton_walk_pipeline_v1/side_base_manifest.json",
-            "stage": "side_base",
+            "source": "prototype/assets/characters/generated/skeleton_walk_pipeline_v1/side_legs_8_frames_manifest.json",
+            "stage": "side_legs_8_frames",
             "status": "active_review",
-            "next_stage": "side_legs_8_frames",
+            "next_stage": "side_pelvis_bob",
         },
         "excluded": "legacy bodies, RGS proxies, skeleton tests, old generated walk GIFs, and retired preview pages",
         "files": sorted(path.name for path in OUTPUT.iterdir() if path.is_file()),

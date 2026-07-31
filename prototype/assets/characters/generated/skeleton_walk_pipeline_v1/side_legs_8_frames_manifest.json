@@ -1,0 +1,16 @@
+{
+  "schema": "skeleton_walk_pipeline_v1",
+  "stage": "side_legs_8_frames",
+  "status": "active_review",
+  "depends_on": "side_base",
+  "facing": "right",
+  "frame_count": 8,
+  "contact_frames": [0, 4],
+  "rear_leg_lift_frames": [1, 2, 3],
+  "front_leg_lift_frames": [5, 6, 7],
+  "foot_baseline_y": 470,
+  "foreground_leg_policy": ["front", "rear", "rear", "rear", "rear", "front", "front", "front"],
+  "upper_body_policy": "static",
+  "gate": "Each frame retains one planted foot, rear and front lifts occupy separate half-cycles, and foreground leg order changes only at the opposite contact.",
+  "next_stage": "side_pelvis_bob"
+}
