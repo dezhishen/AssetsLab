@@ -1,0 +1,10 @@
+{
+  "schema": "skeleton_walk_pipeline_v1",
+  "stage": "front_base",
+  "status": "active_review",
+  "coordinate_space": [960, 600],
+  "front_axis_x": 480,
+  "foot_baseline_y": 470,
+  "gate": "The front skeleton must be symmetric and share one foot baseline before leg animation begins.",
+  "next_stage": "front_legs_8_frames"
+}

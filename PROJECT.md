@@ -86,6 +86,29 @@ Last updated: 2026-07-31.
   vertical/head alignment are accepted; otherwise clothing would hide or
   amplify unresolved registration errors.
 
+### Skeleton-First Walk Pipeline
+
+The existing generated and redraw body candidates are retained only as
+comparison material. New animation work restarts from a separately verified
+Godot skeleton pipeline at
+`prototype/assets/characters/generated/skeleton_walk_pipeline_v1/`.
+
+Each stage must have its own headless capture and validation gate before the
+next stage begins:
+
+1. front-view static base skeleton: symmetry and shared foot baseline;
+2. front-view eight-frame leg loop: alternating contact/passing poses;
+3. pelvis vertical bob over the accepted leg loop;
+4. opposite arm swing over the accepted pelvis/leg loop;
+5. side-view skeleton and side walk loop;
+6. back-view skeleton and back walk loop;
+7. body blocks, then head and modular character art.
+
+The current active stage is 1. Run
+`tools/capture_front_skeleton_stage.ps1` for its no-GUI validation and image
+capture. Do not reuse a later-stage asset to compensate for an earlier-stage
+error.
+
 ### Resource Cleanup 2026-07-31
 
 The branch `history0731` contains the rejected AI body/head experiments, the

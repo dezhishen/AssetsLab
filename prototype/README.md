@@ -29,6 +29,17 @@ four-direction clothed style experiment from the external pixel-art skill is
 also preview-only and is stored under
 `assets/characters/generated/skill_pixel_art_experiment_v1/`.
 
+The new skeleton-first walk workflow is independent of the older body
+candidates. Its current first gate is a front-view static skeleton. Run:
+
+```powershell
+.\tools\capture_front_skeleton_stage.ps1
+```
+
+This uses the Godot console executable with `--headless`, writes
+`test_output/skeleton_pipeline/front_base.png`, and must pass before the
+eight-frame leg loop is started.
+
 Controls:
 
 - `WASD` or arrow keys: move.

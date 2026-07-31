@@ -20,6 +20,7 @@ STYLE_ROOT = ROOT / "prototype/assets/characters/generated/skill_pixel_art_exper
 RECOMMENDED_FIX_ROOT = ROOT / "prototype/assets/characters/generated/recommended_base_horizontal_layer_fix_v1"
 CAPTURE_GIF = ROOT / "prototype/test_output/movement_vertical_body_candidate.gif"
 RIGHT_ONLY_CAPTURE_GIF = ROOT / "prototype/test_output/movement_rebuild_head_right_only.gif"
+SKELETON_FRONT_CAPTURE = ROOT / "prototype/test_output/skeleton_pipeline/front_base.png"
 STAGED_CAPTURE_GIF = OUTPUT / "movement_vertical_body_candidate.gif"
 DIRECTIONS = ("front", "right", "back", "left")
 
@@ -137,6 +138,8 @@ def main() -> int:
         shutil.copy2(STAGED_CAPTURE_GIF, OUTPUT / "movement_vertical_body_candidate.gif")
     if RIGHT_ONLY_CAPTURE_GIF.exists():
         shutil.copy2(RIGHT_ONLY_CAPTURE_GIF, OUTPUT / "movement_rebuild_head_right_only.gif")
+    if SKELETON_FRONT_CAPTURE.exists():
+        shutil.copy2(SKELETON_FRONT_CAPTURE, OUTPUT / "skeleton_front_base.png")
 
     style_image = STYLE_ROOT / "turnaround_db16_transparent.png"
     if style_image.exists():
@@ -168,6 +171,12 @@ def main() -> int:
             "runtime": "prototype/assets/characters/generated/recommended_base_horizontal_layer_fix_v1/runtime",
             "foot_occlusion_policy": ["right_front", "right_front", "right_front", "left_front", "left_front", "left_front", "left_front", "right_front"],
             "status": "candidate_for_visual_review",
+        },
+        "skeleton_walk_pipeline": {
+            "source": "prototype/assets/characters/generated/skeleton_walk_pipeline_v1/front_base_manifest.json",
+            "stage": "front_base",
+            "status": "active_review",
+            "next_stage": "front_legs_8_frames",
         },
         "excluded": "legacy bodies, RGS proxies, skeleton tests, old generated walk GIFs, and retired preview pages",
         "files": sorted(path.name for path in OUTPUT.iterdir() if path.is_file()),
