@@ -20,6 +20,10 @@ component offset. It can align the torso, arms, lower body, and feet across all
 eight frames and stores offsets in the ignored
 `prototype/preview/calibration/body_components_latest.json` file.
 
+Use `body_outline_split.html` to mark the four limb guide lines directly on the
+generated outline. It exports `body_outline_split_v1`; the server stores the
+optional local result in the ignored `body_outline_split_latest.json` file.
+
 The RGS open-source character is a motion reference, not final character art.
 Run `tools/capture_walk_gif.ps1 -RgsWalkReference` to render its complete
 eight-frame loop without opening the Godot editor. The project will later redraw

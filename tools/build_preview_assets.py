@@ -12,6 +12,7 @@ SOURCE = ROOT / "prototype" / "assets" / "characters" / "rebuild_atlas_v1_runtim
 BODY_SOURCE = ROOT / "prototype" / "assets" / "characters" / "rebuild_body_v2"
 BODY_CANDIDATE_SOURCE = ROOT / "prototype" / "assets" / "characters" / "rebuild_body_v5_rgs"
 BODY_BOMBO_CANDIDATE_SOURCE = ROOT / "prototype" / "assets" / "characters" / "rebuild_body_v6_bombo"
+BODY_OUTLINE_SOURCE = ROOT / "prototype" / "assets" / "characters" / "generated" / "body_outline_split_v1_right_walk_8.png"
 OUTPUT = ROOT / "prototype" / "preview" / "assets"
 RUNTIME_OUTPUT = OUTPUT / "runtime"
 BODY_CALIBRATION_PATH = ROOT / "prototype" / "preview" / "calibration" / "body_latest.json"
@@ -62,6 +63,8 @@ def load_body_offsets() -> dict[str, tuple[int, int]]:
 def main() -> int:
     OUTPUT.mkdir(parents=True, exist_ok=True)
     RUNTIME_OUTPUT.mkdir(parents=True, exist_ok=True)
+    if BODY_OUTLINE_SOURCE.exists():
+        shutil.copy2(BODY_OUTLINE_SOURCE, OUTPUT / BODY_OUTLINE_SOURCE.name)
     for preview_artifact in (
         "movement_rgs_body_candidate.gif",
         "movement_rgs_body_candidate_contact.png",

@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>身体轮廓分割线标注</title>
+  <style>
+    :root { color-scheme: dark; font-family: system-ui, "Microsoft YaHei", sans-serif; background: #10131d; color: #edf1ff; }
+    body { margin: 0; }
+    main { max-width: 1080px; margin: auto; padding: 18px; }
+    h1 { font-size: 1.25rem; margin: 0 0 8px; }
+    p { color: #b9c2df; line-height: 1.55; }
+    .toolbar, .frames, .parts, .actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
+    button { color: inherit; background: #222a40; border: 1px solid #3c496b; border-radius: 7px; padding: 7px 10px; cursor: pointer; font: inherit; }
+    button:hover, button.active { background: #425986; border-color: #8fc4ff; }
+    .workspace { display: grid; grid-template-columns: minmax(300px, 512px) minmax(250px, 1fr); gap: 18px; align-items: start; }
+    canvas { display: block; width: min(100%, 512px); aspect-ratio: 1; background: #090b12; border: 1px solid #3c496b; border-radius: 10px; touch-action: none; image-rendering: pixelated; }
+    .panel { padding: 14px; background: #181d2c; border: 1px solid #303b57; border-radius: 10px; }
+    .part { min-width: 110px; text-align: left; }
+    .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; }
+    #status, .hint { color: #aeb9d9; font-size: .9rem; line-height: 1.55; }
+    .file { display: none; }
+    @media (max-width: 760px) { .workspace { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+<main>
+  <h1>身体轮廓分割线标注（右向 8 帧）</h1>
+  <p>选择一个部件，然后在轮廓上从关节拖到手或脚。这里记录的是“部件中线/分割参考线”，不是最终像素切割结果；四个部件全部标注后，再由脚本按线精细化切分。</p>
+  <div class="frames" id="frames"></div>
+  <div class="workspace">
+    <canvas id="board" width="512" height="512"></canvas>
+    <section class="panel">
+      <div class="toolbar">
+        <button id="drawMode" class="active">画线模式</button>
+        <button id="eraseMode">擦除线模式</button>
+      </div>
+      <div class="parts" id="parts"></div>
+      <div class="actions">
+        <button id="copyPrev">复制上一帧标注</button>
+        <button id="clearFrame">清空当前帧</button>
+        <button id="reset">重置全部</button>
+      </div>
+      <div class="actions">
+        <button id="play">播放</button>
+        <button id="download">下载 JSON</button>
+        <button id="save">保存到预览服务器</button>
+      </div>
+      <div id="status"></div>
+      <p class="hint">颜色：前臂蓝色、后臂红色、前腿绿色、后腿黄色。建议每帧都标注，不要直接复制整套姿势；这样后续才能检查两侧是否真的换相。</p>
+    </section>
+  </div>
+</main>
+<script>
+  const SIZE = 64;
+  const FRAME_COUNT = 8;
+  const PARTS = {
+    front_arm: { label: '前臂', color: '#5cc8ff' },
+    rear_arm: { label: '后臂', color: '#ff7272' },
+    front_leg: { label: '前腿', color: '#73e28d' },
+    rear_leg: { label: '后腿', color: '#ffcf60' }
+  };
+  const labels = ['接触 A', '下沉 A', '经过 A', '抬升 A', '接触 B', '下沉 B', '经过 B', '抬升 B'];
+  const image = new Image();
+  image.src = 'assets/body_outline_split_v1_right_walk_8.png';
+  const board = document.getElementById('board');
+  const ctx = board.getContext('2d');
+  let frames = Array.from({ length: FRAME_COUNT }, () => ({ lines: {} }));
+  let frameIndex = 0;
+  let selected = 'front_arm';
+  let mode = 'draw';
+  let drawing = null;
+  let playing = false;
+  let timer = null;
+  const clone = value => JSON.parse(JSON.stringify(value));
+  const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+
+  function point(event) {
+    const rect = board.getBoundingClientRect();
+    return [clamp((event.clientX - rect.left) / rect.width * SIZE, 0, SIZE), clamp((event.clientY - rect.top) / rect.height * SIZE, 0, SIZE)];
+  }
+  function drawLine(line, key, preview = false) {
+    if (!line) return;
+    const spec = PARTS[key];
+    ctx.save();
+    ctx.strokeStyle = spec.color;
+    ctx.fillStyle = spec.color;
+    ctx.lineWidth = 2.4;
+    ctx.setLineDash(preview ? [5, 4] : []);
+    ctx.beginPath();
+    ctx.moveTo(line.start[0] * 8, line.start[1] * 8);
+    ctx.lineTo(line.end[0] * 8, line.end[1] * 8);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    for (const p of [line.start, line.end]) {
+      ctx.beginPath();
+      ctx.arc(p[0] * 8, p[1] * 8, 5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+  function render() {
+    ctx.clearRect(0, 0, board.width, board.height);
+    ctx.fillStyle = '#090b12';
+    ctx.fillRect(0, 0, board.width, board.height);
+    if (image.complete && image.naturalWidth) {
+      const sx = frameIndex * image.naturalWidth / FRAME_COUNT;
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(image, sx, 0, image.naturalWidth / FRAME_COUNT, image.naturalHeight, 0, 0, board.width, board.height);
+    }
+    ctx.strokeStyle = '#8fc4ff66';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(256, 0); ctx.lineTo(256, 512); ctx.stroke();
+    ctx.strokeStyle = '#73e28d88';
+    ctx.beginPath(); ctx.moveTo(0, 58 * 8); ctx.lineTo(512, 58 * 8); ctx.stroke();
+    for (const [key, line] of Object.entries(frames[frameIndex].lines)) drawLine(line, key);
+    if (drawing) drawLine({ start: drawing.start, end: drawing.end }, selected, true);
+    document.querySelectorAll('#frames button').forEach((button, index) => button.classList.toggle('active', index === frameIndex));
+    document.querySelectorAll('#parts button').forEach(button => button.classList.toggle('active', button.dataset.part === selected));
+    document.getElementById('drawMode').classList.toggle('active', mode === 'draw');
+    document.getElementById('eraseMode').classList.toggle('active', mode === 'erase');
+    const count = Object.keys(frames[frameIndex].lines).length;
+    document.getElementById('status').textContent = `第 ${frameIndex + 1}/8 帧：${labels[frameIndex]}；当前部件：${PARTS[selected].label}；${mode === 'draw' ? '画线' : '擦除'}；已标注 ${count}/4 条线`;
+  }
+  function buildButtons() {
+    const frameBox = document.getElementById('frames');
+    for (let index = 0; index < FRAME_COUNT; index++) {
+      const button = document.createElement('button');
+      button.textContent = `${index + 1} ${labels[index]}`;
+      button.onclick = () => { frameIndex = index; render(); };
+      frameBox.appendChild(button);
+    }
+    const partBox = document.getElementById('parts');
+    for (const [key, spec] of Object.entries(PARTS)) {
+      const button = document.createElement('button');
+      button.className = 'part';
+      button.dataset.part = key;
+      button.innerHTML = `<span class="swatch" style="background:${spec.color}"></span>${spec.label}`;
+      button.onclick = () => { selected = key; render(); };
+      partBox.appendChild(button);
+    }
+  }
+  function distanceToSegment(pointValue, start, end) {
+    const vx = end[0] - start[0], vy = end[1] - start[1];
+    const wx = pointValue[0] - start[0], wy = pointValue[1] - start[1];
+    const length = vx * vx + vy * vy;
+    const ratio = length ? Math.max(0, Math.min(1, (wx * vx + wy * vy) / length)) : 0;
+    const dx = pointValue[0] - (start[0] + ratio * vx);
+    const dy = pointValue[1] - (start[1] + ratio * vy);
+    return Math.hypot(dx, dy);
+  }
+  function eraseLineAt(value) {
+    const entries = Object.entries(frames[frameIndex].lines);
+    let closest = null;
+    let distance = Infinity;
+    for (const [key, line] of entries) {
+      const candidate = distanceToSegment(value, line.start, line.end);
+      if (candidate < distance) { closest = key; distance = candidate; }
+    }
+    if (closest && distance <= 3.2) delete frames[frameIndex].lines[closest];
+  }
+  board.addEventListener('pointerdown', event => {
+    if (mode === 'erase') {
+      eraseLineAt(point(event));
+      render();
+      return;
+    }
+    drawing = { start: point(event), end: point(event) };
+    board.setPointerCapture(event.pointerId);
+    render();
+  });
+  board.addEventListener('pointermove', event => {
+    if (!drawing) return;
+    drawing.end = point(event);
+    render();
+  });
+  function finishLine() {
+    if (!drawing) return;
+    const dx = drawing.end[0] - drawing.start[0];
+    const dy = drawing.end[1] - drawing.start[1];
+    if (Math.hypot(dx, dy) >= 2) frames[frameIndex].lines[selected] = clone(drawing);
+    drawing = null;
+    render();
+  }
+  board.addEventListener('pointerup', finishLine);
+  board.addEventListener('pointercancel', () => { drawing = null; render(); });
+  document.getElementById('copyPrev').onclick = () => { if (frameIndex > 0) { frames[frameIndex] = clone(frames[frameIndex - 1]); render(); } };
+  document.getElementById('clearFrame').onclick = () => { frames[frameIndex] = { lines: {} }; render(); };
+  document.getElementById('reset').onclick = () => { frames = Array.from({ length: FRAME_COUNT }, () => ({ lines: {} })); render(); };
+  document.getElementById('drawMode').onclick = () => { mode = 'draw'; render(); };
+  document.getElementById('eraseMode').onclick = () => { mode = 'erase'; render(); };
+  document.getElementById('play').onclick = () => { playing = !playing; document.getElementById('play').textContent = playing ? '停止' : '播放'; if (playing) timer = setInterval(() => { frameIndex = (frameIndex + 1) % FRAME_COUNT; render(); }, 150); else clearInterval(timer); };
+  function payload() { return { schema: 'body_outline_split_v1', cell_size: [64, 64], direction: 'right', frame_order: labels, frames }; }
+  document.getElementById('download').onclick = () => { const link = document.createElement('a'); link.href = URL.createObjectURL(new Blob([JSON.stringify(payload(), null, 2)], { type: 'application/json' })); link.download = 'body_outline_split_v1.json'; link.click(); URL.revokeObjectURL(link.href); };
+  document.getElementById('save').onclick = async () => { try { const response = await fetch('/api/save-calibration', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload()) }); if (!response.ok) throw new Error(await response.text()); document.getElementById('status').textContent = '已保存到 prototype/preview/calibration/body_outline_split_latest.json'; } catch (error) { document.getElementById('status').textContent = `保存失败，请下载 JSON：${error}`; } };
+  image.onload = render;
+  buildButtons();
+  render();
+</script>
+</body>
+</html>
