@@ -45,6 +45,34 @@ Last updated: 2026-07-31.
 - The reusable lesson from these candidates is pose timing and contact-frame
   structure, not their generated pixels.
 
+### Current Skeleton2D Workflow Experiment
+
+The retired warped-sprite rig is not being restored as a production runtime.
+For a controlled feasibility test, the milestone body is now used as rigid
+cutouts under a Godot 4.6.2 `Skeleton2D`/`Bone2D` hierarchy. This keeps the
+experiment separate from the current Sprite2D runtime and lets us compare pose
+policies without mixing assets.
+
+- Workflow A: both legs use the authored passing pose.
+- Workflow B: in the third and seventh frames, only the leading/front leg
+  retracts; the trailing/rear leg keeps its preceding support pose.
+- Both workflows use the same core, hands, feet, z-order, canvas, and eight
+  frame timing. Only the passing-leg policy changes.
+- Sources: `prototype/assets/characters/limb_puzzle.json` and the processed
+  milestone body under `prototype/assets/characters/generated/`.
+- The generated cutouts are a motion feasibility prototype, not approved final
+  art. The current body pixels remain the milestone reference until one
+  workflow is visually accepted.
+
+Run both silent captures and regenerate their previews with:
+
+```powershell
+.\tools\capture_skeleton_workflow.ps1
+```
+
+The A/B GIFs are written to `prototype/preview/assets/` and the temporary
+capture frames remain under the ignored `prototype/test_output/` directory.
+
 ### Verification Progress
 
 - Random appearance package: passed with deterministic seed validation.

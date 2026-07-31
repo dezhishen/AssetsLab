@@ -1,0 +1,69 @@
+{
+  "schema": "skeleton_cutouts_v1",
+  "source_art": "prototype/assets/characters/generated/body_outline_split_v2_manual_from_project/frame0.png",
+  "source_pose": "prototype/assets/characters/generated/skeleton_workflows/A_both_legs_pass.json",
+  "cell_size": [
+    64,
+    64
+  ],
+  "core": "core.png",
+  "parts": {
+    "left_hand": {
+      "source_bbox": [
+        28,
+        35,
+        39,
+        46
+      ],
+      "source_center": [
+        34.49438444924406,
+        40.74343412527
+      ],
+      "source_angle": 127.03776779562565,
+      "z_order": 9
+    },
+    "right_hand": {
+      "source_bbox": [
+        25,
+        35,
+        35,
+        50
+      ],
+      "source_center": [
+        26.6645788336933,
+        43.308012958963275
+      ],
+      "source_angle": 44.80019337856589,
+      "z_order": 11
+    },
+    "left_foot": {
+      "source_bbox": [
+        25,
+        42,
+        36,
+        58
+      ],
+      "source_center": [
+        28.4939524838013,
+        50.125939524838
+      ],
+      "source_angle": 39.908427321405114,
+      "z_order": 9
+    },
+    "right_foot": {
+      "source_bbox": [
+        27,
+        42,
+        39,
+        58
+      ],
+      "source_center": [
+        35.791252699784025,
+        51.33468682505401
+      ],
+      "source_angle": 138.82037955202105,
+      "z_order": 11
+    }
+  },
+  "notes": "Rigid cutouts for Skeleton2D workflow comparison; not a final production split."
+}
