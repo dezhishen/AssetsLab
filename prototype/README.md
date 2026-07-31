@@ -100,6 +100,16 @@ It writes eight captures plus `test_output/skeleton_pipeline/side_pelvis_bob.gif
 The pelvis moves vertically by at most 6px peak-to-peak while all side-leg foot
 coordinates and upper-body coordinates remain unchanged.
 
+The final side-view step adds only counterphased arms:
+
+```powershell
+.\tools\capture_side_arm_swing_stage.ps1
+```
+
+It writes eight captures plus `test_output/skeleton_pipeline/side_arm_swing.gif`.
+The arms are opposite each other and counterphased to the legs; all accepted
+side pelvis, foot, and depth-order keys remain unchanged.
+
 Controls:
 
 - `WASD` or arrow keys: move.
