@@ -1,0 +1,41 @@
+{
+  "schema": "recommended_horizontal_layer_fix_v1",
+  "source": "prototype/assets/characters/generated/recommended_base_horizontal_layer_fix_v1/right_source.png",
+  "direction": "right",
+  "cell_size": [
+    64,
+    64
+  ],
+  "frames": 8,
+  "frame_order": [
+    "contact_a",
+    "down_a",
+    "passing_a",
+    "up_a",
+    "contact_b",
+    "down_b",
+    "passing_b",
+    "up_b"
+  ],
+  "foot_occlusion_policy": [
+    "right_front",
+    "right_front",
+    "right_front",
+    "left_front",
+    "left_front",
+    "left_front",
+    "left_front",
+    "right_front"
+  ],
+  "runtime_frames": [
+    "right_frame0.png",
+    "right_frame1.png",
+    "right_frame2.png",
+    "right_frame3.png",
+    "right_frame4.png",
+    "right_frame5.png",
+    "right_frame6.png",
+    "right_frame7.png"
+  ],
+  "notes": "Review candidate generated from the recommended base. The fourth/fifth frame transition uses the opposite leg in front; this is not the older redraw adapter."
+}

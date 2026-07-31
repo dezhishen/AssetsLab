@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import json
 import shutil
+import subprocess
+import sys
 from pathlib import Path
 
 from PIL import Image
@@ -15,7 +17,9 @@ BODY_ROOT = ROOT / "prototype/assets/characters/generated/female_adventurer_refe
 HEAD_ROOT = ROOT / "prototype/assets/characters/rebuild_atlas_v1_runtime/male"
 VERTICAL_ROOT = ROOT / "prototype/assets/characters/generated/body_vertical_update_v1/runtime"
 STYLE_ROOT = ROOT / "prototype/assets/characters/generated/skill_pixel_art_experiment_v1"
+RECOMMENDED_FIX_ROOT = ROOT / "prototype/assets/characters/generated/recommended_base_horizontal_layer_fix_v1"
 CAPTURE_GIF = ROOT / "prototype/test_output/movement_vertical_body_candidate.gif"
+RIGHT_ONLY_CAPTURE_GIF = ROOT / "prototype/test_output/movement_rebuild_head_right_only.gif"
 STAGED_CAPTURE_GIF = OUTPUT / "movement_vertical_body_candidate.gif"
 DIRECTIONS = ("front", "right", "back", "left")
 
@@ -90,6 +94,11 @@ def load_offsets() -> dict[str, tuple[int, int]]:
 
 
 def main() -> int:
+    subprocess.run(
+        [sys.executable, str(ROOT / "tools/build_recommended_horizontal_fix.py")],
+        cwd=ROOT,
+        check=True,
+    )
     clear_output()
     body_frames = load_frames(BODY_ROOT, "walk_row{row}_frame{frame}.png")
     head_frames = load_head_frames()
@@ -126,10 +135,18 @@ def main() -> int:
         shutil.copy2(CAPTURE_GIF, OUTPUT / "movement_vertical_body_candidate.gif")
     elif STAGED_CAPTURE_GIF.exists():
         shutil.copy2(STAGED_CAPTURE_GIF, OUTPUT / "movement_vertical_body_candidate.gif")
+    if RIGHT_ONLY_CAPTURE_GIF.exists():
+        shutil.copy2(RIGHT_ONLY_CAPTURE_GIF, OUTPUT / "movement_rebuild_head_right_only.gif")
 
     style_image = STYLE_ROOT / "turnaround_db16_transparent.png"
     if style_image.exists():
         shutil.copy2(style_image, OUTPUT / "style_experiment_db16.png")
+
+    recommended_source = RECOMMENDED_FIX_ROOT / "right_source.png"
+    recommended_runtime = RECOMMENDED_FIX_ROOT / "runtime"
+    shutil.copy2(recommended_source, OUTPUT / "recommended_horizontal_layer_fix_source.png")
+    shutil.copy2(recommended_runtime / "right_walk_8.png", OUTPUT / "recommended_horizontal_layer_fix_8frames.png")
+    shutil.copy2(recommended_runtime / "right_walk_8.gif", OUTPUT / "recommended_horizontal_layer_fix.gif")
 
     manifest = {
         "schema": "assetslab_current_preview_v2",
@@ -144,6 +161,12 @@ def main() -> int:
         "vertical_candidate": {
             "source": "prototype/assets/characters/generated/body_vertical_update_v1/runtime",
             "head_anchor_offsets": {"front": [0, 0], "back": [0, 0]},
+            "status": "candidate_for_visual_review",
+        },
+        "recommended_horizontal_layer_fix": {
+            "source": "prototype/assets/characters/generated/recommended_base_horizontal_layer_fix_v1/right_source.png",
+            "runtime": "prototype/assets/characters/generated/recommended_base_horizontal_layer_fix_v1/runtime",
+            "foot_occlusion_policy": ["right_front", "right_front", "right_front", "left_front", "left_front", "left_front", "left_front", "right_front"],
             "status": "candidate_for_visual_review",
         },
         "excluded": "legacy bodies, RGS proxies, skeleton tests, old generated walk GIFs, and retired preview pages",

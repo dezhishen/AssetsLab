@@ -119,8 +119,12 @@ try {
         }
     }
 	& $pythonPath (Join-Path $assetsLabRoot "tools\validate_chibi_frames.py")
-    if ($LASTEXITCODE -ne 0) {
+	if ($LASTEXITCODE -ne 0) {
 		throw "Chibi frame validation failed with exit code $LASTEXITCODE"
+	}
+	& $pythonPath (Join-Path $assetsLabRoot "tools\validate_limb_occlusion.py")
+	if ($LASTEXITCODE -ne 0) {
+		throw "Limb occlusion validation failed with exit code $LASTEXITCODE"
 	}
     & $pythonPath (Join-Path $assetsLabRoot "tools\validate_face_variants.py")
     if ($LASTEXITCODE -ne 0) {

@@ -30,57 +30,64 @@
 <body>
 <main>
   <h1>AssetsLab 当前预览</h1>
-  <p class="status">只展示当前测试基底、当前候选资源和最新自动捕获结果。</p>
+  <p class="status">当前页面只展示新的测试基底、推荐横向基底修正版、纵向候选和最新无 GUI 捕获结果。</p>
   <div class="meta"><span class="tag">Godot 4.6.2</span><span class="tag">4 directions</span><span class="tag">8 frames</span><span class="tag">headless capture</span></div>
 
   <section class="panel">
     <h2>当前测试基底</h2>
-    <p>身体来源为 latest generated body adapter；头部来源为 calibrated rebuild runtime。旧身体、RGS 代理、Skeleton2D 实验和旧 GIF 不在此页面。</p>
+    <p>这一组仍是旧的重绘适配版，仅作为对照，不再称为推荐基底。它用于确认头部组合和运行链路。</p>
     <div class="grid">
-      <figure><img src="assets/current_body_4way_8frames.png" alt="current body 4 directions 8 frames"><figcaption>身体基底：4 方向 × 8 帧</figcaption></figure>
+      <figure><img src="assets/current_body_4way_8frames.png" alt="current body 4 directions 8 frames"><figcaption>重绘适配版身体：4 方向 × 8 帧</figcaption></figure>
       <figure><img src="assets/current_head_4way_8frames.png" alt="current head 4 directions 8 frames"><figcaption>校准头部：头部、耳朵、眼睛图层</figcaption></figure>
-      <figure><img src="assets/current_character_4way_8frames.png" alt="current character 4 directions 8 frames"><figcaption>头身合成测试基底</figcaption></figure>
+      <figure><img src="assets/current_character_4way_8frames.png" alt="current character 4 directions 8 frames"><figcaption>重绘适配版头身组合</figcaption></figure>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>重点：推荐基底横向腿部层次修正版</h2>
+    <p class="status">修正规则：第 4 帧开始切换前腿，第 4/5 帧不再固定同一条腿永远位于上层；每帧仍保留两条腿。</p>
+    <div class="grid">
+      <figure><img src="assets/recommended_horizontal_layer_fix_source.png" alt="recommended horizontal base layer fix source"><figcaption>推荐基底的横向 8 帧原始修正版</figcaption></figure>
+      <figure><img src="assets/recommended_horizontal_layer_fix_8frames.png" alt="normalized recommended horizontal layer fix 8 frames"><figcaption>归一化 64×64 横向 8 帧</figcaption></figure>
+      <figure><img src="assets/recommended_horizontal_layer_fix.gif" alt="recommended horizontal layer fix animation"><figcaption>横向层次修正版 GIF（候选）</figcaption></figure>
     </div>
   </section>
 
   <section class="panel">
     <h2>运行预览 GIF</h2>
     <div class="grid">
-      <figure><img src="assets/current_character_walk_4way.gif" alt="current four direction character walk"><figcaption>当前测试基底自动行走：D/S/A/W 四方向</figcaption></figure>
+      <figure><img src="assets/current_character_walk_4way.gif" alt="current four direction character walk"><figcaption>旧重绘适配版自动行走：D/A/S/W 四方向</figcaption></figure>
+      <figure><img src="assets/movement_rebuild_head_right_only.gif" alt="right-only headless capture"><figcaption>横向单方向无 GUI 捕获：仅 D，确认不会混入背面头部</figcaption></figure>
       <figure><img src="assets/movement_vertical_body_candidate.gif" alt="latest automatic vertical candidate walk"><figcaption>最新自动纵向捕获：S/W，前后各 8 帧</figcaption></figure>
     </div>
   </section>
 
   <section class="panel">
     <h2>纵向候选与对齐检查</h2>
-    <p class="warning">纵向身体仍是候选稿；前后方向头部当前使用独立 [0,0] 偏移，避免继承旧身体的水平标定。</p>
+    <p class="warning">纵向身体仍是候选；前后方向头部使用 [0,0] 偏移，避免继承旧身体的水平标定。</p>
     <div class="grid">
-      <figure><img src="assets/vertical_front_8frames.png" alt="vertical front candidate"><figcaption>前视纵向候选</figcaption></figure>
-      <figure><img src="assets/vertical_back_8frames.png" alt="vertical back candidate"><figcaption>后视纵向候选</figcaption></figure>
+      <figure><img src="assets/vertical_front_8frames.png" alt="vertical front candidate"><figcaption>正面纵向候选</figcaption></figure>
+      <figure><img src="assets/vertical_back_8frames.png" alt="vertical back candidate"><figcaption>背面纵向候选</figcaption></figure>
       <figure><img src="assets/vertical_candidate_rebuilt.gif" alt="rebuilt vertical candidate"><figcaption>基于当前头部的纵向重建循环</figcaption></figure>
     </div>
   </section>
 
   <section class="panel">
-    <h2>风格实验</h2>
-    <figure><img src="assets/style_experiment_db16.png" alt="pixel art style experiment"><figcaption>ai-pixel-art-image-generation 本地像素化实验稿；不进入运行时。</figcaption></figure>
-  </section>
-
-  <section class="panel">
     <h2>方向映射</h2>
     <table><thead><tr><th>行</th><th>方向</th><th>输入</th><th>当前来源</th></tr></thead><tbody>
-      <tr><td>0</td><td>front</td><td>S / down</td><td>latest body adapter；纵向模式使用 vertical front candidate</td></tr>
-      <tr><td>1</td><td>right</td><td>D / right</td><td>latest body adapter</td></tr>
-      <tr><td>2</td><td>back</td><td>W / up</td><td>latest body adapter；纵向模式使用 vertical back candidate</td></tr>
-      <tr><td>3</td><td>left</td><td>A / left</td><td>latest body adapter</td></tr>
+      <tr><td>0</td><td>front</td><td>S / down</td><td>重绘适配版；纵向模式使用 front candidate</td></tr>
+      <tr><td>1</td><td>right</td><td>D / right</td><td>推荐横向修正版作为独立候选；旧适配版保留对照</td></tr>
+      <tr><td>2</td><td>back</td><td>W / up</td><td>重绘适配版；纵向模式使用 back candidate</td></tr>
+      <tr><td>3</td><td>left</td><td>A / left</td><td>等待 right 方向层次确认后再镜像/生成</td></tr>
     </tbody></table>
   </section>
 
   <section class="panel">
     <h2>验证入口</h2>
+    <p><code>tools/build_recommended_horizontal_fix.py</code></p>
     <p><code>tools/run_headless_tests.ps1 -RebuildHead -VerticalCandidate</code></p>
     <p><code>tools/capture_walk_gif.ps1 -RebuildHead -VerticalCandidate -VerticalOnly</code></p>
-    <p><code>tools/serve_preview.ps1 -SnapshotName current</code></p>
+    <p><code>tools/publish_preview.py --snapshot-name current_test_base_clean</code></p>
   </section>
 </main>
 </body>

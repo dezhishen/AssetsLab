@@ -11,10 +11,11 @@ This prototype is intentionally UI-free. It is a command-line validated gameplay
 - QQTang-style oversized-head neutral base as the current runtime skin: shared torso, arms, lower-body, feet, plus male/female head layers.
 - deterministic front-facing ear and eye/blush layers selected by an appearance seed.
 
-Body source rule: all new body adaptation work uses only
-`assets/characters/generated/female_adventurer_reference_mannequin_v1/`.
-Other body assets in the repository are legacy or problematic comparison
-fixtures and must not be selected for new production art.
+Body source rule: new horizontal walk work starts from the recommended neutral
+base `../walk-base-4way-male-4frame-sheet.png`. The current eight-frame review
+candidate is `assets/characters/generated/recommended_base_horizontal_layer_fix_v1/`.
+The later `female_adventurer_reference_mannequin_v1_adapted` output is a redraw
+comparison fixture and must not be treated as the recommended base.
 
 The generated front/back vertical movement candidate is kept separately at
 `assets/characters/generated/body_vertical_update_v1/runtime/`; it is a review
@@ -142,9 +143,11 @@ Whenever Tailscale is used, proactively include the complete preview URL in
 the response. If nobody requests visual review, do not generate an additional
 preview.
 
-The current preview is rebuilt from the latest generated body adapter and
-calibrated head runtime only. Historical proxy GIFs, retired body candidates,
-and old skeleton experiments are intentionally excluded from the new page.
+The current preview includes the recommended horizontal leg-depth correction
+candidate, the older redraw adapter as a comparison, the calibrated head
+runtime, and the vertical candidate. Historical proxy GIFs, retired body
+candidates, and old skeleton experiments are intentionally excluded from the
+new page.
 
 Use the interactive component calibration page at
 `http://<Tailscale-IP>:8765/calibrate.html`. It can move the face and ear

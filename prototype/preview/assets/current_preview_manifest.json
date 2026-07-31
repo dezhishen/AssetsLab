@@ -27,6 +27,21 @@
     },
     "status": "candidate_for_visual_review"
   },
+  "recommended_horizontal_layer_fix": {
+    "source": "prototype/assets/characters/generated/recommended_base_horizontal_layer_fix_v1/right_source.png",
+    "runtime": "prototype/assets/characters/generated/recommended_base_horizontal_layer_fix_v1/runtime",
+    "foot_occlusion_policy": [
+      "right_front",
+      "right_front",
+      "right_front",
+      "left_front",
+      "left_front",
+      "left_front",
+      "left_front",
+      "right_front"
+    ],
+    "status": "candidate_for_visual_review"
+  },
   "excluded": "legacy bodies, RGS proxies, skeleton tests, old generated walk GIFs, and retired preview pages",
   "files": [
     "current_back.png",
@@ -41,7 +56,11 @@
     "current_left_body.png",
     "current_right.png",
     "current_right_body.png",
+    "movement_rebuild_head_right_only.gif",
     "movement_vertical_body_candidate.gif",
+    "recommended_horizontal_layer_fix.gif",
+    "recommended_horizontal_layer_fix_8frames.png",
+    "recommended_horizontal_layer_fix_source.png",
     "style_experiment_db16.png",
     "vertical_back_8frames.png",
     "vertical_candidate_rebuilt.gif",

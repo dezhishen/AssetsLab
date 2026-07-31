@@ -15,6 +15,19 @@
     "passing_b",
     "up_b"
   ],
+  "foot_occlusion_policy": {
+    "front_leg_by_frame": [
+      "right_foot",
+      "right_foot",
+      "right_foot",
+      "left_foot",
+      "left_foot",
+      "left_foot",
+      "left_foot",
+      "right_foot"
+    ],
+    "notes": "The nearer leg changes at the fourth frame and remains in front through the passing transition; do not keep one named leg permanently above the other."
+  },
   "torso": {
     "x": 32,
     "y": 41.5,
@@ -155,7 +168,7 @@
           "w": 4,
           "h": 13.036103712382776,
           "angle": -25.091572678594886,
-          "z_order": 9
+          "z_order": 11
         },
         "right_foot": {
           "x": 29.294492440604756,
@@ -163,7 +176,7 @@
           "w": 4,
           "h": 16.601204775557704,
           "angle": 208.82037955202105,
-          "z_order": 11
+          "z_order": 9
         }
       }
     },
@@ -191,7 +204,7 @@
           "w": 4,
           "h": 13.036103712382776,
           "angle": -40.091572678594886,
-          "z_order": 9
+          "z_order": 11
         },
         "right_foot": {
           "x": 27.497516198704112,
@@ -199,7 +212,7 @@
           "w": 4,
           "h": 16.601204775557704,
           "angle": 223.82037955202105,
-          "z_order": 11
+          "z_order": 9
         }
       }
     },
@@ -227,7 +240,7 @@
           "w": 4,
           "h": 13.036103712382776,
           "angle": -20.091572678594886,
-          "z_order": 9
+          "z_order": 11
         },
         "right_foot": {
           "x": 29.709179265658758,
@@ -235,7 +248,7 @@
           "w": 4,
           "h": 16.601204775557704,
           "angle": 198.82037955202105,
-          "z_order": 11
+          "z_order": 9
         }
       }
     },
@@ -263,7 +276,7 @@
           "w": 4,
           "h": 13.036103712382776,
           "angle": -0.09157267859488627,
-          "z_order": 9
+          "z_order": 11
         },
         "right_foot": {
           "x": 32.197300215982736,
@@ -271,7 +284,7 @@
           "w": 4,
           "h": 16.601204775557704,
           "angle": 178.82037955202105,
-          "z_order": 11
+          "z_order": 9
         }
       }
     },

@@ -46,6 +46,8 @@ $gifName = if ($BomboBodyRight) {
     "movement_latest_generated_body.gif"
 } elseif ($VerticalCandidate) {
     "movement_vertical_body_candidate.gif"
+} elseif ($RebuildHead -and $RightOnly) {
+    "movement_rebuild_head_right_only.gif"
 } elseif ($RebuildHead) {
     "movement_rebuild_head.gif"
 } elseif ($MilestoneBodyRight) {
@@ -191,6 +193,9 @@ try {
 	}
 	if ($VerticalOnly) {
 		Copy-Item -LiteralPath $gifPath -Destination (Join-Path $assetsLabRoot "prototype\preview\assets\movement_vertical_body_candidate.gif") -Force
+	}
+	if ($RebuildHead -and $RightOnly) {
+		Copy-Item -LiteralPath $gifPath -Destination (Join-Path $assetsLabRoot "prototype\preview\assets\movement_rebuild_head_right_only.gif") -Force
 	}
 }
 finally {
