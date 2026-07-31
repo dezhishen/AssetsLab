@@ -36,8 +36,6 @@ Last updated: 2026-07-31.
 
 ### Failed Candidates Retired From Runtime
 
-- Skeleton2D/Polygon2D keyframe rig: retired because bitmap parts warped and
-  produced unclear leg motion, head drift, and particle-like edge artifacts.
 - `WalkReadyRight` baked training sample: retired because it was a single
   generated direction and did not provide a coherent four-direction base.
 - Walk-motion proxy and full-walk generated samples: no longer part of the
@@ -45,33 +43,16 @@ Last updated: 2026-07-31.
 - The reusable lesson from these candidates is pose timing and contact-frame
   structure, not their generated pixels.
 
-### Current Skeleton2D Workflow Experiment
+### Resource Cleanup 2026-07-31
 
-The retired warped-sprite rig is not being restored as a production runtime.
-For a controlled feasibility test, the milestone body is now used as rigid
-cutouts under a Godot 4.6.2 `Skeleton2D`/`Bone2D` hierarchy. This keeps the
-experiment separate from the current Sprite2D runtime and lets us compare pose
-policies without mixing assets.
+The branch `history0731` contains the rejected AI body/head experiments, the
+external female-adventurer reference package, the intermediate head splits,
+and the Skeleton2D feasibility experiment. They remain available for audit but
+are not part of the active main-line asset set.
 
-- Workflow A: both legs use the authored passing pose.
-- Workflow B: in the third and seventh frames, only the leading/front leg
-  retracts; the trailing/rear leg keeps its preceding support pose.
-- Both workflows use the same core, hands, feet, z-order, canvas, and eight
-  frame timing. Only the passing-leg policy changes.
-- Sources: `prototype/assets/characters/limb_puzzle.json` and the processed
-  milestone body under `prototype/assets/characters/generated/`.
-- The generated cutouts are a motion feasibility prototype, not approved final
-  art. The current body pixels remain the milestone reference until one
-  workflow is visually accepted.
-
-Run both silent captures and regenerate their previews with:
-
-```powershell
-.\tools\capture_skeleton_workflow.ps1
-```
-
-The A/B GIFs are written to `prototype/preview/assets/` and the temporary
-capture frames remain under the ignored `prototype/test_output/` directory.
+The main line retains the calibrated `rebuild_atlas_v1_runtime/male` head,
+the milestone body and `limb_puzzle.json`, the default chibi runtime, and the
+body candidates still referenced by the existing silent comparison switches.
 
 ### Verification Progress
 
@@ -112,21 +93,13 @@ The neutral base has no hair, ears, eyes, nose, mouth, clothing, underwear, acce
 - `walk-base-4way-male-4frame-sheet.png` - male-presenting neutral four-direction walk-cycle reference.
 - `walk-base-4way-female-4frame-sheet.png` - female-presenting neutral four-direction walk-cycle reference.
 - `prototype/assets/characters/generated/character_turnaround_v1_male.png` - first male-presenting four-direction character turnaround generated from the male front anchor.
-- `prototype/assets/characters/turnaround_v1/` - rough aligned split of the turnaround into `face_base`, `eyes`, `eyebrows`, `ears`, and `hair` layers, with a `full` reference layer for comparison.
 - `prototype/assets/characters/generated/character_head_rebuild_v1_male.png` - clean head-only four-direction reference used to begin component reconstruction.
-- `prototype/assets/characters/rebuilt_head_v1/` - intermediate head-only reconstruction reference; retained for comparison, not the preferred runtime input.
 - `prototype/assets/characters/generated/neutral_face_base_rebuild_v1_male.png` - independently generated featureless four-direction face base.
 - `prototype/assets/characters/generated/facial_feature_atlas_rebuild_v1_male.png` - independently generated eyes, eyebrows, and ears atlas.
 - `prototype/assets/characters/generated/hair_atlas_rebuild_v1_male.png` - independently generated hair atlas, currently provisional because its fit still needs anchor correction.
 - `prototype/assets/characters/rebuild_atlas_v1/` - fixed-frame components produced from the independent base and feature atlases.
 - `prototype/assets/characters/rebuild_atlas_v1_runtime/male/` - 64 x 64 runtime sheets used by the silent `--rebuild-head` Godot test; hair is intentionally excluded until its fit is approved.
 - `prototype/preview/index.html` - persistent local preview page; it uses tracked project assets rather than temporary test output.
-
-The turnaround split is an alignment study, not production-ready randomization
-art. Its manifest records the directional feature policy: two eyes on the
-front, one eye on each side, and no eyes or eyebrows on the back. The source
-is intentionally kept as a complete visual reference until the masks are
-redrawn and manually checked.
 
 The head rebuild separates the problem from body and clothing occlusion. The
 current preferred direction is independent reconstruction: the neutral face
