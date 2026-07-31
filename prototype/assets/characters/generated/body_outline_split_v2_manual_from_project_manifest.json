@@ -1,0 +1,14 @@
+{
+  "schema": "body_outline_pixel_project_processed_v1",
+  "source_project": "prototype/preview/body_outline_split_v2_manual.project.json",
+  "source_schema": "body_outline_pixel_project_v1",
+  "cell_size": [
+    64,
+    64
+  ],
+  "frames": 8,
+  "sheet": "prototype/assets/characters/generated/body_outline_split_v2_manual_from_project.png",
+  "frame_directory": "prototype/assets/characters/generated/body_outline_split_v2_manual_from_project",
+  "limb_motion_reference": "prototype/assets/characters/limb_puzzle.json",
+  "notes": "Pixel project JSON is authoritative for artwork; limb_puzzle_v1 remains authoritative for limb pose and z_order."
+}

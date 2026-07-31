@@ -24,6 +24,11 @@ Use `body_outline_split.html` as a pixel editor for the generated outline. The
 64x64 grid supports painting, transparent erasing, color picking, undo, PNG
 download, and saving `body_outline_split_v2_manual.png` to the preview assets.
 
+The exported `body_outline_split_v2_manual.project.json` is the authoritative
+pixel source. Run `tools/process_body_pixel_project.py` to regenerate the
+canonical sheet, individual frames, contact preview, and GIF from that JSON;
+do not use an older manually saved PNG when the two differ.
+
 The RGS open-source character is a motion reference, not final character art.
 Run `tools/capture_walk_gif.ps1 -RgsWalkReference` to render its complete
 eight-frame loop without opening the Godot editor. The project will later redraw
