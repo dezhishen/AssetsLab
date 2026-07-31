@@ -32,9 +32,24 @@ func _run() -> void:
 		_fail("Player node is missing")
 		return
 	player.global_position = START_POSITION
+	var right_only := "--right-only" in OS.get_cmdline_user_args()
 	print("CHARACTER_VARIANT=%s" % player.variant)
 	print("RGS_WALK_REFERENCE=%s frames=%d" % [player.rgs_walk_reference, player.rgs_walk_reference_frame_textures.size()])
 	print("MILESTONE_BODY_RIGHT=%s frames=%d" % [player.milestone_body_right, player.milestone_body_frame_textures.size()])
+
+	# A right-only capture is used for single-direction asset validation so that
+	# other direction resources cannot contaminate the GIF.
+	if right_only:
+		player._update_direction(Vector2.RIGHT)
+		player._apply_frame(0)
+		await _run_direction(KEY_D, Vector2.RIGHT, "D")
+		_release_all_keys()
+		if failed:
+			return
+		print("CAPTURE_TEST_PASS")
+		print("CAPTURE_FRAME_COUNT=%d" % frame_number)
+		print("CAPTURE_DIR=%s" % ProjectSettings.globalize_path(CAPTURE_DIR))
+		quit(0)
 
 	# Four short segments make one repeatable W/A/S/D walk loop.
 	await _run_direction(KEY_D, Vector2.RIGHT, "D")

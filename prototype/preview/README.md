@@ -38,3 +38,5 @@ For the current milestone baseline, run
 `tools/capture_walk_gif.ps1 -MilestoneBodyRight`. This uses the processed pixel
 project frames directly for the right-facing test and leaves the default runtime
 body layers unchanged.
+Use `-RightOnly` with it when the GIF should contain only the milestone's
+right-facing frames.

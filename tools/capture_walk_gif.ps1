@@ -6,12 +6,19 @@ param(
 	[switch]$BomboBodyRight,
 	[switch]$RgsWalkReference,
 	[switch]$MilestoneBodyRight,
+	[switch]$RightOnly,
     [string]$GodotPath,
     [string]$PythonPath,
     [int]$AppearanceSeed
 )
 
 $ErrorActionPreference = "Stop"
+
+# The milestone currently contains only the right-facing direction. Force a
+# single-direction capture so its preview can never mix in another body set.
+if ($MilestoneBodyRight) {
+	$RightOnly = $true
+}
 
 $assetsLabRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $prototypeRoot = Join-Path $assetsLabRoot "prototype"
@@ -29,7 +36,7 @@ $gifName = if ($BomboBodyRight) {
 } elseif ($RgsWalkReference) {
     "movement_rgs_reference.gif"
 } elseif ($MilestoneBodyRight) {
-    "movement_milestone_body.gif"
+    if ($RightOnly) { "movement_milestone_body_right_only.gif" } else { "movement_milestone_body.gif" }
 } elseif ($BaseFeatures) {
     "movement_walk_base_features_v1.gif"
 } elseif ($Compact) {
@@ -120,7 +127,10 @@ if ($BomboBodyRight) {
     $godotArguments += "--bombo-body-right"
 }
 if ($MilestoneBodyRight) {
-    $godotArguments += "--milestone-body-right"
+	$godotArguments += "--milestone-body-right"
+}
+if ($RightOnly) {
+	$godotArguments += "--right-only"
 }
 $godotProcess = Start-Process -FilePath $godotPath -ArgumentList $godotArguments -WindowStyle Hidden -PassThru -Wait
 if (Test-Path -LiteralPath $logPath) {
@@ -150,7 +160,8 @@ try {
 		Copy-Item -LiteralPath $gifPath -Destination (Join-Path $assetsLabRoot "prototype\preview\assets\movement_bombo_body_candidate.gif") -Force
 	}
 	if ($MilestoneBodyRight) {
-		Copy-Item -LiteralPath $gifPath -Destination (Join-Path $assetsLabRoot "prototype\preview\assets\movement_milestone_body.gif") -Force
+		$milestoneDestination = if ($RightOnly) { "movement_milestone_body_right_only.gif" } else { "movement_milestone_body.gif" }
+		Copy-Item -LiteralPath $gifPath -Destination (Join-Path $assetsLabRoot "prototype\preview\assets\$milestoneDestination") -Force
 	}
 }
 finally {

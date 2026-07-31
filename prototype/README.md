@@ -50,6 +50,7 @@ Generate a hidden-window W/A/S/D capture and GIF from the repository root:
 ```
 
 Add `-Female` to capture the female-presenting base, `-Compact` to capture the compact-stride candidate, `-RgsWalkReference` to capture the open-source motion reference, or `-MilestoneBodyRight` to capture the frozen pixel-project milestone directly.
+Add `-RightOnly` with `-MilestoneBodyRight` to capture only the eight-frame right-facing milestone loop and avoid mixing other direction assets.
 
 Both test entry points generate a fresh random appearance package under
 `prototype/test_output/random_appearance/` before starting Godot. The package
