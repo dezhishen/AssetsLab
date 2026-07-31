@@ -64,6 +64,8 @@ Add `-Female` to capture the female-presenting base, `-Compact` to capture the c
 Add `-RebuildHead` to capture the calibrated `rebuild_atlas_v1_runtime/male` head on the current body.
 Combine it with `-LatestGeneratedBody` to validate the latest generated body
 adapter under `assets/characters/generated/female_adventurer_reference_mannequin_v1_adapted/`.
+Use `-VerticalCandidate -VerticalOnly` to capture only the generated front/back
+vertical candidate, without mixing it with the four-direction runtime body.
 Add `-RightOnly` with `-MilestoneBodyRight` to capture only the eight-frame right-facing milestone loop and avoid mixing other direction assets.
 
 Both test entry points generate a fresh random appearance package under

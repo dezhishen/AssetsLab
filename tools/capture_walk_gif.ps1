@@ -4,6 +4,8 @@ param(
     [switch]$BaseFeatures,
     [switch]$RebuildHead,
     [switch]$LatestGeneratedBody,
+    [switch]$VerticalCandidate,
+	[switch]$VerticalOnly,
     [switch]$RgsBodyRight,
 	[switch]$BomboBodyRight,
 	[switch]$RgsWalkReference,
@@ -20,6 +22,9 @@ $ErrorActionPreference = "Stop"
 # single-direction capture so its preview can never mix in another body set.
 if ($MilestoneBodyRight) {
 	$RightOnly = $true
+}
+if ($VerticalOnly) {
+	$VerticalCandidate = $true
 }
 
 $assetsLabRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
@@ -39,6 +44,8 @@ $gifName = if ($BomboBodyRight) {
     "movement_rgs_reference.gif"
 } elseif ($LatestGeneratedBody) {
     "movement_latest_generated_body.gif"
+} elseif ($VerticalCandidate) {
+    "movement_vertical_body_candidate.gif"
 } elseif ($RebuildHead) {
     "movement_rebuild_head.gif"
 } elseif ($MilestoneBodyRight) {
@@ -129,6 +136,12 @@ if ($RebuildHead) {
 }
 if ($LatestGeneratedBody) {
     $godotArguments += "--latest-generated-body"
+}
+if ($VerticalCandidate) {
+	$godotArguments += "--vertical-body-candidate"
+}
+if ($VerticalOnly) {
+	$godotArguments += "--vertical-only"
 }
 if ($RgsWalkReference) {
 	$godotArguments += "--rgs-walk-reference"

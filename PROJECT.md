@@ -95,6 +95,11 @@ separate from the authoritative body adapter. Build or rebuild them with:
 
 `python tools/build_body_vertical_update.py`
 
+The candidate can be tested headlessly with
+`tools/run_headless_tests.ps1 -RebuildHead -VerticalCandidate`, or captured as
+an isolated front/back loop with
+`tools/capture_walk_gif.ps1 -RebuildHead -VerticalCandidate -VerticalOnly`.
+
 The front/back free reference inputs used for timing are retained at
 `third_party/female_adventurer_free_reference/The Female Adventurer - Free/Walk/`.
 The complete reference package, including diagonal strips, remains available

@@ -62,6 +62,10 @@ func _run() -> void:
 		if not player.latest_generated_body or player.latest_generated_body_frame_textures.size() != 32:
 			_fail("latest generated body frames were not loaded")
 			return
+	if "--vertical-body-candidate" in user_args:
+		if not player.vertical_body_candidate or player.vertical_front_frame_textures.size() != 8 or player.vertical_back_frame_textures.size() != 8:
+			_fail("vertical body candidate frames were not loaded")
+			return
 	if "--rgs-walk-reference" in user_args:
 		if not player.rgs_walk_reference or player.rgs_walk_reference_frame_textures.size() != 8:
 			_fail("RGS walk reference frames were not loaded")
@@ -90,6 +94,17 @@ func _run() -> void:
 		return
 
 	player._update_direction(Vector2.DOWN)
+	if "--vertical-body-candidate" in user_args:
+		player._apply_frame(0)
+		if not body_sprite.texture.resource_path.contains("body_vertical_update_v1/runtime/front_frames"):
+			_fail("front vertical candidate was not selected")
+			return
+		player._update_direction(Vector2.UP)
+		player._apply_frame(0)
+		if not body_sprite.texture.resource_path.contains("body_vertical_update_v1/runtime/back_frames"):
+			_fail("back vertical candidate was not selected")
+			return
+		player._update_direction(Vector2.DOWN)
 	player._update_walk_frame(0.0, false)
 	var first_frame := body_sprite.texture
 	player._update_walk_frame(0.2, true)

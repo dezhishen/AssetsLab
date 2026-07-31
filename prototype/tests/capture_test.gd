@@ -33,9 +33,26 @@ func _run() -> void:
 		return
 	player.global_position = START_POSITION
 	var right_only := "--right-only" in OS.get_cmdline_user_args()
+	var vertical_only := "--vertical-only" in OS.get_cmdline_user_args()
 	print("CHARACTER_VARIANT=%s" % player.variant)
 	print("RGS_WALK_REFERENCE=%s frames=%d" % [player.rgs_walk_reference, player.rgs_walk_reference_frame_textures.size()])
 	print("MILESTONE_BODY_RIGHT=%s frames=%d" % [player.milestone_body_right, player.milestone_body_frame_textures.size()])
+	print("VERTICAL_BODY_CANDIDATE=%s front=%d back=%d" % [player.vertical_body_candidate, player.vertical_front_frame_textures.size(), player.vertical_back_frame_textures.size()])
+
+	# A vertical-only capture validates the new front/back candidate without
+	# mixing it with the current side-direction body resources.
+	if vertical_only:
+		player._update_direction(Vector2.DOWN)
+		player._apply_frame(0)
+		await _run_direction(KEY_S, Vector2.DOWN, "S")
+		await _run_direction(KEY_W, Vector2.UP, "W")
+		_release_all_keys()
+		if failed:
+			return
+		print("CAPTURE_TEST_PASS")
+		print("CAPTURE_FRAME_COUNT=%d" % frame_number)
+		print("CAPTURE_DIR=%s" % ProjectSettings.globalize_path(CAPTURE_DIR))
+		quit(0)
 
 	# A right-only capture is used for single-direction asset validation so that
 	# other direction resources cannot contaminate the GIF.

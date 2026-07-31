@@ -6,6 +6,7 @@ param(
     [switch]$BaseFeatures,
     [switch]$RebuildHead,
     [switch]$RebuildBody,
+    [switch]$VerticalCandidate,
     [switch]$RgsBodyRight,
     [switch]$BomboBodyRight,
     [switch]$RgsWalkReference,
@@ -210,6 +211,13 @@ function Invoke-SmokeTest {
             $arguments += @("--", "--milestone-body-right")
         }
     }
+	if ($VerticalCandidate) {
+		if ($arguments -contains "--") {
+			$arguments += "--vertical-body-candidate"
+		} else {
+			$arguments += @("--", "--vertical-body-candidate")
+		}
+	}
 
     Write-Output ("Running headless smoke test ({0}) with {1}" -f ($(if ($UseFemale) { "female" } else { "male" }), $godotPath))
     $previousErrorActionPreference = $ErrorActionPreference
