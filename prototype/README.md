@@ -110,6 +110,12 @@ It writes eight captures plus `test_output/skeleton_pipeline/side_arm_swing.gif`
 The arms are opposite each other and counterphased to the legs; all accepted
 side pelvis, foot, and depth-order keys remain unchanged.
 
+## Skeleton Pipeline Status
+
+Paused after the back-view eight-frame leg loop. Remaining: back pelvis/arms,
+verified left mirror, four-direction anchor review, body blocks, calibrated
+head attachment, and modular male/female face-hair-clothing layers.
+
 Controls:
 
 - `WASD` or arrow keys: move.
