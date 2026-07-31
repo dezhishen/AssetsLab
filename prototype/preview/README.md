@@ -20,9 +20,9 @@ component offset. It can align the torso, arms, lower body, and feet across all
 eight frames and stores offsets in the ignored
 `prototype/preview/calibration/body_components_latest.json` file.
 
-Use `body_outline_split.html` to mark the four limb guide lines directly on the
-generated outline. It exports `body_outline_split_v1`; the server stores the
-optional local result in the ignored `body_outline_split_latest.json` file.
+Use `body_outline_split.html` as a pixel editor for the generated outline. The
+64x64 grid supports painting, transparent erasing, color picking, undo, PNG
+download, and saving `body_outline_split_v2_manual.png` to the preview assets.
 
 The RGS open-source character is a motion reference, not final character art.
 Run `tools/capture_walk_gif.ps1 -RgsWalkReference` to render its complete
