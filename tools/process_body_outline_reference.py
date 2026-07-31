@@ -1,16 +1,13 @@
 from __future__ import annotations
 
 import json
+import argparse
 from pathlib import Path
 
 from PIL import Image
 
 
 ROOT = Path(__file__).resolve().parents[1]
-SOURCE = ROOT / "prototype/assets/characters/generated/walk_body_outline_split_v1.png"
-OUTPUT = ROOT / "prototype/assets/characters/generated/body_outline_split_v1_right_walk_8.png"
-CONTACT = ROOT / "prototype/preview/assets/body_outline_split_v1_right_contact.png"
-MANIFEST = ROOT / "prototype/assets/characters/generated/body_outline_split_v1_manifest.json"
 FRAME_COUNT = 8
 CELL_SIZE = 64
 TARGET_HEIGHT = 30
@@ -38,20 +35,27 @@ def fit_frame(source: Image.Image, frame_index: int) -> Image.Image:
 
 
 def main() -> int:
-    source = Image.open(SOURCE).convert("RGBA")
-    frames = [fit_frame(source, index) for index in range(FRAME_COUNT)]
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--version", default="v1", choices=["v1", "v2"])
+    args = parser.parse_args()
+    source_path = ROOT / f"prototype/assets/characters/generated/walk_body_outline_split_{args.version}.png"
+    output = ROOT / f"prototype/assets/characters/generated/body_outline_split_{args.version}_right_walk_8.png"
+    contact = ROOT / f"prototype/preview/assets/body_outline_split_{args.version}_right_contact.png"
+    manifest = ROOT / f"prototype/assets/characters/generated/body_outline_split_{args.version}_manifest.json"
+    source_image = Image.open(source_path).convert("RGBA")
+    frames = [fit_frame(source_image, index) for index in range(FRAME_COUNT)]
     sheet = Image.new("RGBA", (CELL_SIZE * FRAME_COUNT, CELL_SIZE), (0, 0, 0, 0))
     for index, frame in enumerate(frames):
         sheet.alpha_composite(frame, (index * CELL_SIZE, 0))
-    OUTPUT.parent.mkdir(parents=True, exist_ok=True)
-    CONTACT.parent.mkdir(parents=True, exist_ok=True)
-    sheet.save(OUTPUT)
-    sheet.resize((CELL_SIZE * FRAME_COUNT * 4, CELL_SIZE * 4), Image.Resampling.NEAREST).save(CONTACT)
-    MANIFEST.write_text(
+    output.parent.mkdir(parents=True, exist_ok=True)
+    contact.parent.mkdir(parents=True, exist_ok=True)
+    sheet.save(output)
+    sheet.resize((CELL_SIZE * FRAME_COUNT * 4, CELL_SIZE * 4), Image.Resampling.NEAREST).save(contact)
+    manifest.write_text(
         json.dumps(
             {
                 "schema": "body_outline_split_v1",
-                "source": SOURCE.relative_to(ROOT).as_posix(),
+                "source": source_path.relative_to(ROOT).as_posix(),
                 "direction": "right",
                 "frames": FRAME_COUNT,
                 "cell_size": [CELL_SIZE, CELL_SIZE],
@@ -63,7 +67,7 @@ def main() -> int:
         ),
         encoding="utf-8",
     )
-    print("BODY_OUTLINE_REFERENCE_PASS frames=8 status=awaiting_manual_split_lines")
+    print(f"BODY_OUTLINE_REFERENCE_PASS version={args.version} frames=8 status=awaiting_manual_split_lines")
     return 0
 
 
