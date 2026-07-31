@@ -51,6 +51,8 @@ def write_snapshot_page(snapshot_root: Path, snapshot_name: str) -> None:
   <figure><img src=\"walk_motion_proxy_right_v1_full_loop.gif\" alt=\"右侧完整往返循环参考\"><figcaption>完整往返循环诊断：由半程参考按时间轴反向补齐，仅用于验证摆臂是否闭环</figcaption></figure>
   <figure><img src=\"walk_motion_proxy_right_v1_full_loop_preview.png\" alt=\"右侧完整循环帧序\"><figcaption>完整循环帧序：正向 0 到 7，再反向 6 到 1</figcaption></figure>
   <figure><img src=\"rebuild_body_candidate_front.png\" alt=\"新身体正面基准\"><figcaption>新身体基准图：四方向无衣身体参考</figcaption></figure>
+  <figure><img src=\"movement_vertical_body_candidate.gif\" alt=\"latest vertical automatic walk candidate\"><figcaption>Latest vertical walk candidate: automatically captured front/back S/W loop, 8 frames per direction.</figcaption></figure>
+  <figure><img src=\"skill_pixel_art_experiment_v1.png\" alt=\"skill pixel art character experiment\"><figcaption>AI pixel-art skill experiment: four-direction clothed character, db16 palette, transparent background.</figcaption></figure>
   <div class=\"grid\">
     <figure><img src=\"body_front.png\" alt=\"正面身体\"><figcaption>身体 0 · 正面</figcaption></figure>
     <figure><img src=\"body_right.png\" alt=\"右侧身体\"><figcaption>身体 1 · 右侧</figcaption></figure>
@@ -90,6 +92,13 @@ def publish_snapshot(name: str | None) -> tuple[str, Path]:
         source_path = CURRENT_ASSETS / filename
         if source_path.exists():
             shutil.copy2(source_path, snapshot_root / filename)
+    for filename in ("movement_vertical_body_candidate.gif",):
+        source_path = CURRENT_ASSETS / filename
+        if source_path.exists():
+            shutil.copy2(source_path, snapshot_root / filename)
+    skill_source = ROOT / "prototype" / "assets" / "characters" / "generated" / "skill_pixel_art_experiment_v1" / "turnaround_db16_transparent.png"
+    if skill_source.exists():
+        shutil.copy2(skill_source, snapshot_root / "skill_pixel_art_experiment_v1.png")
     for filename in ("face_base_walk_4way.png", "face_walk_4way.png", "ears_walk_4way.png", "runtime_manifest.json"):
         shutil.copy2(RUNTIME_ROOT / filename, snapshot_root / filename)
 
@@ -101,6 +110,8 @@ def publish_snapshot(name: str | None) -> tuple[str, Path]:
         "files": [
             "anchor_debug.png",
             "character_walk_4way.gif",
+            "movement_vertical_body_candidate.gif",
+            "skill_pixel_art_experiment_v1.png",
             "rgs_walk_reference.gif",
             "rgs_walk_reference_contact.png",
             "movement_rgs_reference.gif",

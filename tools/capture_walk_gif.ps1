@@ -189,6 +189,9 @@ try {
 		$milestoneDestination = if ($RightOnly) { "movement_milestone_body_right_only.gif" } else { "movement_milestone_body.gif" }
 		Copy-Item -LiteralPath $gifPath -Destination (Join-Path $assetsLabRoot "prototype\preview\assets\$milestoneDestination") -Force
 	}
+	if ($VerticalOnly) {
+		Copy-Item -LiteralPath $gifPath -Destination (Join-Path $assetsLabRoot "prototype\preview\assets\movement_vertical_body_candidate.gif") -Force
+	}
 }
 finally {
     $env:PYTHONPATH = $previousPythonPath

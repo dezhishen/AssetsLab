@@ -39,6 +39,10 @@ Last updated: 2026-07-31.
 - Skin-tone variants are produced by deterministic palette remapping. The
   remapper preserves frame dimensions, alpha, and every occupied coordinate;
   it changes color only and is currently preview-pipeline-only.
+- The `ai-pixel-art-image-generation` skill is installed from the external
+  GitHub repository and has been used for local pixelization and QA of a new
+  clothed four-direction character experiment. Its online generator remains
+  unavailable in this environment because no provider credentials are set.
 
 ### Failed Candidates Retired From Runtime
 
@@ -174,6 +178,7 @@ The neutral base has no hair, ears, eyes, nose, mouth, clothing, underwear, acce
 - `prototype/assets/characters/generated/character_turnaround_v1_male.png` - first male-presenting four-direction character turnaround generated from the male front anchor.
 - `prototype/assets/characters/generated/character_head_rebuild_v1_male.png` - clean head-only four-direction reference used to begin component reconstruction.
 - `prototype/assets/characters/generated/female_adventurer_reference_mannequin_v1/` - authoritative latest generated body reference for the next head-to-body adaptation.
+- `prototype/assets/characters/generated/skill_pixel_art_experiment_v1/` - isolated four-direction clothed character style experiment; not runtime art.
 - `prototype/assets/characters/generated/neutral_face_base_rebuild_v1_male.png` - independently generated featureless four-direction face base.
 - `prototype/assets/characters/generated/facial_feature_atlas_rebuild_v1_male.png` - independently generated eyes, eyebrows, and ears atlas.
 - `prototype/assets/characters/generated/hair_atlas_rebuild_v1_male.png` - independently generated hair atlas, currently provisional because its fit still needs anchor correction.

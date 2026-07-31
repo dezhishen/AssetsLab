@@ -1,0 +1,34 @@
+{
+  "metrics": {
+    "palette_fidelity": {
+      "value": 1.0,
+      "pass": true,
+      "gate": "hard"
+    },
+    "alpha_crispness": {
+      "value": 1.0,
+      "pass": true,
+      "gate": "hard"
+    },
+    "outline_coverage": {
+      "value": 0.9724770642201835,
+      "pass": true,
+      "gate": "soft"
+    },
+    "baseline_alignment": {
+      "value": true,
+      "pass": true,
+      "gate": "hard"
+    },
+    "palette_coverage": {
+      "value": 0.8125,
+      "pass": false,
+      "gate": "soft"
+    }
+  },
+  "hard_fail": false,
+  "soft_fail": true,
+  "input": "D:\\Apps\\CodeXApp\\Tests\\AssetsLab\\prototype\\assets\\characters\\generated\\skill_pixel_art_experiment_v1\\turnaround_db16_transparent.png",
+  "kind": "sprite",
+  "palette": "db16"
+}

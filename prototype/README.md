@@ -22,6 +22,12 @@ candidate and does not replace the current runtime body. The complete reference
 package on the `history0731` branch contains diagonal timing strips, but the
 prototype remains four-direction until that contract is stable.
 
+The latest automatic vertical preview is published through the snapshot server
+when `capture_walk_gif.ps1 -VerticalCandidate -VerticalOnly` is run. The
+four-direction clothed style experiment from the external pixel-art skill is
+also preview-only and is stored under
+`assets/characters/generated/skill_pixel_art_experiment_v1/`.
+
 Controls:
 
 - `WASD` or arrow keys: move.
