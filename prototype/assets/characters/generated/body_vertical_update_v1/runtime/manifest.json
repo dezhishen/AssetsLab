@@ -32,6 +32,10 @@
     64,
     64
   ],
+  "head_anchor_offsets": {
+    "front": [0, 0],
+    "back": [0, 0]
+  },
   "body_bbox_target": [
     null,
     30,

@@ -341,8 +341,10 @@ func _apply_frame(frame: int) -> void:
 		ear_sprite.texture = ear_frame_textures[index]
 		head_sprite.texture = head_frame_textures[index]
 		face_sprite.texture = face_frame_textures[index]
-		var vertical_body_offset := _current_body_anchor_offset()
-		var vertical_registered_position := Vector2(vertical_body_offset.x, -26.0 + vertical_body_offset.y)
+		# The vertical candidate was normalized around the 64x64 center. The
+		# adapter calibration offsets belong to the older body source and would
+		# shift the head several pixels to the right on front/back views.
+		var vertical_registered_position := Vector2(0.0, -26.0)
 		head_sprite.position = vertical_registered_position
 		ear_sprite.position = vertical_registered_position
 		face_sprite.position = vertical_registered_position

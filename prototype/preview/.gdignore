@@ -1,0 +1,3 @@
+Preview HTML, generated images, GIFs, and timestamped snapshots are not Godot
+runtime assets. Keep the editor/importer out of this directory so headless
+tests cannot create import sidecar files or accidentally open preview content.

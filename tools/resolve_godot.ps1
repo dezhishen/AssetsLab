@@ -1,3 +1,26 @@
+function Resolve-HeadlessGodotPath {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Path
+    )
+
+    $resolvedPath = (Resolve-Path -LiteralPath $Path).Path
+    $fileName = [System.IO.Path]::GetFileName($resolvedPath)
+    if ($fileName -match "_console\.exe$") {
+        return $resolvedPath
+    }
+
+    # Godot's Windows GUI and console builds are shipped side by side. Prefer
+    # the console binary for every automated test, even when GODOT_BIN, PATH,
+    # or -GodotPath points at the GUI binary.
+    $consoleName = [System.IO.Path]::GetFileNameWithoutExtension($fileName) + "_console.exe"
+    $consolePath = Join-Path (Split-Path -Parent $resolvedPath) $consoleName
+    if (Test-Path -LiteralPath $consolePath -PathType Leaf) {
+        return (Resolve-Path -LiteralPath $consolePath).Path
+    }
+    return $resolvedPath
+}
+
 function Resolve-GodotExecutable {
     param(
         [Parameter(Mandatory = $false)]
@@ -18,10 +41,10 @@ function Resolve-GodotExecutable {
     if (-not [string]::IsNullOrWhiteSpace($requestedValue)) {
         $command = Get-Command $requestedValue -ErrorAction SilentlyContinue
         if ($null -ne $command -and $command.CommandType -eq "Application") {
-            return $command.Source
+            return (Resolve-HeadlessGodotPath -Path $command.Source)
         }
         if (Test-Path -LiteralPath $requestedValue -PathType Leaf) {
-            return (Resolve-Path -LiteralPath $requestedValue).Path
+            return (Resolve-HeadlessGodotPath -Path $requestedValue)
         }
         throw "Godot executable was not found at '$requestedValue'. Set GODOT_BIN or GODOT_PATH to the Godot executable, or pass -GodotPath."
     }
@@ -29,7 +52,7 @@ function Resolve-GodotExecutable {
     foreach ($commandName in @("godot", "godot4")) {
         $command = Get-Command $commandName -ErrorAction SilentlyContinue
         if ($null -ne $command -and $command.CommandType -eq "Application") {
-            return $command.Source
+            return (Resolve-HeadlessGodotPath -Path $command.Source)
         }
     }
 
@@ -39,7 +62,7 @@ function Resolve-GodotExecutable {
     )
     foreach ($candidate in $adjacentCandidates) {
         if (Test-Path -LiteralPath $candidate -PathType Leaf) {
-            return (Resolve-Path -LiteralPath $candidate).Path
+            return (Resolve-HeadlessGodotPath -Path $candidate)
         }
     }
 
