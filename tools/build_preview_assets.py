@@ -35,6 +35,8 @@ SKELETON_SIDE_PELVIS_CAPTURE_GIF = ROOT / "prototype/test_output/skeleton_pipeli
 SKELETON_SIDE_ARM_CAPTURE_DIRECTORY = ROOT / "prototype/test_output/skeleton_pipeline/side_arm_swing"
 SKELETON_SIDE_ARM_CAPTURE_GIF = ROOT / "prototype/test_output/skeleton_pipeline/side_arm_swing.gif"
 SKELETON_BACK_BASE_CAPTURE = ROOT / "prototype/test_output/skeleton_pipeline/back_base.png"
+SKELETON_BACK_LEG_CAPTURE_DIRECTORY = ROOT / "prototype/test_output/skeleton_pipeline/back_legs"
+SKELETON_BACK_LEG_CAPTURE_GIF = ROOT / "prototype/test_output/skeleton_pipeline/back_legs.gif"
 STAGED_CAPTURE_GIF = OUTPUT / "movement_vertical_body_candidate.gif"
 DIRECTIONS = ("front", "right", "back", "left")
 
@@ -199,6 +201,9 @@ def main() -> int:
     if all(path.exists() for path in skeleton_side_arm_frames): skeleton_contact_sheet(skeleton_side_arm_frames, OUTPUT / "skeleton_side_arm_swing_8frames.png")
     if SKELETON_SIDE_ARM_CAPTURE_GIF.exists(): shutil.copy2(SKELETON_SIDE_ARM_CAPTURE_GIF, OUTPUT / "skeleton_side_arm_swing.gif")
     if SKELETON_BACK_BASE_CAPTURE.exists(): shutil.copy2(SKELETON_BACK_BASE_CAPTURE, OUTPUT / "skeleton_back_base.png")
+    skeleton_back_leg_frames = [SKELETON_BACK_LEG_CAPTURE_DIRECTORY / f"frame_{index:02d}.png" for index in range(8)]
+    if all(path.exists() for path in skeleton_back_leg_frames): skeleton_contact_sheet(skeleton_back_leg_frames, OUTPUT / "skeleton_back_legs_8frames.png")
+    if SKELETON_BACK_LEG_CAPTURE_GIF.exists(): shutil.copy2(SKELETON_BACK_LEG_CAPTURE_GIF, OUTPUT / "skeleton_back_legs.gif")
 
     style_image = STYLE_ROOT / "turnaround_db16_transparent.png"
     if style_image.exists():
