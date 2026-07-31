@@ -23,6 +23,8 @@ RIGHT_ONLY_CAPTURE_GIF = ROOT / "prototype/test_output/movement_rebuild_head_rig
 SKELETON_FRONT_CAPTURE = ROOT / "prototype/test_output/skeleton_pipeline/front_base.png"
 SKELETON_LEG_CAPTURE_DIRECTORY = ROOT / "prototype/test_output/skeleton_pipeline/front_legs"
 SKELETON_LEG_CAPTURE_GIF = ROOT / "prototype/test_output/skeleton_pipeline/front_legs.gif"
+SKELETON_PELVIS_CAPTURE_DIRECTORY = ROOT / "prototype/test_output/skeleton_pipeline/front_pelvis_bob"
+SKELETON_PELVIS_CAPTURE_GIF = ROOT / "prototype/test_output/skeleton_pipeline/front_pelvis_bob.gif"
 STAGED_CAPTURE_GIF = OUTPUT / "movement_vertical_body_candidate.gif"
 DIRECTIONS = ("front", "right", "back", "left")
 
@@ -161,6 +163,11 @@ def main() -> int:
         skeleton_contact_sheet(skeleton_leg_frames, OUTPUT / "skeleton_front_legs_8frames.png")
     if SKELETON_LEG_CAPTURE_GIF.exists():
         shutil.copy2(SKELETON_LEG_CAPTURE_GIF, OUTPUT / "skeleton_front_legs.gif")
+    skeleton_pelvis_frames = [SKELETON_PELVIS_CAPTURE_DIRECTORY / f"frame_{index:02d}.png" for index in range(8)]
+    if all(path.exists() for path in skeleton_pelvis_frames):
+        skeleton_contact_sheet(skeleton_pelvis_frames, OUTPUT / "skeleton_front_pelvis_bob_8frames.png")
+    if SKELETON_PELVIS_CAPTURE_GIF.exists():
+        shutil.copy2(SKELETON_PELVIS_CAPTURE_GIF, OUTPUT / "skeleton_front_pelvis_bob.gif")
 
     style_image = STYLE_ROOT / "turnaround_db16_transparent.png"
     if style_image.exists():
@@ -194,10 +201,10 @@ def main() -> int:
             "status": "candidate_for_visual_review",
         },
         "skeleton_walk_pipeline": {
-            "source": "prototype/assets/characters/generated/skeleton_walk_pipeline_v1/front_base_manifest.json",
-            "stage": "front_legs_8_frames",
+            "source": "prototype/assets/characters/generated/skeleton_walk_pipeline_v1/front_pelvis_bob_manifest.json",
+            "stage": "front_pelvis_bob",
             "status": "active_review",
-            "next_stage": "front_pelvis_bob",
+            "next_stage": "front_opposite_arm_swing",
         },
         "excluded": "legacy bodies, RGS proxies, skeleton tests, old generated walk GIFs, and retired preview pages",
         "files": sorted(path.name for path in OUTPUT.iterdir() if path.is_file()),

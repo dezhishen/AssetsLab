@@ -50,6 +50,16 @@ It writes eight independent captures plus
 `test_output/skeleton_pipeline/front_legs.gif`. Pelvis, arms, torso, and head
 must remain static in this step.
 
+The next isolated step adds only the pelvis bob over those accepted leg frames:
+
+```powershell
+.\tools\capture_front_pelvis_bob_stage.ps1
+```
+
+It writes eight captures plus `test_output/skeleton_pipeline/front_pelvis_bob.gif`.
+The pelvis moves vertically by at most 6px peak-to-peak; the head and arms stay
+static, and each foot position must exactly match stage 2.
+
 Controls:
 
 - `WASD` or arrow keys: move.

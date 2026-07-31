@@ -1,0 +1,13 @@
+{
+  "schema": "skeleton_walk_pipeline_v1",
+  "stage": "front_pelvis_bob",
+  "status": "active_review",
+  "depends_on": "front_legs_8_frames",
+  "frame_count": 8,
+  "pelvis_offset_y": [-2, -1, 1, 3, -2, -1, 1, 3],
+  "foot_policy": "Reuse accepted stage-2 foot positions exactly; at least one foot remains on the y=470 baseline in every frame.",
+  "arm_policy": "static",
+  "head_policy": "static",
+  "gate": "The pelvis may move vertically by at most 6px peak-to-peak while the center axis, stage-2 foot positions, and front-leg order remain unchanged.",
+  "next_stage": "front_opposite_arm_swing"
+}
