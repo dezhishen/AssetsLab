@@ -309,7 +309,7 @@ yet the production character system and does not include random hair or clothing
 
 ### Automated Visual Capture
 
-`tools/capture_walk_gif.ps1` runs `prototype/tests/capture_test.gd` with internal W/A/S/D key events, captures the rendered viewport at 12 FPS, and uses the local Pillow tool environment to produce a GIF. Add `-RgsWalkReference` to capture `movement_rgs_reference.gif`. Godot is launched as a hidden process with the normal OpenGL renderer because Godot's dummy `--headless` renderer has no readable viewport texture on this machine. The test still runs without presenting an editor or game window.
+`tools/capture_walk_gif.ps1` runs `prototype/tests/capture_test.gd` with internal W/A/S/D key events, captures the rendered viewport at 12 FPS, and uses the local Pillow tool environment to produce a GIF. Add `-RgsWalkReference` to capture `movement_rgs_reference.gif`. Godot is launched with `--headless` and the Windows/OpenGL renderer so the viewport remains readable while no editor or game window is created.
 
 `tools/run_headless_tests.ps1` runs the male smoke test and optionally the female smoke test with `--headless`; add `-Compact` to test the compact asset variant. Set `$env:GODOT_BIN` (or `$env:GODOT_PATH`) or pass `-GodotPath` when Godot is installed in a different directory.
 

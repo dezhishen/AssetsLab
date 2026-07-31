@@ -94,6 +94,7 @@ finally {
 }
 
 $godotArguments = @(
+    "--headless",
     "--display-driver", "windows",
     "--rendering-driver", "opengl3",
     "--rendering-method", "gl_compatibility",
