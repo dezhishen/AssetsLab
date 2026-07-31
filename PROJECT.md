@@ -51,8 +51,28 @@ and the Skeleton2D feasibility experiment. They remain available for audit but
 are not part of the active main-line asset set.
 
 The main line retains the calibrated `rebuild_atlas_v1_runtime/male` head,
-the milestone body and `limb_puzzle.json`, the default chibi runtime, and the
-body candidates still referenced by the existing silent comparison switches.
+the latest generated body reference, the milestone pose contract, and the
+default runtime only as a regression fixture while the adapter is rebuilt.
+
+### Authoritative Body Resource
+
+From this point forward, new body work must use only:
+
+`prototype/assets/characters/generated/female_adventurer_reference_mannequin_v1/`
+
+This is the latest eight-frame, four-direction body generation derived from the
+selected external motion reference. Its `runtime_manifest.json`, direction
+folders, and 64 x 64 frame registration are the sole body input for the next
+head-to-body adaptation step.
+
+All earlier body resources are marked problematic and must not be used as
+production-art inputs: the default `chibi`/`chibi_compact` body, the
+`rebuild_body_v2`, `rebuild_body_v5_rgs`, and `rebuild_body_v6_bombo`
+candidates, the older outline/body candidates, and the archived v3/v4 body
+experiments. They may remain temporarily for regression comparison only.
+
+`prototype/assets/characters/limb_puzzle.json` remains the motion and layer
+ordering contract; it is not an alternative body artwork source.
 
 ### Verification Progress
 
@@ -60,7 +80,7 @@ body candidates still referenced by the existing silent comparison switches.
 - Godot 4.6.2 import and smoke tests: passed.
 - RGS reference loading: passed with eight runtime frames.
 - Hidden W/A/S/D capture: passed with 36 frames and GIF conversion.
-- GitHub synchronization: pending this cleanup and verification pass.
+- GitHub synchronization: `main` and `history0731` are synchronized with GitHub.
 
 ## Art Experiment Workflow
 
@@ -94,6 +114,7 @@ The neutral base has no hair, ears, eyes, nose, mouth, clothing, underwear, acce
 - `walk-base-4way-female-4frame-sheet.png` - female-presenting neutral four-direction walk-cycle reference.
 - `prototype/assets/characters/generated/character_turnaround_v1_male.png` - first male-presenting four-direction character turnaround generated from the male front anchor.
 - `prototype/assets/characters/generated/character_head_rebuild_v1_male.png` - clean head-only four-direction reference used to begin component reconstruction.
+- `prototype/assets/characters/generated/female_adventurer_reference_mannequin_v1/` - authoritative latest generated body reference for the next head-to-body adaptation.
 - `prototype/assets/characters/generated/neutral_face_base_rebuild_v1_male.png` - independently generated featureless four-direction face base.
 - `prototype/assets/characters/generated/facial_feature_atlas_rebuild_v1_male.png` - independently generated eyes, eyebrows, and ears atlas.
 - `prototype/assets/characters/generated/hair_atlas_rebuild_v1_male.png` - independently generated hair atlas, currently provisional because its fit still needs anchor correction.

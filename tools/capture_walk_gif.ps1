@@ -2,6 +2,7 @@ param(
     [switch]$Female,
     [switch]$Compact,
     [switch]$BaseFeatures,
+    [switch]$RebuildHead,
     [switch]$RgsBodyRight,
 	[switch]$BomboBodyRight,
 	[switch]$RgsWalkReference,
@@ -35,6 +36,8 @@ $gifName = if ($BomboBodyRight) {
     "movement_rgs_body_candidate.gif"
 } elseif ($RgsWalkReference) {
     "movement_rgs_reference.gif"
+} elseif ($RebuildHead) {
+    "movement_rebuild_head.gif"
 } elseif ($MilestoneBodyRight) {
     if ($RightOnly) { "movement_milestone_body_right_only.gif" } else { "movement_milestone_body.gif" }
 } elseif ($BaseFeatures) {
@@ -117,6 +120,9 @@ if ($BaseFeatures) {
     $godotArguments += "--base-features"
 } else {
     $godotArguments += "--appearance-seed=$appearanceSeed"
+}
+if ($RebuildHead) {
+    $godotArguments += "--rebuild-head"
 }
 if ($RgsWalkReference) {
 	$godotArguments += "--rgs-walk-reference"

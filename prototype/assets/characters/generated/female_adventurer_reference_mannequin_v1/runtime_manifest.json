@@ -1,0 +1,24 @@
+{
+  "schema": "reference_mannequin_runtime_v1",
+  "cell_size": [
+    64,
+    64
+  ],
+  "frame_count": 8,
+  "directions": [
+    "front",
+    "right",
+    "back",
+    "left"
+  ],
+  "baseline_y": 60,
+  "target_subject_height": 54,
+  "source": "prototype/preview/assets/female_adventurer_reference_mannequin_walk_v1",
+  "status": "candidate_runtime_reference_not_final_art",
+  "processing": [
+    "alpha_bbox_registration",
+    "nearest_neighbor_resize",
+    "12_color_quantization",
+    "hard_alpha_threshold"
+  ]
+}

@@ -11,6 +11,11 @@ This prototype is intentionally UI-free. It is a command-line validated gameplay
 - QQTang-style oversized-head neutral base as the current runtime skin: shared torso, arms, lower-body, feet, plus male/female head layers.
 - deterministic front-facing ear and eye/blush layers selected by an appearance seed.
 
+Body source rule: all new body adaptation work uses only
+`assets/characters/generated/female_adventurer_reference_mannequin_v1/`.
+Other body assets in the repository are legacy or problematic comparison
+fixtures and must not be selected for new production art.
+
 Controls:
 
 - `WASD` or arrow keys: move.
@@ -50,6 +55,7 @@ Generate a hidden-window W/A/S/D capture and GIF from the repository root:
 ```
 
 Add `-Female` to capture the female-presenting base, `-Compact` to capture the compact-stride candidate, `-RgsWalkReference` to capture the open-source motion reference, or `-MilestoneBodyRight` to capture the frozen pixel-project milestone directly.
+Add `-RebuildHead` to capture the calibrated `rebuild_atlas_v1_runtime/male` head on the current body.
 Add `-RightOnly` with `-MilestoneBodyRight` to capture only the eight-frame right-facing milestone loop and avoid mixing other direction assets.
 
 Both test entry points generate a fresh random appearance package under
