@@ -15,6 +15,10 @@ The tracked body-pose source of truth is instead
 rectangles per frame record position, angle, and `z_order`; retain the explicit
 rear/torso/front relationship when drawing final pixels. The page exports the
 same schema so the adjusted file can be copied back into that tracked path.
+Use `limb_calibrate.html` only if the right-facing candidate later shows a
+component offset. It can align the torso, arms, lower body, and feet across all
+eight frames and stores offsets in the ignored
+`prototype/preview/calibration/body_components_latest.json` file.
 
 The RGS open-source character is a motion reference, not final character art.
 Run `tools/capture_walk_gif.ps1 -RgsWalkReference` to render its complete

@@ -10,6 +10,7 @@ from PIL import Image, ImageDraw, ImageFont
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "prototype" / "assets" / "characters" / "rebuild_atlas_v1_runtime" / "male"
 BODY_SOURCE = ROOT / "prototype" / "assets" / "characters" / "rebuild_body_v2"
+BODY_CANDIDATE_SOURCE = ROOT / "prototype" / "assets" / "characters" / "rebuild_body_v5_rgs"
 OUTPUT = ROOT / "prototype" / "preview" / "assets"
 RUNTIME_OUTPUT = OUTPUT / "runtime"
 BODY_CALIBRATION_PATH = ROOT / "prototype" / "preview" / "calibration" / "body_latest.json"
@@ -60,10 +61,23 @@ def load_body_offsets() -> dict[str, tuple[int, int]]:
 def main() -> int:
     OUTPUT.mkdir(parents=True, exist_ok=True)
     RUNTIME_OUTPUT.mkdir(parents=True, exist_ok=True)
+    for preview_artifact in (
+        "movement_rgs_body_candidate.gif",
+        "movement_rgs_body_candidate_contact.png",
+    ):
+        artifact_path = ROOT / "prototype" / "test_output" / preview_artifact
+        if artifact_path.exists():
+            shutil.copy2(artifact_path, OUTPUT / preview_artifact)
     for filename in ("face_base_walk_4way.png", "face_walk_4way.png", "ears_walk_4way.png", "runtime_manifest.json"):
         shutil.copy2(SOURCE / filename, RUNTIME_OUTPUT / filename)
     for layer in BODY_LAYERS:
         shutil.copy2(BODY_SOURCE / f"{layer}_walk_4way.png", RUNTIME_OUTPUT / f"{layer}_walk_4way.png")
+        candidate_layer = BODY_CANDIDATE_SOURCE / layer
+        candidate_output = OUTPUT / "body_candidate_v5" / layer
+        if candidate_layer.exists():
+            candidate_output.mkdir(parents=True, exist_ok=True)
+            for frame in range(8):
+                shutil.copy2(candidate_layer / f"right_frame{frame}.png", candidate_output / f"right_frame{frame}.png")
     body_offsets = load_body_offsets()
     manifest = json.loads((SOURCE / "runtime_manifest.json").read_text(encoding="utf-8"))
     debug = Image.new("RGBA", (1024, 256), (22, 24, 39, 255))

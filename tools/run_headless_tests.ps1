@@ -4,8 +4,9 @@ param(
     [switch]$Female,
     [switch]$Compact,
     [switch]$BaseFeatures,
-	[switch]$RebuildHead,
-	[switch]$RebuildBody,
+    [switch]$RebuildHead,
+    [switch]$RebuildBody,
+    [switch]$RgsBodyRight,
     [switch]$RgsWalkReference,
     [int]$AppearanceSeed
 )
@@ -179,12 +180,19 @@ function Invoke-SmokeTest {
             $arguments += @("--", "--rebuild-body")
         }
     }
-	if ($RgsWalkReference) {
+    if ($RgsBodyRight) {
+        if ($arguments -contains "--") {
+            $arguments += "--rgs-body-right"
+        } else {
+            $arguments += @("--", "--rgs-body-right")
+        }
+    }
+    if ($RgsWalkReference) {
         if ($arguments -contains "--") {
             $arguments += "--rgs-walk-reference"
         } else {
             $arguments += @("--", "--rgs-walk-reference")
-	}
+        }
     }
 
     Write-Output ("Running headless smoke test ({0}) with {1}" -f ($(if ($UseFemale) { "female" } else { "male" }), $godotPath))

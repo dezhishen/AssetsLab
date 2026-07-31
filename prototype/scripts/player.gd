@@ -14,6 +14,7 @@ var asset_root := "chibi"
 var base_features := false
 var rebuild_head := false
 var rebuild_body := false
+var rgs_body_right := false
 var rgs_walk_reference := false
 var appearance_seed: int = 20260730
 var appearance_variant: int = 0
@@ -43,6 +44,7 @@ func _ready() -> void:
 	base_features = "--base-features" in user_args
 	rebuild_head = "--rebuild-head" in user_args
 	rebuild_body = "--rebuild-body" in user_args
+	rgs_body_right = "--rgs-body-right" in user_args
 	rgs_walk_reference = "--rgs-walk-reference" in user_args
 	appearance_seed = _read_appearance_seed()
 	appearance_variant = appearance_variant_for_seed(appearance_seed, variant == "female")
@@ -90,6 +92,12 @@ func _load_frame_textures() -> void:
 				arms_path = rebuild_body_path + "arms/%s_frame%d.png" % [direction_name, column]
 				lower_body_path = rebuild_body_path + "lower_body/%s_frame%d.png" % [direction_name, column]
 				feet_path = rebuild_body_path + "feet/%s_frame%d.png" % [direction_name, column]
+				if rgs_body_right and row == 1:
+					var rgs_body_path := "res://assets/characters/rebuild_body_v5_rgs/"
+					torso_path = rgs_body_path + "torso/right_frame%d.png" % column
+					arms_path = rgs_body_path + "arms/right_frame%d.png" % column
+					lower_body_path = rgs_body_path + "lower_body/right_frame%d.png" % column
+					feet_path = rgs_body_path + "feet/right_frame%d.png" % column
 			else:
 				torso_path = body_base_path + "torso_frames/walk_row%d_frame%d.png" % [row, column]
 				arms_path = body_base_path + "arms_frames/walk_row%d_frame%d.png" % [row, column]

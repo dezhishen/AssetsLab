@@ -40,6 +40,13 @@ func _run() -> void:
 	if "--rebuild-body" in user_args and not player.rebuild_body:
 		_fail("rebuild body mode was not enabled")
 		return
+	if "--rgs-body-right" in user_args:
+		if not player.rgs_body_right:
+			_fail("RGS body candidate mode was not enabled")
+			return
+		if player.torso_frame_textures.size() <= 8 or not player.torso_frame_textures[8].resource_path.contains("rebuild_body_v5_rgs"):
+			_fail("RGS body candidate right-facing torso was not loaded")
+			return
 	if "--rgs-walk-reference" in user_args:
 		if not player.rgs_walk_reference or player.rgs_walk_reference_frame_textures.size() != 8:
 			_fail("RGS walk reference frames were not loaded")

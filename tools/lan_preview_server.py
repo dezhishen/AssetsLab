@@ -26,6 +26,7 @@ class PreviewHandler(SimpleHTTPRequestHandler):
             output_name = {
                 "component_anchor_calibration_v1": "latest.json",
                 "body_anchor_calibration_v1": "body_latest.json",
+                "walk_body_component_anchor_calibration_v1": "body_components_latest.json",
             }.get(schema)
             if output_name is None:
                 raise ValueError("unsupported calibration schema")

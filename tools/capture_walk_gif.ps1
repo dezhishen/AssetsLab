@@ -1,8 +1,9 @@
 param(
     [switch]$Female,
     [switch]$Compact,
-	[switch]$BaseFeatures,
-	[switch]$RgsWalkReference,
+    [switch]$BaseFeatures,
+    [switch]$RgsBodyRight,
+    [switch]$RgsWalkReference,
     [string]$GodotPath,
     [string]$PythonPath,
     [int]$AppearanceSeed
@@ -19,7 +20,9 @@ $pythonPath = Resolve-PythonExecutable -RequestedPath $PythonPath -AssetsLabRoot
 $pythonModules = Join-Path $assetsLabRoot ".tools\python"
 $frameDirectory = Join-Path $prototypeRoot "test_output\capture_frames"
 $randomAppearanceRoot = Join-Path $prototypeRoot "test_output\random_appearance"
-$gifName = if ($RgsWalkReference) {
+$gifName = if ($RgsBodyRight) {
+    "movement_rgs_body_candidate.gif"
+} elseif ($RgsWalkReference) {
     "movement_rgs_reference.gif"
 } elseif ($BaseFeatures) {
     "movement_walk_base_features_v1.gif"
@@ -104,6 +107,9 @@ if ($BaseFeatures) {
 if ($RgsWalkReference) {
 	$godotArguments += "--rgs-walk-reference"
 }
+if ($RgsBodyRight) {
+    $godotArguments += "--rgs-body-right"
+}
 $godotProcess = Start-Process -FilePath $godotPath -ArgumentList $godotArguments -WindowStyle Hidden -PassThru -Wait
 if (Test-Path -LiteralPath $logPath) {
     Get-Content -LiteralPath $logPath
@@ -124,6 +130,9 @@ try {
     }
     if ($RgsWalkReference) {
         Copy-Item -LiteralPath $gifPath -Destination (Join-Path $assetsLabRoot "prototype\preview\assets\movement_rgs_reference.gif") -Force
+    }
+    if ($RgsBodyRight) {
+        Copy-Item -LiteralPath $gifPath -Destination (Join-Path $assetsLabRoot "prototype\preview\assets\movement_rgs_body_candidate.gif") -Force
     }
 }
 finally {
