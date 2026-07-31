@@ -404,7 +404,7 @@ The current runtime processing pass is complete for the QQTang-style neutral lay
 
 ### Silent Verification
 
-The Godot 4.6.2 console executable can be selected from `-GodotPath`, the `GODOT_BIN`/`GODOT_PATH` environment variable, `godot`/`godot4` on `PATH`, or the legacy sibling directory `Godot-4.6.2`. The resolver automatically prefers a sibling `_console.exe` even when a GUI executable is supplied, and automated runs use `--headless` without opening the editor UI.
+The Godot 4.6.2 console executable can be selected from `-GodotPath`, the `GODOT_BIN`/`GODOT_PATH` environment variable, `godot`/`godot4` on `PATH`, or the legacy sibling directory `Godot-4.6.2`. The resolver accepts only a `_console.exe` binary for automated work; when no unambiguous console sibling exists it fails rather than falling back to a GUI executable. Automated capture also uses `--headless` and hidden process windows, so preview generation must not open the editor or game UI.
 
 Verified commands:
 

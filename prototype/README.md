@@ -161,7 +161,7 @@ they are not wired into the player yet.
 `tools/validate_random_appearance.py` verifies that the package frames are
 complete, composited, and consistent with the seed/gender rule.
 
-The Godot process uses `--headless` with the Windows/OpenGL renderer, so no editor or game window is presented even if the capture is started repeatedly. The resolver prefers a sibling `_console.exe` when a GUI executable is configured. PNG frames and the GIF are written to `prototype/test_output/`; this directory is ignored by Git. The GIF is `prototype/test_output/movement_walk.gif`.
+The Godot process uses `--headless` with the Windows/OpenGL renderer, so no editor or game window is presented even if the capture is started repeatedly. The resolver requires a `_console.exe` build; it fails closed if a GUI binary has no unambiguous console sibling. PNG frames and the GIF are written to `prototype/test_output/`; this directory is ignored by Git. The GIF is `prototype/test_output/movement_walk.gif`.
 
 The headless test runner validates all 192 frames across six chibi layers and
 512 face/ear component frames before launching Godot. It checks fixed frame

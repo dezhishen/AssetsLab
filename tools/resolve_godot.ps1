@@ -10,15 +10,23 @@ function Resolve-HeadlessGodotPath {
         return $resolvedPath
     }
 
-    # Godot's Windows GUI and console builds are shipped side by side. Prefer
-    # the console binary for every automated test, even when GODOT_BIN, PATH,
-    # or -GodotPath points at the GUI binary.
+    # Godot's Windows GUI and console builds are shipped side by side. Automated
+    # capture must never fall back to the GUI binary: that can open an editor or
+    # game window despite a caller intending a silent preview run.
     $consoleName = [System.IO.Path]::GetFileNameWithoutExtension($fileName) + "_console.exe"
     $consolePath = Join-Path (Split-Path -Parent $resolvedPath) $consoleName
     if (Test-Path -LiteralPath $consolePath -PathType Leaf) {
         return (Resolve-Path -LiteralPath $consolePath).Path
     }
-    return $resolvedPath
+
+    # A PATH alias such as godot.exe may not share the versioned filename of
+    # its console sibling. If exactly one console build lives beside it, use
+    # that build; otherwise fail closed rather than launching a GUI executable.
+    $consoleCandidates = @(Get-ChildItem -LiteralPath (Split-Path -Parent $resolvedPath) -Filter "*_console.exe" -File -ErrorAction SilentlyContinue)
+    if ($consoleCandidates.Count -eq 1) {
+        return $consoleCandidates[0].FullName
+    }
+    throw "Silent Godot automation requires a *_console.exe executable. No unambiguous console sibling was found for '$resolvedPath'."
 }
 
 function Resolve-GodotExecutable {
@@ -57,8 +65,7 @@ function Resolve-GodotExecutable {
     }
 
     $adjacentCandidates = @(
-        (Join-Path $AssetsLabRoot "..\Godot-4.6.2\unpacked\Godot_v4.6.2-stable_win64_console.exe"),
-        (Join-Path $AssetsLabRoot "..\Godot-4.6.2\unpacked\Godot_v4.6.2-stable_win64.exe")
+        (Join-Path $AssetsLabRoot "..\Godot-4.6.2\unpacked\Godot_v4.6.2-stable_win64_console.exe")
     )
     foreach ($candidate in $adjacentCandidates) {
         if (Test-Path -LiteralPath $candidate -PathType Leaf) {
