@@ -50,10 +50,11 @@
       <div class="actions">
         <button id="play">播放</button>
         <button id="download">下载 PNG</button>
+        <button id="exportProject">导出工程 JSON</button>
         <button id="save">保存到预览服务器</button>
       </div>
       <div id="status"></div>
-      <p class="hint">建议先用橡皮擦去错误的内部线，再用轮廓色或白色逐格修补。保存后的文件名是 <code>body_outline_split_v2_manual.png</code>，后续会以它作为精细化处理输入。</p>
+      <p class="hint">建议先用橡皮擦去错误的内部线，再用轮廓色或白色逐格修补。PNG 用于直接查看；“导出工程 JSON”会保存每一帧的全部像素信息，之后可放回项目中继续处理。</p>
     </section>
   </div>
 </main>
@@ -145,6 +146,14 @@
   document.getElementById('play').onclick = () => { playing = !playing; document.getElementById('play').textContent = playing ? '停止' : '播放'; if (playing) timer = setInterval(() => { frameIndex = (frameIndex + 1) % FRAME_COUNT; render(); }, 150); else clearInterval(timer); };
   function buildSheet() { const sheet = document.createElement('canvas'); sheet.width = SIZE * FRAME_COUNT; sheet.height = SIZE; const sheetCtx = sheet.getContext('2d'); frames.forEach((pixels, index) => sheetCtx.putImageData(new ImageData(pixels, SIZE, SIZE), index * SIZE, 0)); return sheet; }
   document.getElementById('download').onclick = () => { const link = document.createElement('a'); link.href = buildSheet().toDataURL('image/png'); link.download = 'body_outline_split_v2_manual.png'; link.click(); };
+  function bytesToBase64(bytes) { let binary = ''; const chunkSize = 0x8000; for (let index = 0; index < bytes.length; index += chunkSize) binary += String.fromCharCode(...bytes.subarray(index, Math.min(index + chunkSize, bytes.length))); return btoa(binary); }
+  document.getElementById('exportProject').onclick = () => {
+    const project = { schema: 'body_outline_pixel_project_v1', width: SIZE, height: SIZE, frame_count: FRAME_COUNT, frames_rgba_base64: frames.map(bytesToBase64), current_frame: frameIndex, color, exported_at: new Date().toISOString() };
+    const blob = new Blob([JSON.stringify(project, null, 2)], { type: 'application/json' });
+    const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = 'body_outline_split_v2_manual.project.json'; link.click();
+    setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+    document.getElementById('status').textContent = '已导出 body_outline_split_v2_manual.project.json';
+  };
   document.getElementById('save').onclick = async () => { try { const pngBase64 = buildSheet().toDataURL('image/png').split(',')[1]; const response = await fetch('/api/save-pixel-art', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ schema: 'body_outline_pixel_edit_v1', file_name: 'body_outline_split_v2_manual.png', png_base64: pngBase64 }) }); if (!response.ok) throw new Error(await response.text()); document.getElementById('status').textContent = '已保存 body_outline_split_v2_manual.png'; } catch (error) { document.getElementById('status').textContent = `保存失败，请下载 PNG：${error}`; } };
   source.onload = initialize;
 </script>
