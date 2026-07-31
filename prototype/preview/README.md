@@ -33,3 +33,8 @@ The RGS open-source character is a motion reference, not final character art.
 Run `tools/capture_walk_gif.ps1 -RgsWalkReference` to render its complete
 eight-frame loop without opening the Godot editor. The project will later redraw
 the QQTang-style body against the same pose timing.
+
+For the current milestone baseline, run
+`tools/capture_walk_gif.ps1 -MilestoneBodyRight`. This uses the processed pixel
+project frames directly for the right-facing test and leaves the default runtime
+body layers unchanged.

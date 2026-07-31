@@ -17,6 +17,7 @@ var rebuild_body := false
 var rgs_body_right := false
 var bombo_body_right := false
 var rgs_walk_reference := false
+var milestone_body_right := false
 var appearance_seed: int = 20260730
 var appearance_variant: int = 0
 var body_anchor_offsets: Dictionary = {}
@@ -28,6 +29,7 @@ var head_frame_textures: Array[Texture2D] = []
 var ear_frame_textures: Array[Texture2D] = []
 var face_frame_textures: Array[Texture2D] = []
 var rgs_walk_reference_frame_textures: Array[Texture2D] = []
+var milestone_body_frame_textures: Array[Texture2D] = []
 
 @onready var torso_sprite: Sprite2D = $BodySprite
 @onready var arms_sprite: Sprite2D = $ArmsSprite
@@ -48,10 +50,12 @@ func _ready() -> void:
 	rgs_body_right = "--rgs-body-right" in user_args
 	bombo_body_right = "--bombo-body-right" in user_args
 	rgs_walk_reference = "--rgs-walk-reference" in user_args
+	milestone_body_right = "--milestone-body-right" in user_args
 	appearance_seed = _read_appearance_seed()
 	appearance_variant = appearance_variant_for_seed(appearance_seed, variant == "female")
 	_load_frame_textures()
 	_load_rgs_walk_reference_frames()
+	_load_milestone_body_frames()
 	_load_body_anchor_offsets()
 	spawn_position = global_position
 	_apply_frame(0)
@@ -198,6 +202,19 @@ func _load_rgs_walk_reference_frames() -> void:
 			rgs_walk_reference_frame_textures.append(texture)
 
 
+func _load_milestone_body_frames() -> void:
+	milestone_body_frame_textures.clear()
+	if not milestone_body_right:
+		return
+	for frame in range(8):
+		var path := "res://assets/characters/generated/body_outline_split_v2_manual_from_project/frame%d.png" % frame
+		var texture := load(path) as Texture2D
+		if texture == null:
+			push_error("Missing milestone body frame: " + path)
+		else:
+			milestone_body_frame_textures.append(texture)
+
+
 func _current_body_anchor_offset() -> Vector2:
 	if not rebuild_head:
 		return Vector2.ZERO
@@ -257,6 +274,13 @@ func _apply_frame(frame: int) -> void:
 	if use_rgs_reference:
 		rgs_walk_reference_sprite.texture = rgs_walk_reference_frame_textures[posmod(frame, 8)]
 		for sprite in [torso_sprite, arms_sprite, lower_body_sprite, feet_sprite, ear_sprite, head_sprite, face_sprite]:
+			sprite.visible = false
+		return
+	var use_milestone_body := milestone_body_right and direction_row == 1 and milestone_body_frame_textures.size() == 8
+	if use_milestone_body:
+		torso_sprite.visible = true
+		torso_sprite.texture = milestone_body_frame_textures[posmod(frame, 8)]
+		for sprite in [arms_sprite, lower_body_sprite, feet_sprite, ear_sprite, head_sprite, face_sprite]:
 			sprite.visible = false
 		return
 	for sprite in [torso_sprite, arms_sprite, lower_body_sprite, feet_sprite, ear_sprite, head_sprite, face_sprite]:

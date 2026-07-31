@@ -9,6 +9,7 @@ param(
     [switch]$RgsBodyRight,
     [switch]$BomboBodyRight,
     [switch]$RgsWalkReference,
+    [switch]$MilestoneBodyRight,
     [int]$AppearanceSeed
 )
 
@@ -200,6 +201,13 @@ function Invoke-SmokeTest {
             $arguments += "--bombo-body-right"
         } else {
             $arguments += @("--", "--bombo-body-right")
+        }
+    }
+    if ($MilestoneBodyRight) {
+        if ($arguments -contains "--") {
+            $arguments += "--milestone-body-right"
+        } else {
+            $arguments += @("--", "--milestone-body-right")
         }
     }
 

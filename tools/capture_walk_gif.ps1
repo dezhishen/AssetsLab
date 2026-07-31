@@ -3,8 +3,9 @@ param(
     [switch]$Compact,
     [switch]$BaseFeatures,
     [switch]$RgsBodyRight,
-    [switch]$BomboBodyRight,
-    [switch]$RgsWalkReference,
+	[switch]$BomboBodyRight,
+	[switch]$RgsWalkReference,
+	[switch]$MilestoneBodyRight,
     [string]$GodotPath,
     [string]$PythonPath,
     [int]$AppearanceSeed
@@ -27,6 +28,8 @@ $gifName = if ($BomboBodyRight) {
     "movement_rgs_body_candidate.gif"
 } elseif ($RgsWalkReference) {
     "movement_rgs_reference.gif"
+} elseif ($MilestoneBodyRight) {
+    "movement_milestone_body.gif"
 } elseif ($BaseFeatures) {
     "movement_walk_base_features_v1.gif"
 } elseif ($Compact) {
@@ -116,6 +119,9 @@ if ($RgsBodyRight) {
 if ($BomboBodyRight) {
     $godotArguments += "--bombo-body-right"
 }
+if ($MilestoneBodyRight) {
+    $godotArguments += "--milestone-body-right"
+}
 $godotProcess = Start-Process -FilePath $godotPath -ArgumentList $godotArguments -WindowStyle Hidden -PassThru -Wait
 if (Test-Path -LiteralPath $logPath) {
     Get-Content -LiteralPath $logPath
@@ -140,9 +146,12 @@ try {
     if ($RgsBodyRight) {
         Copy-Item -LiteralPath $gifPath -Destination (Join-Path $assetsLabRoot "prototype\preview\assets\movement_rgs_body_candidate.gif") -Force
     }
-    if ($BomboBodyRight) {
-        Copy-Item -LiteralPath $gifPath -Destination (Join-Path $assetsLabRoot "prototype\preview\assets\movement_bombo_body_candidate.gif") -Force
-    }
+	if ($BomboBodyRight) {
+		Copy-Item -LiteralPath $gifPath -Destination (Join-Path $assetsLabRoot "prototype\preview\assets\movement_bombo_body_candidate.gif") -Force
+	}
+	if ($MilestoneBodyRight) {
+		Copy-Item -LiteralPath $gifPath -Destination (Join-Path $assetsLabRoot "prototype\preview\assets\movement_milestone_body.gif") -Force
+	}
 }
 finally {
     $env:PYTHONPATH = $previousPythonPath

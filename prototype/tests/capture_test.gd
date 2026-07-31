@@ -34,6 +34,7 @@ func _run() -> void:
 	player.global_position = START_POSITION
 	print("CHARACTER_VARIANT=%s" % player.variant)
 	print("RGS_WALK_REFERENCE=%s frames=%d" % [player.rgs_walk_reference, player.rgs_walk_reference_frame_textures.size()])
+	print("MILESTONE_BODY_RIGHT=%s frames=%d" % [player.milestone_body_right, player.milestone_body_frame_textures.size()])
 
 	# Four short segments make one repeatable W/A/S/D walk loop.
 	await _run_direction(KEY_D, Vector2.RIGHT, "D")
