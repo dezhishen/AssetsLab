@@ -60,6 +60,16 @@ It writes eight captures plus `test_output/skeleton_pipeline/front_pelvis_bob.gi
 The pelvis moves vertically by at most 6px peak-to-peak; the head and arms stay
 static, and each foot position must exactly match stage 2.
 
+The final front-view skeleton step adds only opposite arm swings:
+
+```powershell
+.\tools\capture_front_arm_swing_stage.ps1
+```
+
+It writes eight captures plus `test_output/skeleton_pipeline/front_arm_swing.gif`.
+Hands must remain below their shoulders and on their own side of the center
+axis; all accepted stage-3 lower-body values remain unchanged.
+
 Controls:
 
 - `WASD` or arrow keys: move.

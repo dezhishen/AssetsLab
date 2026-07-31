@@ -34,14 +34,16 @@
   <div class="meta"><span class="tag">Godot 4.6.2</span><span class="tag">4 directions</span><span class="tag">8 frames</span><span class="tag">headless capture</span></div>
 
   <section class="panel">
-    <h2>新流程：阶段 1–3 / 正面骨架、双腿循环与骨盆起伏</h2>
-    <p class="status">阶段 1 已验证静止对称与基线。阶段 2 只让双腿运动。阶段 3 只在此基础上加入不超过 6px 的骨盆上下起伏；头部、手臂与落脚点保持不变。浅金色腿是本帧前腿，蓝色腿为后腿，橙色关节为骨盆。</p>
+    <h2>新流程：阶段 1–4 / 正面骨架、双腿、骨盆与摆臂</h2>
+    <p class="status">阶段 1 已验证静止对称与基线。阶段 2 只让双腿运动，阶段 3 只加入不超过 6px 的骨盆上下起伏，阶段 4 才加入与对应腿反相的摆臂。头部、落脚点、骨盆位移与前后腿层次均沿用已通过的阶段。浅金色腿是本帧前腿，蓝色腿为后腿，橙色关节为骨盆，绿色为摆臂。</p>
     <div class="grid">
       <figure><img src="assets/skeleton_front_base.png" alt="front base skeleton"><figcaption>Godot 无 GUI 捕获：正面基础骨架</figcaption></figure>
       <figure><img src="assets/skeleton_front_legs_8frames.png" alt="front leg cycle 8 frames"><figcaption>正面双腿 8 帧：F0–F7</figcaption></figure>
       <figure><img src="assets/skeleton_front_legs.gif" alt="front leg cycle animation"><figcaption>正面双腿循环 GIF；尚未加入骨盆起伏或摆臂</figcaption></figure>
       <figure><img src="assets/skeleton_front_pelvis_bob_8frames.png" alt="front pelvis bob 8 frames"><figcaption>阶段 3：保留同一双腿循环，仅加入骨盆起伏</figcaption></figure>
       <figure><img src="assets/skeleton_front_pelvis_bob.gif" alt="front pelvis bob animation"><figcaption>阶段 3 循环 GIF；下一阶段才加入反向摆臂</figcaption></figure>
+      <figure><img src="assets/skeleton_front_arm_swing_8frames.png" alt="front arm swing 8 frames"><figcaption>阶段 4：在已接受的下半身上加入反相摆臂</figcaption></figure>
+      <figure><img src="assets/skeleton_front_arm_swing.gif" alt="front arm swing animation"><figcaption>阶段 4 循环 GIF；下一阶段将单独建立侧面骨架</figcaption></figure>
     </div>
   </section>
 

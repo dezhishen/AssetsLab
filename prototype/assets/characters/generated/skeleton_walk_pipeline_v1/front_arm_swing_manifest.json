@@ -1,0 +1,14 @@
+{
+  "schema": "skeleton_walk_pipeline_v1",
+  "stage": "front_opposite_arm_swing",
+  "status": "active_review",
+  "depends_on": "front_pelvis_bob",
+  "frame_count": 8,
+  "arm_policy": "Left and right arms use equal, opposite offsets. Each arm is counterphased to the corresponding leg.",
+  "hand_travel_y": 28,
+  "foot_policy": "Reuse accepted stage-3 foot positions exactly.",
+  "pelvis_policy": "Reuse accepted stage-3 pelvis offsets exactly.",
+  "head_policy": "static",
+  "gate": "Hands must remain below their shoulders and on their own side of the center axis while the accepted stage-3 lower body remains unchanged.",
+  "next_stage": "side_skeleton_and_walk"
+}
