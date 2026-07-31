@@ -1,0 +1,14 @@
+{
+  "schema": "skeleton_walk_pipeline_v1",
+  "stage": "side_pelvis_bob",
+  "status": "active_review",
+  "depends_on": "side_legs_8_frames",
+  "facing": "right",
+  "frame_count": 8,
+  "pelvis_offset_y": [-2, -1, 1, 3, -2, -1, 1, 3],
+  "foot_policy": "Reuse accepted side-leg foot positions exactly; each frame retains a foot on the y=470 baseline.",
+  "arm_policy": "static",
+  "head_policy": "static",
+  "gate": "The side pelvis may move only vertically by at most 6px peak-to-peak while all accepted side-leg contacts and depth ordering remain unchanged.",
+  "next_stage": "side_opposite_arm_swing"
+}

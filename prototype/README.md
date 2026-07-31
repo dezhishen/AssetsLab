@@ -90,6 +90,16 @@ It writes eight captures plus `test_output/skeleton_pipeline/side_legs.gif`.
 F0/F4 are contact frames; only the rear leg lifts during F1–F3 and only the
 front leg lifts during F5–F7. The pelvis and arms remain static.
 
+The next side step adds only the pelvis bob:
+
+```powershell
+.\tools\capture_side_pelvis_bob_stage.ps1
+```
+
+It writes eight captures plus `test_output/skeleton_pipeline/side_pelvis_bob.gif`.
+The pelvis moves vertically by at most 6px peak-to-peak while all side-leg foot
+coordinates and upper-body coordinates remain unchanged.
+
 Controls:
 
 - `WASD` or arrow keys: move.

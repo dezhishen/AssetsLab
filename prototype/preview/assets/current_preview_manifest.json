@@ -43,10 +43,10 @@
     "status": "candidate_for_visual_review"
   },
   "skeleton_walk_pipeline": {
-    "source": "prototype/assets/characters/generated/skeleton_walk_pipeline_v1/side_legs_8_frames_manifest.json",
-    "stage": "side_legs_8_frames",
+    "source": "prototype/assets/characters/generated/skeleton_walk_pipeline_v1/side_pelvis_bob_manifest.json",
+    "stage": "side_pelvis_bob",
     "status": "active_review",
-    "next_stage": "side_pelvis_bob"
+    "next_stage": "side_opposite_arm_swing"
   },
   "excluded": "legacy bodies, RGS proxies, skeleton tests, old generated walk GIFs, and retired preview pages",
   "files": [
@@ -77,6 +77,8 @@
     "skeleton_side_base.png",
     "skeleton_side_legs.gif",
     "skeleton_side_legs_8frames.png",
+    "skeleton_side_pelvis_bob.gif",
+    "skeleton_side_pelvis_bob_8frames.png",
     "style_experiment_db16.png",
     "vertical_back_8frames.png",
     "vertical_candidate_rebuilt.gif",

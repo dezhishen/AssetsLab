@@ -106,12 +106,13 @@ next stage begins:
 
 Stages 1–4 passed with `tools/capture_front_skeleton_stage.ps1`,
 `tools/capture_front_leg_cycle_stage.ps1`, and
-`tools/capture_front_pelvis_bob_stage.ps1`, and
-`tools/capture_front_arm_swing_stage.ps1`, and
-`tools/capture_side_skeleton_stage.ps1`. The current active gate is 5B:
-`tools/capture_side_leg_cycle_stage.ps1` captures and checks the right-facing,
-leg-only side loop before side pelvis or arm keys are introduced. Do not reuse
-a later-stage asset to compensate for an earlier-stage error.
+`tools/capture_front_pelvis_bob_stage.ps1`,
+`tools/capture_front_arm_swing_stage.ps1`,
+`tools/capture_side_skeleton_stage.ps1`, and
+`tools/capture_side_leg_cycle_stage.ps1`. The current active gate is 5C:
+`tools/capture_side_pelvis_bob_stage.ps1` captures and checks vertical-only
+side pelvis motion while preserving every accepted side-leg key. Do not reuse a
+later-stage asset to compensate for an earlier-stage error.
 
 ### Resource Cleanup 2026-07-31
 
