@@ -24,7 +24,7 @@
     "left_front",
     "left_front",
     "left_front",
-    "left_front",
+    "right_front",
     "right_front"
   ],
   "runtime_frames": [
@@ -37,5 +37,5 @@
     "right_frame6.png",
     "right_frame7.png"
   ],
-  "notes": "Review candidate generated from the recommended base. The fourth/fifth frame transition uses the opposite leg in front; this is not the older redraw adapter."
+  "notes": "Review candidate generated from the recommended base. The front leg switches after frames 3 and 6; this is not the older redraw adapter."
 }
