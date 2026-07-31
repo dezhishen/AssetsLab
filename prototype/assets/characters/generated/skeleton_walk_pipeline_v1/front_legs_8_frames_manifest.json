@@ -1,0 +1,13 @@
+{
+  "schema": "skeleton_walk_pipeline_v1",
+  "stage": "front_legs_8_frames",
+  "status": "active_review",
+  "frame_count": 8,
+  "pelvis_policy": "static",
+  "arm_policy": "static",
+  "head_policy": "static",
+  "foot_baseline_y": 470,
+  "front_leg_policy": ["left", "left", "left", "left", "right", "right", "right", "right"],
+  "gate": "Every frame has one planted foot, the pelvis remains fixed, and the front leg changes at the half-cycle.",
+  "next_stage": "front_pelvis_bob"
+}

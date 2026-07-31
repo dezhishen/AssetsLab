@@ -40,6 +40,16 @@ This uses the Godot console executable with `--headless`, writes
 `test_output/skeleton_pipeline/front_base.png`, and must pass before the
 eight-frame leg loop is started.
 
+The current active step is the leg-only front-view loop. Run:
+
+```powershell
+.\tools\capture_front_leg_cycle_stage.ps1
+```
+
+It writes eight independent captures plus
+`test_output/skeleton_pipeline/front_legs.gif`. Pelvis, arms, torso, and head
+must remain static in this step.
+
 Controls:
 
 - `WASD` or arrow keys: move.

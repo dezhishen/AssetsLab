@@ -104,10 +104,10 @@ next stage begins:
 6. back-view skeleton and back walk loop;
 7. body blocks, then head and modular character art.
 
-The current active stage is 1. Run
-`tools/capture_front_skeleton_stage.ps1` for its no-GUI validation and image
-capture. Do not reuse a later-stage asset to compensate for an earlier-stage
-error.
+Stage 1 passed with `tools/capture_front_skeleton_stage.ps1`. The current
+active stage is 2: `tools/capture_front_leg_cycle_stage.ps1` captures and
+checks the front-view leg-only 8-frame loop. Do not reuse a later-stage asset
+to compensate for an earlier-stage error.
 
 ### Resource Cleanup 2026-07-31
 

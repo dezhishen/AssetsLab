@@ -44,9 +44,9 @@
   },
   "skeleton_walk_pipeline": {
     "source": "prototype/assets/characters/generated/skeleton_walk_pipeline_v1/front_base_manifest.json",
-    "stage": "front_base",
+    "stage": "front_legs_8_frames",
     "status": "active_review",
-    "next_stage": "front_legs_8_frames"
+    "next_stage": "front_pelvis_bob"
   },
   "excluded": "legacy bodies, RGS proxies, skeleton tests, old generated walk GIFs, and retired preview pages",
   "files": [
@@ -68,6 +68,8 @@
     "recommended_horizontal_layer_fix_8frames.png",
     "recommended_horizontal_layer_fix_source.png",
     "skeleton_front_base.png",
+    "skeleton_front_legs.gif",
+    "skeleton_front_legs_8frames.png",
     "style_experiment_db16.png",
     "vertical_back_8frames.png",
     "vertical_candidate_rebuilt.gif",

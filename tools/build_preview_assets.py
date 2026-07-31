@@ -8,7 +8,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from PIL import Image
+from PIL import Image, ImageDraw
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -21,6 +21,8 @@ RECOMMENDED_FIX_ROOT = ROOT / "prototype/assets/characters/generated/recommended
 CAPTURE_GIF = ROOT / "prototype/test_output/movement_vertical_body_candidate.gif"
 RIGHT_ONLY_CAPTURE_GIF = ROOT / "prototype/test_output/movement_rebuild_head_right_only.gif"
 SKELETON_FRONT_CAPTURE = ROOT / "prototype/test_output/skeleton_pipeline/front_base.png"
+SKELETON_LEG_CAPTURE_DIRECTORY = ROOT / "prototype/test_output/skeleton_pipeline/front_legs"
+SKELETON_LEG_CAPTURE_GIF = ROOT / "prototype/test_output/skeleton_pipeline/front_legs.gif"
 STAGED_CAPTURE_GIF = OUTPUT / "movement_vertical_body_candidate.gif"
 DIRECTIONS = ("front", "right", "back", "left")
 
@@ -86,6 +88,20 @@ def gif(frames: list[Image.Image], path: Path) -> None:
     enlarged[0].save(path, save_all=True, append_images=enlarged[1:], duration=100, loop=0, disposal=2)
 
 
+def skeleton_contact_sheet(paths: list[Path], path: Path) -> None:
+	thumbnail_size = (240, 150)
+	output = Image.new("RGB", (thumbnail_size[0] * 4, thumbnail_size[1] * 2), (17, 24, 39))
+	draw = ImageDraw.Draw(output)
+	for index, source_path in enumerate(paths):
+		with Image.open(source_path) as source:
+			thumbnail = source.convert("RGB").resize(thumbnail_size, Image.Resampling.LANCZOS)
+			x = (index % 4) * thumbnail_size[0]
+			y = (index // 4) * thumbnail_size[1]
+			output.paste(thumbnail, (x, y))
+			draw.text((x + 8, y + 8), "F%d" % index, fill=(255, 241, 168))
+	output.save(path)
+
+
 def load_offsets() -> dict[str, tuple[int, int]]:
     payload = json.loads((HEAD_ROOT / "runtime_manifest.json").read_text(encoding="utf-8"))
     return {
@@ -140,6 +156,11 @@ def main() -> int:
         shutil.copy2(RIGHT_ONLY_CAPTURE_GIF, OUTPUT / "movement_rebuild_head_right_only.gif")
     if SKELETON_FRONT_CAPTURE.exists():
         shutil.copy2(SKELETON_FRONT_CAPTURE, OUTPUT / "skeleton_front_base.png")
+    skeleton_leg_frames = [SKELETON_LEG_CAPTURE_DIRECTORY / f"frame_{index:02d}.png" for index in range(8)]
+    if all(path.exists() for path in skeleton_leg_frames):
+        skeleton_contact_sheet(skeleton_leg_frames, OUTPUT / "skeleton_front_legs_8frames.png")
+    if SKELETON_LEG_CAPTURE_GIF.exists():
+        shutil.copy2(SKELETON_LEG_CAPTURE_GIF, OUTPUT / "skeleton_front_legs.gif")
 
     style_image = STYLE_ROOT / "turnaround_db16_transparent.png"
     if style_image.exists():
@@ -174,9 +195,9 @@ def main() -> int:
         },
         "skeleton_walk_pipeline": {
             "source": "prototype/assets/characters/generated/skeleton_walk_pipeline_v1/front_base_manifest.json",
-            "stage": "front_base",
+            "stage": "front_legs_8_frames",
             "status": "active_review",
-            "next_stage": "front_legs_8_frames",
+            "next_stage": "front_pelvis_bob",
         },
         "excluded": "legacy bodies, RGS proxies, skeleton tests, old generated walk GIFs, and retired preview pages",
         "files": sorted(path.name for path in OUTPUT.iterdir() if path.is_file()),
