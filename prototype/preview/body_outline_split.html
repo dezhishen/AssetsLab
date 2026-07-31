@@ -70,6 +70,7 @@
   let selected = 'front_arm';
   let mode = 'draw';
   let drawing = null;
+  let erasing = false;
   let playing = false;
   let timer = null;
   const clone = value => JSON.parse(JSON.stringify(value));
@@ -164,6 +165,8 @@
   }
   board.addEventListener('pointerdown', event => {
     if (mode === 'erase') {
+      erasing = true;
+      board.setPointerCapture(event.pointerId);
       eraseLineAt(point(event));
       render();
       return;
@@ -173,6 +176,11 @@
     render();
   });
   board.addEventListener('pointermove', event => {
+    if (mode === 'erase' && erasing) {
+      eraseLineAt(point(event));
+      render();
+      return;
+    }
     if (!drawing) return;
     drawing.end = point(event);
     render();
@@ -185,8 +193,8 @@
     drawing = null;
     render();
   }
-  board.addEventListener('pointerup', finishLine);
-  board.addEventListener('pointercancel', () => { drawing = null; render(); });
+  board.addEventListener('pointerup', event => { finishLine(); erasing = false; if (board.hasPointerCapture(event.pointerId)) board.releasePointerCapture(event.pointerId); });
+  board.addEventListener('pointercancel', event => { drawing = null; erasing = false; if (board.hasPointerCapture(event.pointerId)) board.releasePointerCapture(event.pointerId); render(); });
   document.getElementById('copyPrev').onclick = () => { if (frameIndex > 0) { frames[frameIndex] = clone(frames[frameIndex - 1]); render(); } };
   document.getElementById('clearFrame').onclick = () => { frames[frameIndex] = { lines: {} }; render(); };
   document.getElementById('reset').onclick = () => { frames = Array.from({ length: FRAME_COUNT }, () => ({ lines: {} })); render(); };
