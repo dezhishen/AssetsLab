@@ -109,12 +109,12 @@ Stages 1–4 passed with `tools/capture_front_skeleton_stage.ps1`,
 `tools/capture_front_pelvis_bob_stage.ps1`,
 `tools/capture_front_arm_swing_stage.ps1`,
 `tools/capture_side_skeleton_stage.ps1`,
-`tools/capture_side_leg_cycle_stage.ps1`, and
-`tools/capture_side_pelvis_bob_stage.ps1`. The current active gate is 5D:
-`tools/capture_side_arm_swing_stage.ps1` captures and checks counterphased
-side arms while preserving every accepted side-pelvis key. The next independent
-stage is the back-view static skeleton; do not reuse a later-stage asset to
-compensate for an earlier-stage error.
+`tools/capture_side_leg_cycle_stage.ps1`,
+`tools/capture_side_pelvis_bob_stage.ps1`, and
+`tools/capture_side_arm_swing_stage.ps1`. The current active gate is 6A:
+`tools/capture_back_skeleton_stage.ps1` captures and checks the static back
+view before any back walk keys are introduced. Do not reuse a later-stage asset
+to compensate for an earlier-stage error.
 
 ### Resource Cleanup 2026-07-31
 
