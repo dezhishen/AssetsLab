@@ -15,7 +15,7 @@ EXPECTED = [
     "left_foot",
     "left_foot",
     "left_foot",
-    "right_foot",
+    "left_foot",
     "right_foot",
 ]
 
@@ -36,7 +36,7 @@ def main() -> int:
         actual.append("left_foot" if left > right else "right_foot")
     if actual != EXPECTED:
         raise SystemExit(f"z-order does not match policy: {actual!r}")
-    print("LIMB_OCCLUSION_VALIDATION_PASS frames=8 transitions=after_frame3_after_frame6")
+    print("LIMB_OCCLUSION_VALIDATION_PASS frames=8 transitions=after_frame3_after_frame7")
     return 0
 
 

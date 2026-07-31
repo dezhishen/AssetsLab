@@ -58,8 +58,10 @@ Last updated: 2026-07-31.
 
 ### Current TODO and Incomplete Reasons
 
-- **Fix the recommended horizontal base leg depth.** The transitions after
-  frames 3 and 6 of the old base keep the wrong leg above the other. The later
+- **Fix the recommended horizontal base leg depth.** The seventh frame still
+  had the wrong leg above the other after the first correction. The current
+  candidate keeps the same depth through frames 4-7 and returns to the other
+  leg on frame 8. The later
   `female_adventurer_reference_mannequin_v1_adapted` output is a redraw based on
   that base, so it inherits the same conceptual error and is not an acceptable
   replacement. A new `recommended_base_horizontal_layer_fix_v1` candidate now

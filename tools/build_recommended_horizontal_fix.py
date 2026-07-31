@@ -114,9 +114,9 @@ def main() -> int:
         "cell_size": list(CELL_SIZE),
         "frames": FRAME_COUNT,
         "frame_order": ["contact_a", "down_a", "passing_a", "up_a", "contact_b", "down_b", "passing_b", "up_b"],
-        "foot_occlusion_policy": ["right_front", "right_front", "right_front", "left_front", "left_front", "left_front", "right_front", "right_front"],
+        "foot_occlusion_policy": ["right_front", "right_front", "right_front", "left_front", "left_front", "left_front", "left_front", "right_front"],
         "runtime_frames": [f"right_frame{index}.png" for index in range(FRAME_COUNT)],
-        "notes": "Review candidate generated from the recommended base. The front leg switches after frames 3 and 6; this is not the older redraw adapter.",
+        "notes": "Review candidate generated from the recommended base. The front leg switches after frame 3 and returns after frame 7; this is not the older redraw adapter.",
     }
     (OUTPUT / "manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
     print(f"RECOMMENDED_HORIZONTAL_FIX_PASS frames={FRAME_COUNT} output={OUTPUT.relative_to(ROOT)}")

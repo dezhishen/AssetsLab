@@ -23,10 +23,10 @@
       "left_foot",
       "left_foot",
       "left_foot",
-      "right_foot",
+      "left_foot",
       "right_foot"
     ],
-    "notes": "The nearer leg changes after frame 3 and after frame 6; do not keep one named leg permanently above the other."
+    "notes": "The nearer leg changes after frame 3 and after frame 7; frame 7 keeps the same depth as frames 4-6."
   },
   "torso": {
     "x": 32,
@@ -276,7 +276,7 @@
           "w": 4,
           "h": 13.036103712382776,
           "angle": -0.09157267859488627,
-          "z_order": 9
+          "z_order": 11
         },
         "right_foot": {
           "x": 32.197300215982736,
@@ -284,7 +284,7 @@
           "w": 4,
           "h": 16.601204775557704,
           "angle": 178.82037955202105,
-          "z_order": 11
+          "z_order": 9
         }
       }
     },

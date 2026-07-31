@@ -166,7 +166,7 @@ def main() -> int:
         "recommended_horizontal_layer_fix": {
             "source": "prototype/assets/characters/generated/recommended_base_horizontal_layer_fix_v1/right_source.png",
             "runtime": "prototype/assets/characters/generated/recommended_base_horizontal_layer_fix_v1/runtime",
-            "foot_occlusion_policy": ["right_front", "right_front", "right_front", "left_front", "left_front", "left_front", "right_front", "right_front"],
+            "foot_occlusion_policy": ["right_front", "right_front", "right_front", "left_front", "left_front", "left_front", "left_front", "right_front"],
             "status": "candidate_for_visual_review",
         },
         "excluded": "legacy bodies, RGS proxies, skeleton tests, old generated walk GIFs, and retired preview pages",
