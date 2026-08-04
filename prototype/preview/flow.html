@@ -48,6 +48,11 @@
   .ops { display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; }
   .ops button { padding:9px 16px; }
   .empty { color:var(--muted); padding:24px 0; text-align:center; }
+  .bodyToggle { display:flex; align-items:center; gap:10px; width:100%; background:none; border:none; padding:0; cursor:pointer; color:var(--text); text-align:left; }
+  .bodyToggle h3 { margin:0; color:var(--accent); font-size:15px; }
+  .bodyToggle .caret { margin-left:auto; color:var(--muted); font-size:13px; transition:transform .15s; }
+  #bodyPanel.open .caret { transform:rotate(90deg); }
+  .tpldesc { display:block; font-size:12px; color:var(--muted); margin-top:2px; max-width:260px; }
 </style>
 </head>
 <body>
@@ -63,20 +68,24 @@
   <div class="toolbar">
     <label>新实例 <input id="newId" placeholder="实例 id（留空用默认）" style="width:180px"></label>
     <label>参数模板 <select id="tplSelect"><option value="">默认参数</option></select></label>
-    <label>体型模板 <select id="bodyTplSelect"><option value="">标准体型</option></select></label>
+    <label>体型模板 <select id="bodyTplSelect"><option value="">标准体型</option></select>
+      <span id="bodyTplDesc" class="tpldesc"></span></label>
     <button id="newBtn">＋ 新建</button>
   </div>
 
   <div id="stepper" class="stepper"></div>
 
   <section class="panel" id="bodyPanel" hidden>
-    <div class="stepHead">
+    <button id="bodyToggle" class="bodyToggle" type="button">
       <h3>角色体型</h3>
-      <span class="muted" style="font-size:12px">实例级全局 · 三视图共享，改一次全步骤生效</span>
+      <span id="bodySummary" class="muted" style="font-size:12px"></span>
+      <span class="caret">▸</span>
+    </button>
+    <div id="bodyBody" hidden>
+      <p class="muted">骨骼比例（臂长/腿长/躯干长/肩宽/头大小/身高）属于「角色」而非「动作」；与每步的动作参数（步幅/摆臂等）正交。修改后立即保存到该实例。</p>
+      <div id="bodyParams" class="sliders"></div>
+      <div id="bodySaved" class="muted" style="font-size:12px;margin-top:4px"></div>
     </div>
-    <p class="muted">骨骼比例（臂长/腿长/躯干长/肩宽/头大小/身高）属于「角色」而非「动作」；与每步的动作参数（步幅/摆臂等）正交。修改后立即保存到该实例。</p>
-    <div id="bodyParams" class="sliders"></div>
-    <div id="bodySaved" class="muted" style="font-size:12px;margin-top:4px"></div>
   </section>
 
   <section class="panel" id="stepPanel">
@@ -114,6 +123,7 @@ const BODY_MIN = { arm_length:0.6, leg_length:0.6, torso_length:0.6, shoulder_wi
 const BODY_MAX = { arm_length:1.6, leg_length:1.6, torso_length:1.6, shoulder_width:1.6, head_scale:1.6, height:1.4 };
 
 let WF_ID = null, STATE = null, DEF = null, CURRENT = 0;
+let BODY_OPEN = false, BODY_TEMPLATES = [];
 
 async function api(path, opts) {
   const res = await fetch(path, opts);
@@ -151,15 +161,35 @@ async function loadTemplates() {
 async function loadBodyTemplates() {
   const res = await fetch('/api/workflow/body-templates');
   const data = await res.json().catch(() => ({}));
-  const tpls = Array.isArray(data.body_templates) ? data.body_templates : [];
+  BODY_TEMPLATES = Array.isArray(data.body_templates) ? data.body_templates : [];
   $('bodyTplSelect').innerHTML = '<option value="">标准体型</option>' +
-    tpls.map(t => `<option value="${t.id}" title="${(t.description || '').replace(/"/g, '&quot;')}">${t.title}（${t.id}）</option>`).join('');
+    BODY_TEMPLATES.map(t => `<option value="${t.id}" title="${(t.description || '').replace(/"/g, '&quot;')}">${t.title}（${t.id}）</option>`).join('');
+  updateBodyTplDesc();
+}
+
+function presetTitle(id) {
+  if (!id) return '';
+  const t = BODY_TEMPLATES.find(x => x.id === id);
+  return t ? t.title : id;
+}
+
+function updateBodyTplDesc() {
+  const id = $('bodyTplSelect').value;
+  const t = BODY_TEMPLATES.find(x => x.id === id);
+  $('bodyTplDesc').textContent = t ? t.description : '创建时套用的角色体型预设；留空 = 标准体型。';
 }
 
 function renderBody() {
   const body = (STATE && STATE.body) || {};
   $('bodyPanel').hidden = !WF_ID;
   if (!WF_ID) return;
+  const nonDefault = BODY_KEYS.filter(k => Math.abs((body[k] ?? 1) - 1) > 0.001)
+    .map(k => `${BODY_LABEL[k]}${body[k]}`).join(' · ');
+  const preset = STATE.body_template ? presetTitle(STATE.body_template) : '';
+  $('bodySummary').textContent = (preset ? `${preset} · ` : '') + (nonDefault || '标准体型');
+  $('bodyPanel').classList.toggle('open', BODY_OPEN);
+  $('bodyBody').hidden = !BODY_OPEN;
+  if (!BODY_OPEN) return;
   $('bodyParams').innerHTML = BODY_KEYS.map(k =>
     `<label class="prow">${BODY_LABEL[k]}
       <span class="numstep">
@@ -358,6 +388,8 @@ $('nextBtn').onclick = async () => {
 };
 
 $('wfSelect').onchange = () => { history.replaceState(null, '', 'flow.html?id=' + encodeURIComponent($('wfSelect').value)); openInstance($('wfSelect').value); };$('refresh').onclick = async () => { await loadInstances(); if (WF_ID) await refresh(); };
+$('bodyToggle').onclick = () => { BODY_OPEN = !BODY_OPEN; renderBody(); };
+$('bodyTplSelect').onchange = updateBodyTplDesc;
 $('newBtn').onclick = async () => {
   const body = JSON.stringify({
     definition: 'default',
@@ -369,6 +401,7 @@ $('newBtn').onclick = async () => {
   log('新建实例 → ' + JSON.stringify(r.data));
   await loadInstances();
   if (r.ok && r.data && r.data.workflow_id) {
+    BODY_OPEN = false;  // keep the new instance's body panel collapsed
     history.replaceState(null, '', 'flow.html?id=' + encodeURIComponent(r.data.workflow_id));
     await openInstance(r.data.workflow_id);
   }

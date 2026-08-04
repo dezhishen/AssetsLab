@@ -80,6 +80,7 @@ def create_instance(root: Path, run_root: Path, workflow_id: str, definition_id:
         "title": definition.title,
         "template_id": template_id,
         "template_params": template_params,
+        "body_template": body_template,
         "body": body_values,
         "created_at": now_iso(),
         "version": 0,

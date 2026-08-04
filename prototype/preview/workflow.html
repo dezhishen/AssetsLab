@@ -78,8 +78,10 @@
     </div>
     <div class="muted" style="font-size:12px;margin-top:8px">动作参数（怎么动）</div>
     <div class="toolbar" id="mvParams"></div>
-    <div class="muted" style="font-size:12px;margin-top:8px">角色体型（骨骼比例 · 与动作正交，三视图共享）</div>
-    <div class="toolbar" id="mvProps"></div>
+    <details>
+      <summary class="muted" style="font-size:12px;margin-top:8px;cursor:pointer;user-select:none">角色体型（骨骼比例 · 与动作正交，三视图共享）</summary>
+      <div class="toolbar" id="mvProps"></div>
+    </details>
     <div class="toolbar">
       <label>混合 → <select id="mvBlend"><option value="">无</option></select></label>
       <label>比例 <input type="range" id="mvBlendT" min="0" max="1" step="0.05" value="0.5" style="width:110px"></label>
