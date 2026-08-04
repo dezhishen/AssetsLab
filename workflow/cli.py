@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -16,11 +17,22 @@ from .model import BODY_NAMES, WorkflowDef
 from .runner import WorkflowRunner, create_instance, list_instances
 from .store import Store
 
-ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_RUN_ROOT = ROOT / "run"
-DEFAULT_DEFINITION_ROOT = ROOT / "workflow" / "definitions"
-DEFAULT_TEMPLATE_ROOT = ROOT / "workflow" / "templates"
-DEFAULT_BODY_ROOT = ROOT / "workflow" / "body"
+if getattr(sys, "frozen", False):
+    # PyInstaller binary: the engine data (definitions/templates/body/motions)
+    # is bundled under sys._MEIPASS, while the *user's* workspace (run/, dist/)
+    # is the current working directory the binary is launched from.
+    _BUNDLED = Path(getattr(sys, "_MEIPASS", Path.cwd()))
+    ROOT = Path.cwd()
+    DEFAULT_RUN_ROOT = ROOT / "run"
+    DEFAULT_DEFINITION_ROOT = _BUNDLED / "workflow" / "definitions"
+    DEFAULT_TEMPLATE_ROOT = _BUNDLED / "workflow" / "templates"
+    DEFAULT_BODY_ROOT = _BUNDLED / "workflow" / "body"
+else:
+    ROOT = Path(__file__).resolve().parents[1]
+    DEFAULT_RUN_ROOT = ROOT / "run"
+    DEFAULT_DEFINITION_ROOT = ROOT / "workflow" / "definitions"
+    DEFAULT_TEMPLATE_ROOT = ROOT / "workflow" / "templates"
+    DEFAULT_BODY_ROOT = ROOT / "workflow" / "body"
 
 
 def _emit(data: object, as_json: bool) -> None:
@@ -163,6 +175,52 @@ def cmd_set_body(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_update(args: argparse.Namespace) -> int:
+    """Update a webflow artifact (frontend / cli / server) from a GitHub Release.
+
+    The CI pipeline publishes three artifacts: ``webflow-dist.zip`` (cross-platform
+    frontend), ``webflow-cli-<platform>.zip`` and ``webflow-server-<platform>.zip``
+    (per-platform binaries). This command fetches the selected one.
+    """
+    from .webflow import (  # noqa: PLC0415
+        download_release_asset,
+        ensure_webflow_dist,
+        infer_repo,
+        platform_tag,
+        read_version,
+    )
+    token = args.webflow_token or os.environ.get("GITHUB_TOKEN")
+    repo = args.webflow_repo or infer_repo(ROOT)
+    if not repo:
+        _emit({"ok": False, "error": "cannot infer GitHub repo (use --webflow-repo)"}, args.json)
+        return 1
+    # Download progress/errors go to stderr so stdout stays pure JSON in --json.
+    elog = lambda *a: print(*a, file=sys.stderr)  # noqa: E731
+    component = args.component
+    if component == "frontend":
+        dist = ensure_webflow_dist(ROOT, repo, args.webflow_version, token, log=elog)
+        if dist is None:
+            _emit({"ok": False, "error": "frontend update failed (no local build, no reachable release)"}, args.json)
+            return 1
+        _emit({"ok": True, "component": "frontend", "dist": str(dist), "version": read_version(dist)}, args.json)
+        return 0
+    tag = platform_tag()
+    asset = f"webflow-{component}-{tag}.zip"
+    dest = ROOT / "workflow" / "web" / ("cli" if component == "cli" else "server")
+    if download_release_asset(repo, args.webflow_version, asset, dest, token, log=elog) is None:
+        _emit({"ok": False, "error": f"{component} update failed ({asset})"}, args.json)
+        return 1
+    # A zip does not reliably preserve the executable bit on POSIX — make the
+    # unpacked binary runnable so `workflow/web/<cli|server>/webflow-<c|s>*`
+    # works straight away.
+    if os.name != "nt":
+        exe = dest / (f"webflow-{component}" if component == "cli" else f"webflow-{component}")
+        if exe.is_file():
+            exe.chmod(exe.stat().st_mode | 0o111)
+    _emit({"ok": True, "component": component, "asset": asset, "dir": str(dest)}, args.json)
+    return 0
+
+
 def cmd_approve(args: argparse.Namespace) -> int:
     runner = _runner(args)
     try:
@@ -244,6 +302,14 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--body", action="append", metavar="NAME=VALUE", required=True,
                    help="Character proportion to set (repeatable), e.g. --body head_scale=1.4.")
     p.set_defaults(handler=cmd_set_body)
+
+    p = sub.add_parser("update", parents=[common], help="Update a webflow artifact from a GitHub Release.")
+    p.add_argument("--component", choices=["frontend", "cli", "server"], default="frontend",
+                   help="Artifact to update (default: frontend).")
+    p.add_argument("--webflow-repo", help="GitHub owner/repo (default: inferred from git remote).")
+    p.add_argument("--webflow-version", help="Release tag (default: latest).")
+    p.add_argument("--webflow-token", help="GitHub token (env GITHUB_TOKEN also honoured).")
+    p.set_defaults(handler=cmd_update)
 
     for name in ("run", "approve", "reject"):
         p = sub.add_parser(name, parents=[common], help=f"{name} an action of a workflow instance.")

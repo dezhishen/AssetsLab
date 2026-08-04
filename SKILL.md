@@ -25,6 +25,44 @@ Godot 4.7 像素风角色动画实验项目。核心是**骨架优先行走流�
 # 或: .venv/bin/python workflow/tools/assetslab.py preview --port 8765
 ```
 
+## 安装方式
+
+**前置要求**：Git、Python 3.10+；前端构建还需 Node 18+ 与 pnpm。
+
+**方式 A：源码安装（完整，含全部渲染工具链）**
+```bash
+git clone git@github.com:dezhishen/AssetsLab.git && cd AssetsLab
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements.txt
+# 可选：本地构建 Vue 前端（不构建则 server 启动时自动下载制品）
+cd workflow/web && pnpm install && pnpm build && cd ../..
+# 启动预览服务器（REST API + Web 控制台）
+.venv/bin/python workflow/tools/lan_preview_server.py --port 8765 --directory prototype/preview
+```
+
+**方式 B：二进制制品（免 Python 环境，来自 GitHub Releases）**
+
+CI（`.github/workflows/webflow-build.yml`）发布三个制品：
+
+| 制品 | 说明 |
+|---|---|
+| `webflow-dist.zip` | 前端 SPA（跨平台静态文件） |
+| `webflow-cli-<linux\|macos\|windows>.zip` | CLI 二进制：解压后 `./webflow-cli list` |
+| `webflow-server-<linux\|macos\|windows>.zip` | Server 二进制：解压后 `./webflow-server --port 8765 --directory <仓库>/prototype/preview --repo-root <仓库>` |
+
+> Linux/macOS 若 zip 解压后无执行权限：`chmod +x webflow-cli webflow-server`。
+> 二进制的**管理/调度命令独立可用**；渲染类命令（run/stage）在目标机无 Python 时需完整进程内化（当前建议用源码方式渲染，二进制用于调度与 API）。
+
+**更新制品**（CLI `update` 命令）：
+```bash
+python -m workflow update --component frontend   # 更新前端 dist（缺失时后端启动也会自动下载）
+python -m workflow update --component cli        # 更新 CLI 二进制
+python -m workflow update --component server     # 更新 Server 二进制
+# 参数：--webflow-repo <owner/repo>（默认从 git remote 推断）、--webflow-version <tag>、--webflow-token <PAT>
+```
+
+后端（server）启动时若本地 `workflow/web/dist` 缺失，按构建参数自动从 GitHub Release 下载前端制品：`--webflow-repo` / `--webflow-version` / `--webflow-token` / `--no-webflow-download`（禁下载则回退旧页面）。
+
 ## 工作流引擎（AI 调度主入口）— `python -m workflow`
 
 状态按实例持久化 `run/workflows/<workflow_id>/state.json`（git 忽略）。

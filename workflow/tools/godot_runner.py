@@ -20,9 +20,15 @@ from __future__ import annotations
 import os
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[2]
+if getattr(sys, "frozen", False):
+    # PyInstaller packaging: the repo files (workflow/, assets/, …) are bundled
+    # under sys._MEIPASS (onefile extracts to a temp dir at startup).
+    ROOT = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parents[2]))
+else:
+    ROOT = Path(__file__).resolve().parents[2]
 PROTOTYPE_ROOT = ROOT / "prototype"
 TEST_OUTPUT = PROTOTYPE_ROOT / "test_output"
 SKELETON_PIPELINE = TEST_OUTPUT / "skeleton_pipeline"
