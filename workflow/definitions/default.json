@@ -46,7 +46,7 @@
       },
       "depends": [],
       "collect": [
-        "prototype/test_output/skeleton_pipeline/front_arm_swing.gif"
+        "prototype/test_output/skeleton_pipeline/front_arm_swing_walk.gif"
       ],
       "approval": "human",
       "description": "正面完整行走循环，可调整步幅、骨盆起伏、摆臂与体型比例"
@@ -97,7 +97,7 @@
         "skeleton.front"
       ],
       "collect": [
-        "prototype/test_output/skeleton_pipeline/side_arm_swing.gif"
+        "prototype/test_output/skeleton_pipeline/side_arm_swing_walk.gif"
       ],
       "approval": "human",
       "description": "右向侧面完整行走循环，可调整步幅、骨盆起伏、摆臂与体型比例"
@@ -145,7 +145,7 @@
         "skeleton.side"
       ],
       "collect": [
-        "prototype/test_output/skeleton_pipeline/back_legs.gif"
+        "prototype/test_output/skeleton_pipeline/back_legs_walk.gif"
       ],
       "approval": "human",
       "description": "背面行走循环，可调整步幅、骨盆起伏与体型比例"

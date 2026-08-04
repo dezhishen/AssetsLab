@@ -59,7 +59,8 @@ class ActionState:
     approved: bool = False
     approved_by: str | None = None
     note: str | None = None
-    outputs: list[str] = field(default_factory=list)     # absolute paths to local images/files
+    outputs: list[str] = field(default_factory=list)     # absolute paths to local images/files (latest run)
+    prev_outputs: list[str] = field(default_factory=list)  # previous run's outputs, for side-by-side diff
     ran_at: str | None = None
     finished_at: str | None = None
     params: dict = field(default_factory=dict)           # params used for the last run

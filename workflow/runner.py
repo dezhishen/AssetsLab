@@ -139,6 +139,26 @@ class WorkflowRunner:
             log_path.write_text(f"timeout: {error}\n", encoding="utf-8")
 
         ok = exit_code == 0
+
+        # Snapshot the previous run's outputs as <name>.prev.<ext> so the web UI
+        # can show the last version side-by-side with the current one.  This MUST
+        # happen before ``collect`` below, which overwrites the step files with
+        # the newly built outputs — otherwise the backup would copy the current
+        # build onto itself and prev == current.
+        prev_outputs: list[str] = []
+        with self.store.lock():
+            actions = self._state_actions()
+            state = self._action_state(actions, action_id)
+            for old in state.outputs:
+                old_path = Path(old)
+                if old_path.exists() and old_path.parent == step_dir:
+                    prev_path = old_path.parent / (old_path.stem + ".prev" + old_path.suffix)
+                    try:
+                        shutil.copy2(old_path, prev_path)
+                        prev_outputs.append(str(prev_path))
+                    except OSError:
+                        pass
+
         outputs: list[str] = []
         for rel in action.collect:
             source = (self.root / rel).resolve()
@@ -159,6 +179,7 @@ class WorkflowRunner:
         with self.store.lock():
             actions = self._state_actions()
             state = self._action_state(actions, action_id)
+            state.prev_outputs = prev_outputs
             state.outputs = outputs
             state.finished_at = now_iso()
             state.status = Status.PASSED.value if ok else Status.FAILED.value

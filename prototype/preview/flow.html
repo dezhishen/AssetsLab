@@ -28,6 +28,9 @@
   .badge.pending { color:var(--muted); }
   .stepHead { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
   #stepOutput img { max-width:100%; max-height:260px; image-rendering:pixelated; background:#080b13; border-radius:8px; border:1px solid var(--line); margin-top:10px; }
+  .cmp-row { display:flex; gap:18px; flex-wrap:wrap; }
+  .cmp { flex:1; min-width:260px; }
+  .cmp-label { color:var(--muted); font-size:12px; margin-top:8px; }
   .prow { display:flex; align-items:center; justify-content:space-between; gap:12px; margin:8px 0; }
   .numstep { display:inline-flex; align-items:center; gap:4px; }
   .numstep button { width:30px; height:30px; padding:0; font-size:16px; line-height:1; }
@@ -201,10 +204,16 @@ async function renderStep() {
   }).join('') : '';
   bindNumSteps($('stepParams'));
 
-  // outputs (cache-busted so re-running with new params shows the fresh frame)
+  // outputs: previous version vs current version, side by side for diffing
   const ts = encodeURIComponent(st.finished_at || Date.now());
-  const imgs = (st.outputs || []).map(urlFromPath).filter(Boolean).map(u => `<img src="${u}?t=${ts}" alt="${a.action_id}" loading="lazy">`).join('');
-  $('stepOutput').innerHTML = imgs || '<span class="muted">（尚无输出）</span>';
+  const prevImgs = (st.prev_outputs || []).map(urlFromPath).filter(Boolean)
+    .map(u => `<img src="${u}?t=${ts}" alt="${a.action_id} prev" loading="lazy">`).join('');
+  const curImgs = (st.outputs || []).map(urlFromPath).filter(Boolean)
+    .map(u => `<img src="${u}?t=${ts}" alt="${a.action_id}" loading="lazy">`).join('');
+  const cmp = [];
+  if (prevImgs) cmp.push(`<div class="cmp"><div class="cmp-label">上一版</div>${prevImgs}</div>`);
+  if (curImgs) cmp.push(`<div class="cmp"><div class="cmp-label">当前版</div>${curImgs}</div>`);
+  $('stepOutput').innerHTML = cmp.length ? `<div class="cmp-row">${cmp.join('')}</div>` : '<span class="muted">（尚无输出）</span>';
 
   // note + params used
   const note = st.note ? `<div class="note">备注：${st.note}${st.approved_by ? '（' + st.approved_by + '）' : ''}</div>` : '';
