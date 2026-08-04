@@ -130,7 +130,7 @@ python workflow/tools/assetslab.py stage front arms --renderer godot            
 ## 构建与 CI（GitHub Actions）
 
 - **本地构建前端**：`cd workflow/web && pnpm install && pnpm build` → `workflow/web/dist`（含 `version.json`，CI 写入 commit/branch/build_time）。
-- **CI**：`.github/workflows/webflow-build.yml` 在 push（main / feature/workflow-engine）或 workflow_dispatch / release 时：构建前端 → 写版本信息 → 校验 Python CLI/后端（`compileall` + `workflow --help`）→ 打包 `webflow-dist.zip` 上传为 CI artifact，并在 Release 发布时附加为 release 资产。
+- **CI（基于 tag 触发 Release 构建）**：`.github/workflows/webflow-build.yml` 在**推送 `v*` tag**（如 `git tag v1.0.0 && git push origin v1.0.0`）或手动 `workflow_dispatch` 时构建并发布三制品到对应 GitHub Release：`webflow-dist.zip`（前端）、`webflow-cli-<platform>.zip`、`webflow-server-<platform>.zip`（PyInstaller 二进制，按 linux/macos/windows）。构建含：前端 `pnpm build` → 写版本信息 → 校验 Python CLI/后端（`compileall` + `workflow --help`）→ PyInstaller 打包 → zip（Linux/macOS 保留可执行位）→ 上传 CI artifact + Release 资产。
 - **后端自动下载制品**：`lan_preview_server.py` 启动时若本地 `workflow/web/dist` 缺失，按构建参数从 GitHub Release 下载 `webflow-dist.zip` 并解压：
   - `--webflow-repo <owner/repo>`（默认从 git remote 推断）
   - `--webflow-version <tag>`（默认 latest release）

@@ -10,11 +10,11 @@ name: Build Webflow (three artifacts)
 # onedir output.
 
 on:
+  # Build + publish the three artifacts to a GitHub Release when a tag is
+  # pushed (e.g. `git tag v1.0.0 && git push origin v1.0.0`), or manually.
   push:
-    branches: [main, feature/workflow-engine]
+    tags: ['v*']
   workflow_dispatch:
-  release:
-    types: [published]
 
 jobs:
   frontend:
@@ -61,10 +61,11 @@ jobs:
           name: webflow-dist
           path: workflow/web/dist
 
-      - name: Attach webflow-dist.zip to GitHub Release
-        if: github.event_name == 'release'
+      - name: Publish webflow-dist.zip to GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ github.ref_name }}
           files: dist-artifact/webflow-dist.zip
 
   binary:
@@ -131,10 +132,11 @@ jobs:
           name: webflow-binary-${{ env.PTAG }}
           path: artifacts/
 
-      - name: Attach binaries to GitHub Release
-        if: github.event_name == 'release'
+      - name: Publish binaries to GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ github.ref_name }}
           files: |
             artifacts/webflow-cli-${{ env.PTAG }}.zip
             artifacts/webflow-server-${{ env.PTAG }}.zip
