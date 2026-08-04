@@ -185,13 +185,19 @@ class WorkflowRunner:
     # ------------------------------------------------------------- params --
 
     def _resolve_params(self, action: ActionDef, overrides: dict | None) -> dict:
-        """Merge declared defaults with the run-time overrides."""
+        """Merge, in priority order: definition defaults < instance template
+        (industry-style default knob values chosen at creation) < run-time
+        overrides."""
         resolved: dict[str, Any] = {}
         for name, spec in action.params.items():
             if isinstance(spec, dict):
                 resolved[name] = spec.get("default")
             else:
                 resolved[name] = spec
+        data = self.store.load()
+        for name, value in (data.get("template_params") or {}).items():
+            if name in resolved:
+                resolved[name] = value
         for name, value in (overrides or {}).items():
             resolved[name] = value
         return resolved

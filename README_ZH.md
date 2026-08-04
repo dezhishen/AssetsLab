@@ -197,6 +197,14 @@ python -m workflow reject --workflow review-a --action skeleton.front.legs --by 
 python -m workflow run --workflow review-a --action skeleton.front.legs --param stride=1.2 --param pelvis_bob=1.5 --json
 ```
 
+**风格参数模板** — 不必从中性参数（stride=1.0）开始，创建实例时可直接选一套业内风格默认参数（`--template realistic|cartoon|bouncy|heavy|light`）。模板值成为该实例的默认旋钮（每次运行仍可用 `--param` 覆盖）；Web 控制台新建实例时提供同样的模板选择，并会用它预填向导的参数滑块。
+
+```bash
+python -m workflow new --definition default --id hero --template bouncy
+python -m workflow run --workflow hero --action skeleton.front.legs              # 用 bouncy 默认参数
+python -m workflow run --workflow hero --action skeleton.front.legs --param stride=1.5   # 覆盖单个旋钮
+```
+
 - **CLI** 是面向 AI 的调度通道：`--json` 输出机器可读，`outputs` 返回本地图片**绝对路径**。
 - **Web** 是面向人工的完整通道：`http://<host>:8765/workflow.html`；图片经 `http://<host>:8765/run/workflows/<id>/steps/<action_id>/` 预览。带可调参数的动作在运行前会弹出**参数调优窗**（拖动 stride/pelvis-bob/arm-swing 再运行），人真正参与调姿态，而不只是点「通过」。
 - **分步流程向导**：`http://<host>:8765/flow.html?id=<workflow_id>` 一次只渲染一个步骤（步进器 + 上一步/下一步，类似安装向导）。每步展示参数、输出与评审按钮；`workflow.html` 中点击实例即进入向导。首次打开优先定位「已通过但未审核」的步骤（先补审核），否则定位推荐的下一步。

@@ -53,9 +53,13 @@
 
   <div class="toolbar">
     <label>流程实例 <select id="wfSelect"></select></label>
-    <button id="newBtn">＋ 新建</button>
     <button id="refresh">⟳ 刷新</button>
     <span id="wfMeta" class="muted"></span>
+  </div>
+  <div class="toolbar">
+    <label>新实例 <input id="newId" placeholder="实例 id（留空用默认）" style="width:180px"></label>
+    <label>参数模板 <select id="tplSelect"><option value="">默认参数</option></select></label>
+    <button id="newBtn">＋ 新建</button>
   </div>
 
   <div id="stepper" class="stepper"></div>
@@ -116,6 +120,14 @@ async function loadInstances() {
   if (urlId && items.some(it => it.workflow_id === urlId)) $('wfSelect').value = urlId;
 }
 
+async function loadTemplates() {
+  const res = await fetch('/api/workflow/templates');
+  const data = await res.json().catch(() => ({}));
+  const tpls = Array.isArray(data.templates) ? data.templates : [];
+  $('tplSelect').innerHTML = '<option value="">默认参数</option>' +
+    tpls.map(t => `<option value="${t.id}" title="${(t.description || '').replace(/"/g, '&quot;')}">${t.title}（${t.id}）</option>`).join('');
+}
+
 async function openInstance(id, keepStep = false) {
   WF_ID = id;
   $('stepPanel').hidden = false;
@@ -172,7 +184,9 @@ async function renderStep() {
   const hasParams = a.params && Object.keys(a.params).length;
   $('stepParamsTitle').hidden = !hasParams;
   $('stepParams').innerHTML = hasParams ? Object.entries(a.params).map(([k, s]) => {
-    const spec = s || {}; const d = spec.default ?? 1.0;
+    const spec = s || {};
+    const tpl = STATE.template_params || {};
+    const d = (tpl[k] != null) ? tpl[k] : (spec.default ?? 1.0);
     return `<label>${spec.label || k} <input type="range" data-key="${k}" min="${spec.min ?? 0}" max="${spec.max ?? 3}" step="0.05" value="${d}"> <span data-v>${d}</span></label>`;
   }).join('') : '';
   document.querySelectorAll('#stepParams input[type=range]').forEach(r => {
@@ -243,7 +257,7 @@ $('nextBtn').onclick = async () => {
 
 $('wfSelect').onchange = () => { history.replaceState(null, '', 'flow.html?id=' + encodeURIComponent($('wfSelect').value)); openInstance($('wfSelect').value); };$('refresh').onclick = async () => { await loadInstances(); if (WF_ID) await refresh(); };
 $('newBtn').onclick = async () => {
-  const body = JSON.stringify({ definition: 'default', id: prompt('实例 id（留空用 default）') || undefined });
+  const body = JSON.stringify({ definition: 'default', id: $('newId').value || undefined, template: $('tplSelect').value || undefined });
   const r = await api('/api/workflow/instances', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body });
   log('新建实例 → ' + JSON.stringify(r.data));
   await loadInstances();
@@ -255,6 +269,7 @@ $('newBtn').onclick = async () => {
 
 (async () => {
   await loadInstances();
+  await loadTemplates();
   const urlId = new URLSearchParams(location.search).get('id');
   if (urlId) await openInstance(urlId);
   else if ($('wfSelect').value) await openInstance($('wfSelect').value);

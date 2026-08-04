@@ -19,6 +19,7 @@ from .store import Store, now_iso
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_RUN_ROOT = ROOT / "run"
 DEFAULT_DEFINITION_ROOT = ROOT / "workflow" / "definitions"
+DEFAULT_TEMPLATE_ROOT = ROOT / "workflow" / "templates"
 
 
 def _emit(data: object, as_json: bool) -> None:
@@ -68,6 +69,14 @@ def _definition(definitions_root: Path, definition_id: str) -> WorkflowDef:
     return WorkflowDef.load(path)
 
 
+def _template(templates_root: Path, template_id: str) -> dict:
+    """Load an industry-style parameter template (a set of default knob values)."""
+    path = templates_root / f"{template_id}.json"
+    if not path.exists():
+        raise SystemExit(f"template not found: {template_id} ({path})")
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
 def _store(run_root: Path, workflow_id: str) -> Store:
     return Store(run_root, workflow_id)
 
@@ -110,18 +119,27 @@ def cmd_new(args: argparse.Namespace) -> int:
     store = _store(args.run_root, workflow_id)
     if store.exists():
         raise SystemExit(f"workflow instance already exists: {workflow_id}")
+    # Optional industry-style parameter template: a ready-made set of default
+    # knob values (stride / pelvis_bob / arm_swing) so you don't start from 1.0.
+    template_id = args.template or None
+    template_params: dict[str, float] = {}
+    if template_id:
+        template = _template(args.template_root, template_id)
+        template_params = {k: float(v) for k, v in (template.get("params") or {}).items()}
     state = {
         "schema": "assetslab_workflow_v1",
         "workflow_id": workflow_id,
         "definition_id": definition.definition_id,
         "title": definition.title,
+        "template_id": template_id,
+        "template_params": template_params,
         "created_at": now_iso(),
         "version": 0,
         "actions": {a.action_id: {"status": "pending", "approved": False, "outputs": []} for a in definition.actions},
     }
     with store.lock():
         store.save(state)
-    _emit({"workflow_id": workflow_id, "created": True, "next": _first_pending(definition)}, args.json)
+    _emit({"workflow_id": workflow_id, "created": True, "template": template_id, "next": _first_pending(definition)}, args.json)
     return 0
 
 
@@ -218,6 +236,7 @@ def _common_parser() -> argparse.ArgumentParser:
     common = argparse.ArgumentParser(add_help=False)
     common.add_argument("--run-root", type=Path, default=DEFAULT_RUN_ROOT, help="Run directory (default: <repo>/run).")
     common.add_argument("--definition-root", type=Path, default=DEFAULT_DEFINITION_ROOT, help="Workflow definitions directory.")
+    common.add_argument("--template-root", type=Path, default=DEFAULT_TEMPLATE_ROOT, help="Parameter template directory.")
     common.add_argument("--json", action="store_true", help="Machine-readable JSON output.")
     return common
 
@@ -236,6 +255,7 @@ def build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("new", parents=[common], help="Create a workflow instance.")
     p.add_argument("--definition", default="default")
     p.add_argument("--id", help="Instance id (defaults to definition id).")
+    p.add_argument("--template", help="Industry-style parameter template id (realistic/cartoon/bouncy/heavy/light/...).")
     p.set_defaults(handler=cmd_new)
 
     for name in ("status", "next", "history"):

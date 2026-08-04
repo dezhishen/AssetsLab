@@ -204,6 +204,19 @@ any of them; the used values are recorded in the action state for review:
 python -m workflow run --workflow review-a --action skeleton.front.legs --param stride=1.2 --param pelvis_bob=1.5 --json
 ```
 
+**Style templates** — instead of starting from neutral knobs (stride=1.0),
+pick an industry-style default set when creating an instance
+(`--template realistic|cartoon|bouncy|heavy|light`). The template values become
+the instance's default knobs (still overridable per run with `--param`); the
+Web console offers the same templates when creating an instance and pre-fills
+the wizard's parameter sliders with them.
+
+```bash
+python -m workflow new --definition default --id hero --template bouncy
+python -m workflow run --workflow hero --action skeleton.front.legs              # uses bouncy defaults
+python -m workflow run --workflow hero --action skeleton.front.legs --param stride=1.5   # override one knob
+```
+
 - CLI is the AI-facing scheduling channel: `--json` output is machine-readable
   and `outputs` returns absolute paths to local images.
 - Web is the human-facing full channel: `http://<host>:8765/workflow.html`;

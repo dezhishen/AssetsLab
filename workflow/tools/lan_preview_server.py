@@ -155,6 +155,26 @@ class PreviewHandler(SimpleHTTPRequestHandler):
         if parts == ["list"]:
             self._send_json(self._workflow_cli(["list", "--json"]))
             return
+        if parts == ["templates"]:
+            if REPO_ROOT is not None:
+                tpl_dir = REPO_ROOT / "workflow" / "templates"
+                items = []
+                if tpl_dir.is_dir():
+                    for path in sorted(tpl_dir.glob("*.json")):
+                        try:
+                            data = json.loads(path.read_text(encoding="utf-8"))
+                        except Exception:
+                            continue
+                        items.append({
+                            "id": data.get("template_id"),
+                            "title": data.get("title"),
+                            "description": data.get("description", ""),
+                            "params": data.get("params", {}),
+                        })
+                self._send_json({"templates": items})
+                return
+            self.send_error(404)
+            return
         if parts and parts[0] == "definitions":
             if len(parts) == 1 and DEFINITIONS_ROOT is not None:
                 self._send_json({"definitions": sorted(p.stem for p in DEFINITIONS_ROOT.glob("*.json"))})
@@ -188,6 +208,8 @@ class PreviewHandler(SimpleHTTPRequestHandler):
             args = ["new", "--definition", definition, "--json"]
             if body.get("id"):
                 args += ["--id", body["id"]]
+            if body.get("template"):
+                args += ["--template", body["template"]]
             self._send_json(self._workflow_cli(args))
             return
         if len(parts) == 5 and parts[0] == "instances" and parts[2] == "actions":
