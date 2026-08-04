@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>魔兽风格角色展示</title>
+<style>
+  body { background:#1e1e24; color:#ddd; font-family:sans-serif; margin:0; padding:24px; }
+  h1 { text-align:center; color:#f0b860; }
+  .row { display:flex; gap:16px; flex-wrap:wrap; justify-content:center; margin-bottom:24px; }
+  .card { background:#2a2a32; border:1px solid #3a3a46; border-radius:10px; padding:12px; text-align:center; }
+  .card h3 { margin:6px 0; color:#fff; }
+  .card .tag { font-size:12px; color:#aaa; margin-bottom:8px; }
+  .card img { width:120px; height:120px; object-fit:contain; background:#111; border-radius:6px; image-rendering:pixelated; }
+  .card .cap { font-size:12px; color:#888; margin-top:6px; }
+  .section { font-size:14px; color:#f0b860; margin:12px auto; max-width:1000px; }
+</style>
+</head>
+<body>
+<h1>⚔️ 魔兽风格角色（人体模特蒙皮）</h1>
+
+<div class="section">走路 walk（front）</div>
+<div class="row">
+  <div class="card"><img src="orc/preview/orc_walk_front.gif"><h3>兽人 orc</h3><div class="tag">宽肩强壮·绿</div></div>
+  <div class="card"><img src="human_warrior/preview/human_warrior_walk_front.gif"><h3>人类战士 human_warrior</h3><div class="tag">标准健壮·蓝</div></div>
+  <div class="card"><img src="undead/preview/undead_walk_front.gif"><h3>亡灵 undead</h3><div class="tag">瘦长·暗灰</div></div>
+  <div class="card"><img src="dwarf/preview/dwarf_walk_front.gif"><h3>矮人 dwarf</h3><div class="tag">矮壮·棕</div></div>
+</div>
+
+<div class="section">待机 idle（front）</div>
+<div class="row">
+  <div class="card"><img src="orc/preview/orc_idle_front.gif"><h3>兽人</h3></div>
+  <div class="card"><img src="human_warrior/preview/human_warrior_idle_front.gif"><h3>人类战士</h3></div>
+  <div class="card"><img src="undead/preview/undead_idle_front.gif"><h3>亡灵</h3></div>
+  <div class="card"><img src="dwarf/preview/dwarf_idle_front.gif"><h3>矮人</h3></div>
+</div>
+</body>
+</html>

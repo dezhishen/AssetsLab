@@ -37,6 +37,15 @@ COLOR_SEG = (174, 186, 198, 255)    # 肢体段
 COLOR_JOINT = (126, 140, 153, 255)  # 关节球
 COLOR_FOOT = (148, 161, 173, 255)
 
+# 魔兽风格配色（RGB；body 头/躯干, seg 肢体段, joint 关节球, foot 脚）
+PALETTES = {
+    "default": {"body": (200, 210, 220), "seg": (174, 186, 198), "joint": (126, 140, 153), "foot": (148, 161, 173)},
+    "orc":     {"body": (122, 150, 92),  "seg": (102, 132, 74),  "joint": (72, 96, 56),   "foot": (88, 114, 66)},   # 兽人·绿
+    "human":   {"body": (150, 160, 195), "seg": (126, 136, 172), "joint": (88, 98, 132),  "foot": (112, 122, 152)}, # 人类战士·蓝
+    "undead":  {"body": (142, 152, 138), "seg": (118, 128, 116), "joint": (84, 94, 88),   "foot": (100, 108, 96)},  # 亡灵·暗灰
+    "dwarf":   {"body": (152, 122, 96),  "seg": (132, 106, 82),  "joint": (98, 78, 58),   "foot": (114, 92, 70)},   # 矮人·棕
+}
+
 # (zone, layer, 逻辑关节, rotate_child)——逻辑关节用 front 视图的 left_ 系别名，
 # 因为 walk 预设的 front 偏移驱动 left_hand/left_foot/…（skin.py VIEW_JOINT 同款）。
 # 区域分段：百位 = 身体区域（0头颈 1左臂 2右臂 3躯干 4左腿 5右腿 6脚），
@@ -149,9 +158,18 @@ def main(argv: list[str] | None = None) -> int:
 
     parser = argparse.ArgumentParser(description="生成人体模特皮肤包（可按体型实例化）")
     parser.add_argument("--body", action="append", metavar="NAME=VALUE",
-                        help="体型比例覆盖（可重复），如 --body arm_length=1.2 --body leg_length=1.3")
+                        help="体型比例覆盖（可重复），如 --body upper_arm_length=1.2 --body thigh_length=1.3")
     parser.add_argument("--out", default="mannequin", help="皮肤包名（默认 mannequin）")
+    parser.add_argument("--palette", default="default", choices=list(PALETTES),
+                        help="配色（default/orc/human/undead/dwarf）")
     args = parser.parse_args(argv)
+
+    global COLOR_BODY, COLOR_SEG, COLOR_JOINT, COLOR_FOOT
+    pal = PALETTES.get(args.palette, PALETTES["default"])
+    COLOR_BODY = (*pal["body"], 255)
+    COLOR_SEG = (*pal["seg"], 255)
+    COLOR_JOINT = (*pal["joint"], 255)
+    COLOR_FOOT = (*pal["foot"], 255)
 
     body: dict[str, float] = {}
     for item in args.body or []:
