@@ -26,7 +26,9 @@ const body = computed(() => state.value?.body || {})
 function pushLog(text) { log.value = [text, ...log.value].slice(0, 60) }
 
 async function loadInstances() {
-  instances.value = (await workflowApi.list().catch(() => [])) || []
+  // Newest updated first, consistent with the console list.
+  instances.value = ((await workflowApi.list().catch(() => [])) || [])
+    .sort((a, b) => String(b.updated_at || '').localeCompare(String(a.updated_at || '')))
 }
 async function loadBodyTemplates() {
   const d = await workflowApi.bodyTemplates().catch(() => ({}))

@@ -31,6 +31,18 @@ const pmOpen = ref(false)
 const pmWorkflow = ref('')
 const pmAction = ref(null)
 const pmParams = reactive({})
+const instSearch = ref('')
+
+// Instances as a searchable list, newest updated first.
+const filteredInstances = computed(() => {
+  const q = instSearch.value.trim().toLowerCase()
+  return instances.value
+    .filter((it) => !q
+      || (it.workflow_id || '').toLowerCase().includes(q)
+      || (it.definition_id || '').toLowerCase().includes(q))
+    .slice()
+    .sort((a, b) => String(b.updated_at || '').localeCompare(String(a.updated_at || '')))
+})
 
 function pushLog(text) { log.value = [text, ...log.value].slice(0, 60) }
 
@@ -136,16 +148,24 @@ onMounted(async () => { await loadAll(); updateBodyTplDesc() })
 
     <!-- instances -->
     <div class="rounded-xl border border-slate-200 bg-white/70 dark:border-slate-700 dark:bg-slate-900/60 p-4">
-      <h2 class="text-lg font-semibold m-0 mb-3">工作流实例</h2>
+      <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+        <h2 class="text-lg font-semibold m-0">工作流实例 <span class="text-xs text-slate-500 font-normal">共 {{ instances.length }} 个 · 按更新时间倒序</span></h2>
+        <el-input v-model="instSearch" placeholder="搜索实例 id / 定义…" clearable style="width: 240px">
+          <template #prefix><el-icon><Search /></el-icon></template>
+        </el-input>
+      </div>
       <div v-if="!instances.length" class="text-slate-500 py-6 text-center">暂无实例，点击上方「新建实例」开始。</div>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <div v-for="it in instances" :key="it.workflow_id" class="rounded-lg border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-950 p-3 flex items-center gap-3 hover:border-cyan-600 cursor-pointer" @click="gotoWizard(it.workflow_id)">
+      <div v-else-if="!filteredInstances.length" class="text-slate-500 py-6 text-center">没有匹配「{{ instSearch }}」的实例。</div>
+      <div v-else class="divide-y divide-slate-200 dark:divide-slate-700">
+        <div v-for="it in filteredInstances" :key="it.workflow_id" class="flex items-center gap-3 py-3 cursor-pointer rounded px-2 -mx-2 hover:bg-slate-100 dark:hover:bg-slate-800/60" @click="gotoWizard(it.workflow_id)">
           <div class="flex-1 min-w-0">
             <div class="font-medium">{{ it.workflow_id }}</div>
             <div class="text-xs text-slate-500">{{ it.definition_id }} · v{{ it.version }} · {{ it.updated_at }}</div>
-            <el-progress :percentage="progressPct(it.progress)" :show-text="false" class="mt-2" />
           </div>
-          <span class="text-xs text-slate-500 whitespace-nowrap dark:text-slate-400">{{ it.progress }}</span>
+          <div class="w-32 shrink-0">
+            <el-progress :percentage="progressPct(it.progress)" :show-text="false" />
+          </div>
+          <span class="text-xs text-slate-500 whitespace-nowrap dark:text-slate-400 w-10 text-right shrink-0">{{ it.progress }}</span>
           <el-button size="small" @click.stop="openDetail(it.workflow_id)">详情</el-button>
         </div>
       </div>
