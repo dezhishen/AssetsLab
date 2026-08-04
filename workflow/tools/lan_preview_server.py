@@ -4,18 +4,19 @@ import argparse
 import base64
 import json
 import os
-import subprocess
 import sys
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlparse
 
-# Repository root, set by main(). The workflow console API shells out to the
-# cross-platform workflow CLI (python -m workflow), so scheduling behaves
-# identically to the AI-facing command line.
+# Repository root, set by main(). The workflow console API drives the SAME
+# Python SDK (workflow.runner / workflow.store) as the CLI — the Web channel
+# and the AI-facing CLI are peer adapters over one engine, they do NOT call
+# each other. _SDK holds the lazily imported module handles, set up in main().
 REPO_ROOT: Path | None = None
 RUN_ROOT: Path | None = None
 DEFINITIONS_ROOT: Path | None = None
+_SDK: tuple | None = None
 
 
 class PreviewHandler(SimpleHTTPRequestHandler):
@@ -130,31 +131,38 @@ class PreviewHandler(SimpleHTTPRequestHandler):
             return {}
         return json.loads(self.rfile.read(length).decode("utf-8"))
 
-    def _workflow_cli(self, args: list[str]) -> dict:
-        if REPO_ROOT is None:
-            return {"ok": False, "error": "workflow server not configured"}
-        try:
-            process = subprocess.run(
-                [sys.executable, "-m", "workflow", *args],
-                cwd=REPO_ROOT,
-                capture_output=True,
-                text=True,
-                timeout=900,
-            )
-        except subprocess.TimeoutExpired:
-            return {"ok": False, "error": "workflow command timed out"}
-        return {
-            "ok": process.returncode == 0,
-            "exit_code": process.returncode,
-            "stdout": (process.stdout or "")[-8000:],
-            "stderr": (process.stderr or "")[-4000:],
-        }
+    def _sdk(self) -> tuple:
+        """Lazily imported workflow SDK handles (set up in main())."""
+        if _SDK is None:
+            raise RuntimeError("workflow server not configured (SDK not imported)")
+        return _SDK
+
+    def _runner(self, workflow_id: str):
+        """Bind a WorkflowRunner to an existing instance, or None."""
+        WorkflowRunner, _, _, Store, WorkflowDef = self._sdk()
+        store = Store(RUN_ROOT, workflow_id)
+        if not store.exists():
+            return None
+        definition = WorkflowDef.load(DEFINITIONS_ROOT / f"{store.load().get('definition_id', 'default')}.json")
+        return WorkflowRunner(REPO_ROOT, definition, workflow_id, store)
+
+    def _ok(self, payload: object) -> dict:
+        """Wrap an SDK result in the legacy {ok, stdout} envelope the Web UI
+        already parses (stdout = JSON payload, exactly like `--json` output)."""
+        return {"ok": True, "stdout": json.dumps(payload, ensure_ascii=False)}
+
+    def _err(self, error: Exception) -> dict:
+        return {"ok": False, "error": str(error)}
 
     def _workflow_api_get(self) -> None:
         path = self.path[len("/api/workflow/"):].rstrip("/")
         parts = path.split("/")
         if parts == ["list"]:
-            self._send_json(self._workflow_cli(["list", "--json"]))
+            if REPO_ROOT is None:
+                self._send_json({"ok": False, "error": "workflow server not configured"})
+                return
+            WorkflowRunner, _, list_instances, _, _ = self._sdk()
+            self._send_json(self._ok(list_instances(REPO_ROOT, RUN_ROOT)))
             return
         if parts == ["templates"]:
             if REPO_ROOT is not None:
@@ -209,10 +217,18 @@ class PreviewHandler(SimpleHTTPRequestHandler):
             self.send_error(404)
             return
         if len(parts) == 2 and parts[0] == "instances":
-            self._send_json(self._workflow_cli(["status", "--workflow", parts[1], "--json"]))
+            runner = self._runner(parts[1])
+            if runner is None:
+                self._send_json({"ok": False, "error": f"workflow instance not found: {parts[1]}"}, 404)
+                return
+            self._send_json(self._ok(runner.status_view()))
             return
         if len(parts) == 3 and parts[0] == "instances" and parts[2] == "next":
-            self._send_json(self._workflow_cli(["next", "--workflow", parts[1], "--json"]))
+            runner = self._runner(parts[1])
+            if runner is None:
+                self._send_json({"ok": False, "error": f"workflow instance not found: {parts[1]}"}, 404)
+                return
+            self._send_json(self._ok({"next": runner.next()}))
             return
         self.send_error(404)
 
@@ -224,40 +240,61 @@ class PreviewHandler(SimpleHTTPRequestHandler):
         except Exception as error:
             self._send_json({"ok": False, "error": str(error)}, 400)
             return
+        if REPO_ROOT is None:
+            self._send_json({"ok": False, "error": "workflow server not configured"})
+            return
+        WorkflowRunner, create_instance, _, _, _ = self._sdk()
         if parts == ["instances"]:
             definition = body.get("definition") or "default"
-            args = ["new", "--definition", definition, "--json"]
-            if body.get("id"):
-                args += ["--id", body["id"]]
-            if body.get("template"):
-                args += ["--template", body["template"]]
-            if body.get("body_template"):
-                args += ["--body-template", body["body_template"]]
-            for key, value in (body.get("body") or {}).items():
-                args += ["--body", f"{key}={value}"]
-            self._send_json(self._workflow_cli(args))
+            workflow_id = body.get("id") or definition
+            try:
+                result = create_instance(REPO_ROOT, RUN_ROOT, workflow_id, definition,
+                                         body.get("template"), body.get("body_template"),
+                                         body.get("body") or None,
+                                         DEFINITIONS_ROOT,
+                                         REPO_ROOT / "workflow" / "templates",
+                                         REPO_ROOT / "workflow" / "body")
+            except (KeyError, RuntimeError) as error:
+                self._send_json(self._err(error))
+                return
+            self._send_json(self._ok(result))
             return
         if len(parts) == 3 and parts[0] == "instances" and parts[2] == "body":
             # POST /api/workflow/instances/<id>/body  {body: {head_scale: 1.4, ...}}
-            args = ["set-body", "--workflow", parts[1], "--json"]
-            for key, value in (body.get("body") or {}).items():
-                args += ["--body", f"{key}={value}"]
-            self._send_json(self._workflow_cli(args))
+            runner = self._runner(parts[1])
+            if runner is None:
+                self._send_json({"ok": False, "error": f"workflow instance not found: {parts[1]}"}, 404)
+                return
+            try:
+                result = runner.set_body(body.get("body") or {})
+            except RuntimeError as error:
+                self._send_json(self._err(error))
+                return
+            self._send_json(self._ok({"workflow_id": parts[1], "body": result}))
             return
         if len(parts) == 5 and parts[0] == "instances" and parts[2] == "actions":
             workflow_id, action_id, verb = parts[1], parts[3], parts[4]
-            args = [verb, "--workflow", workflow_id, "--action", action_id, "--json"]
-            if verb == "run" and isinstance(body.get("params"), dict):
-                for key, value in body["params"].items():
-                    args += ["--param", f"{key}={value}"]
-            if verb == "run" and isinstance(body.get("body"), dict):
-                for key, value in body["body"].items():
-                    args += ["--body", f"{key}={value}"]
-            if verb in ("approve", "reject"):
-                args += ["--by", body.get("by", "web")]
-                if body.get("note"):
-                    args += ["--note", body["note"]]
-            self._send_json(self._workflow_cli(args))
+            runner = self._runner(workflow_id)
+            if runner is None:
+                self._send_json({"ok": False, "error": f"workflow instance not found: {workflow_id}"}, 404)
+                return
+            try:
+                if verb == "run":
+                    result = runner.run(action_id, params=body.get("params") or None,
+                                        body=body.get("body") or None)
+                elif verb == "approve":
+                    result = runner.approve(action_id, by=body.get("by", "web"), note=body.get("note"))
+                    result = {"action_id": action_id, "approved": True, **result}
+                elif verb == "reject":
+                    result = runner.reject(action_id, by=body.get("by", "web"), note=body.get("note"))
+                    result = {"action_id": action_id, "rejected": True,
+                              "status": result["status"], "note": result["note"]}
+                else:
+                    raise RuntimeError(f"unknown action verb: {verb}")
+            except (KeyError, RuntimeError) as error:
+                self._send_json(self._err(error))
+                return
+            self._send_json(self._ok(result))
             return
         self.send_error(404)
 
@@ -393,10 +430,18 @@ def main() -> int:
     parser.add_argument("--directory", type=Path, required=True)
     parser.add_argument("--repo-root", type=Path, help="Repository root (defaults to the parent of --directory).")
     args = parser.parse_args()
-    global REPO_ROOT, RUN_ROOT, DEFINITIONS_ROOT
+    global REPO_ROOT, RUN_ROOT, DEFINITIONS_ROOT, _SDK
     REPO_ROOT = (args.repo_root or args.directory.parents[1]).resolve()
     RUN_ROOT = REPO_ROOT / "run"
     DEFINITIONS_ROOT = REPO_ROOT / "workflow" / "definitions"
+    # Import the workflow SDK in-process so the Web API is a peer of the CLI
+    # (both drive the same engine; neither depends on the other).
+    if str(REPO_ROOT) not in sys.path:
+        sys.path.insert(0, str(REPO_ROOT))
+    from workflow.model import WorkflowDef  # noqa: E402
+    from workflow.runner import WorkflowRunner, create_instance, list_instances  # noqa: E402
+    from workflow.store import Store  # noqa: E402
+    _SDK = (WorkflowRunner, create_instance, list_instances, Store, WorkflowDef)
     root = args.directory.resolve()
     os.chdir(root)
     server = ThreadingHTTPServer(("0.0.0.0", args.port), PreviewHandler)

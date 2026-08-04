@@ -233,9 +233,14 @@ python -m workflow run --workflow hero --action skeleton.front --body height=1.1
 ```
 
 - CLI is the AI-facing scheduling channel: `--json` output is machine-readable
-  and `outputs` returns absolute paths to local images.
+  and `outputs` returns absolute paths to local images. The CLI drives the
+  workflow SDK (`workflow.runner`) directly and does **not** depend on the
+  Web server — you can run the whole schedule without starting any service.
 - Web is the human-facing full channel: `http://<host>:8765/workflow.html`;
   images are served under `http://<host>:8765/run/workflows/<id>/steps/<action_id>/`.
+  The CLI and the Web API are **two peer adapters over the same SDK** — the
+  web server also calls `workflow.runner` in-process (it no longer shells out
+  to the CLI), so neither depends on the other.
   Actions with tunable params open a parameter dialog before running (drag
   stride/pelvis-bob/arm-swing, then run), so a human actually tunes the pose
   instead of only clicking approve.

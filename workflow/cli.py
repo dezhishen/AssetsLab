@@ -12,9 +12,9 @@ import json
 import sys
 from pathlib import Path
 
-from .model import BODY_NAMES, WorkflowDef, default_body
-from .runner import WorkflowRunner
-from .store import Store, now_iso
+from .model import BODY_NAMES, WorkflowDef
+from .runner import WorkflowRunner, create_instance, list_instances
+from .store import Store
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_RUN_ROOT = ROOT / "run"
@@ -70,14 +70,6 @@ def _definition(definitions_root: Path, definition_id: str) -> WorkflowDef:
     return WorkflowDef.load(path)
 
 
-def _template(templates_root: Path, template_id: str) -> dict:
-    """Load an industry-style parameter template (a set of default knob values)."""
-    path = templates_root / f"{template_id}.json"
-    if not path.exists():
-        raise SystemExit(f"template not found: {template_id} ({path})")
-    return json.loads(path.read_text(encoding="utf-8"))
-
-
 def _apply_body(body: dict, item: str) -> None:
     """Parse one ``--body NAME=VALUE`` into the body dict, validating the name."""
     if "=" not in item:
@@ -103,88 +95,29 @@ def _runner(args: argparse.Namespace, workflow_id: str | None = None) -> Workflo
 
 
 def cmd_list(args: argparse.Namespace) -> int:
-    workflows_dir = args.run_root / "workflows"
-    items: list[dict[str, object]] = []
-    if workflows_dir.is_dir():
-        for child in sorted(workflows_dir.iterdir()):
-            state = child / "state.json"
-            if state.exists():
-                data = json.loads(state.read_text(encoding="utf-8"))
-                actions = data.get("actions", {})
-                total = len(actions)
-                passed = sum(1 for v in actions.values() if v.get("status") == "passed")
-                items.append({
-                    "workflow_id": child.name,
-                    "definition_id": data.get("definition_id"),
-                    "updated_at": data.get("updated_at"),
-                    "version": data.get("version"),
-                    "progress": f"{passed}/{total}",
-                })
-    _emit(items, args.json)
+    _emit(list_instances(ROOT, args.run_root), args.json)
     return 0
 
 
 def cmd_new(args: argparse.Namespace) -> int:
-    definition = _definition(args.definition_root, args.definition)
     workflow_id = args.id or args.definition
-    store = _store(args.run_root, workflow_id)
-    if store.exists():
-        raise SystemExit(f"workflow instance already exists: {workflow_id}")
-    # Optional industry-style parameter template: a ready-made set of default
-    # knob values (stride / pelvis_bob / arm_swing) so you don't start from 1.0.
-    template_id = args.template or None
-    template_params: dict[str, float] = {}
-    if template_id:
-        template = _template(args.template_root, template_id)
-        template_params = {k: float(v) for k, v in (template.get("params") or {}).items()}
-    # Character body proportions (shared by every action of this instance):
-    # optional body template, then explicit --body overrides.
-    body = default_body()
-    if args.body_template:
-        body_tpl = _template(args.body_root, args.body_template)
-        body.update({k: float(v) for k, v in (body_tpl.get("body") or {}).items() if k in BODY_NAMES})
+    body: dict[str, float] = {}
     for item in args.body or []:
         _apply_body(body, item)
-    state = {
-        "schema": "assetslab_workflow_v1",
-        "workflow_id": workflow_id,
-        "definition_id": definition.definition_id,
-        "title": definition.title,
-        "template_id": template_id,
-        "template_params": template_params,
-        "body": body,
-        "created_at": now_iso(),
-        "version": 0,
-        "actions": {a.action_id: {"status": "pending", "approved": False, "outputs": []} for a in definition.actions},
-    }
-    with store.lock():
-        store.save(state)
-    _emit({"workflow_id": workflow_id, "created": True, "template": template_id,
-           "body": body, "next": _first_pending(definition)}, args.json)
+    try:
+        result = create_instance(ROOT, args.run_root, workflow_id, args.definition,
+                                 args.template, args.body_template, body or None,
+                                 args.definition_root, args.template_root, args.body_root)
+    except (KeyError, RuntimeError) as error:
+        _emit({"ok": False, "error": str(error)}, args.json)
+        return 1
+    _emit(result, args.json)
     return 0
-
-
-def _first_pending(definition: WorkflowDef) -> str | None:
-    return definition.actions[0].action_id if definition.actions else None
 
 
 def cmd_status(args: argparse.Namespace) -> int:
     runner = _runner(args)
-    data = runner.status()
-    data["next"] = runner.next()
-    # Enrich each action with definition metadata (phase/title) so the Web
-    # console can group and label actions. This is output-only; state.json
-    # keeps only the runtime state.
-    try:
-        definition = _definition(args.definition_root, data.get("definition_id", "default"))
-        for aid, state in data.get("actions", {}).items():
-            action = definition.by_id(aid)
-            if action and isinstance(state, dict):
-                state["phase"] = action.phase
-                state["title"] = action.title
-    except Exception:
-        pass
-    _emit(data, args.json)
+    _emit(runner.status_view(), args.json)
     return 0
 
 

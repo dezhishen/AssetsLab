@@ -8,6 +8,7 @@ AI (via absolute paths) and the Web console (via HTTP) can inspect them.
 
 from __future__ import annotations
 
+import json
 import shutil
 import subprocess
 import sys
@@ -16,6 +17,79 @@ from typing import Any
 
 from .model import ActionDef, ActionState, Approval, BODY_NAMES, Status, WorkflowDef, default_body
 from .store import Store, now_iso
+
+
+# ------------------------------------------------------------ instances --
+# Instance-level operations (list / create) are shared by the CLI and the Web
+# API: both channels drive the SDK directly, they do NOT depend on each other.
+
+def list_instances(root: Path, run_root: Path) -> list[dict]:
+    """All workflow instances with progress (shared by CLI and Web API)."""
+    workflows_dir = run_root / "workflows"
+    items: list[dict] = []
+    if workflows_dir.is_dir():
+        for child in sorted(workflows_dir.iterdir()):
+            state_path = child / "state.json"
+            if state_path.exists():
+                data = json.loads(state_path.read_text(encoding="utf-8"))
+                actions = data.get("actions", {})
+                total = len(actions)
+                passed = sum(1 for v in actions.values() if v.get("status") == "passed")
+                items.append({
+                    "workflow_id": child.name,
+                    "definition_id": data.get("definition_id"),
+                    "updated_at": data.get("updated_at"),
+                    "version": data.get("version"),
+                    "progress": f"{passed}/{total}",
+                })
+    return items
+
+
+def create_instance(root: Path, run_root: Path, workflow_id: str, definition_id: str = "default",
+                    template_id: str | None = None, body_template: str | None = None,
+                    body: dict | None = None,
+                    definitions_root: Path | None = None, templates_root: Path | None = None,
+                    body_root: Path | None = None) -> dict:
+    """Create a workflow instance (shared by CLI and Web API)."""
+    definitions_root = definitions_root or (root / "workflow" / "definitions")
+    templates_root = templates_root or (root / "workflow" / "templates")
+    body_root = body_root or (root / "workflow" / "body")
+    path = definitions_root / f"{definition_id}.json"
+    if not path.exists():
+        raise KeyError(f"definition not found: {definition_id} ({path})")
+    definition = WorkflowDef.load(path)
+    store = Store(run_root, workflow_id)
+    if store.exists():
+        raise RuntimeError(f"workflow instance already exists: {workflow_id}")
+    template_params: dict[str, float] = {}
+    if template_id:
+        tpl = json.loads((templates_root / f"{template_id}.json").read_text(encoding="utf-8"))
+        template_params = {k: float(v) for k, v in (tpl.get("params") or {}).items()}
+    body_values = default_body()
+    if body_template:
+        body_tpl = json.loads((body_root / f"{body_template}.json").read_text(encoding="utf-8"))
+        body_values.update({k: float(v) for k, v in (body_tpl.get("body") or {}).items() if k in BODY_NAMES})
+    for name, value in (body or {}).items():
+        if name not in BODY_NAMES:
+            raise RuntimeError(f"unknown body proportion: {name} (known: {', '.join(BODY_NAMES)})")
+        body_values[name] = float(value)
+    state = {
+        "schema": "assetslab_workflow_v1",
+        "workflow_id": workflow_id,
+        "definition_id": definition.definition_id,
+        "title": definition.title,
+        "template_id": template_id,
+        "template_params": template_params,
+        "body": body_values,
+        "created_at": now_iso(),
+        "version": 0,
+        "actions": {a.action_id: {"status": "pending", "approved": False, "outputs": []} for a in definition.actions},
+    }
+    with store.lock():
+        store.save(state)
+    return {"workflow_id": workflow_id, "created": True, "template": template_id,
+            "body": body_values,
+            "next": definition.actions[0].action_id if definition.actions else None}
 
 
 class WorkflowRunner:
@@ -60,6 +134,21 @@ class WorkflowRunner:
 
     def status(self) -> dict[str, Any]:
         return self.store.load()
+
+    def status_view(self) -> dict[str, Any]:
+        """Instance status enriched with the recommended next action and
+        per-action phase/title metadata (shared by CLI and Web API)."""
+        data = self.status()
+        data["next"] = self.next()
+        try:
+            for aid, st in data.get("actions", {}).items():
+                action = self.definition.by_id(aid)
+                if action and isinstance(st, dict):
+                    st["phase"] = action.phase
+                    st["title"] = action.title
+        except Exception:
+            pass
+        return data
 
     # -------------------------------------------------------- transitions --
 
