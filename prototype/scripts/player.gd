@@ -71,19 +71,27 @@ func _ready() -> void:
 			skin_view = argument.trim_prefix("--skin-view=")
 		if argument.begins_with("--skin-pack="):
 			skin_pack = argument.trim_prefix("--skin-pack=")
-	for argument in user_args:
+	# --artifacts 支持两种写法：`--artifacts=dist/x` 或 `--artifacts dist/x`（空格）。
+	# 之前只认等号，build_demo.sh 用空格传参会被静默忽略，回退到内置素材。
+	var i := 0
+	while i < user_args.size():
+		var argument: String = user_args[i]
+		var value: String = ""
 		if argument.begins_with("--artifacts="):
-			artifacts_dir = argument.trim_prefix("--artifacts=")
+			value = argument.trim_prefix("--artifacts=")
+		elif argument == "--artifacts" and i + 1 < user_args.size():
+			value = user_args[i + 1]
+			i += 1
+		if not value.is_empty():
+			artifacts_dir = value
 			# Image.load_from_file needs an OS path; resolve relative values
 			# against the launch directory (repository root) so dist/ works
 			# regardless of --path.
 			if not artifacts_dir.is_absolute_path():
-				# Resolve relative paths against the repository root (parent of
-				# the Godot project dir) so dist/ works regardless of the launch
-				# directory or --path.
 				var project_root := ProjectSettings.globalize_path("res://")
 				var repo_root := project_root.trim_suffix("/").get_base_dir()
 				artifacts_dir = repo_root.path_join(artifacts_dir)
+		i += 1
 	appearance_seed = _read_appearance_seed()
 	appearance_variant = appearance_variant_for_seed(appearance_seed, variant == "female")
 	_load_frame_textures()
@@ -151,6 +159,11 @@ func _load_artifacts_frames() -> void:
 					push_error("Missing artifact frame: " + path)
 				else:
 					layers[layer].append(ImageTexture.create_from_image(image))
+	# 确认制品加载（每层 4x8=32 帧）
+	var loaded := 0
+	for layer in layers:
+		loaded += layers[layer].size()
+	print("ARTIFACTS_LOADED dir=", artifacts_dir, " layers=", layers.size(), " frames=", loaded)
 	rebuild_head = true
 
 
