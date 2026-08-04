@@ -163,6 +163,11 @@ workflow's final 「导出 Godot 制品」step:
 godot --path prototype -- --artifacts dist/no-review
 ```
 
+An **interactive helper** (`scripts/build_demo.sh` on Linux/macOS,
+`scripts/build_demo.bat` on Windows) lists the workflow instances, ensures
+the `dist/<id>` artifacts (running `export.artifacts` if missing) and runs
+the demo either in a window or as a headless smoke test.
+
 `prototype/scripts/player.gd` loads `runtime_manifest.json` +
 `atlas/<layer>/walk_row<row>_frame<frame>.png` at startup and falls back to the
 bundled `assets/characters/rebuild_atlas_v1_runtime/male/` runtime when

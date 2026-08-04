@@ -157,6 +157,8 @@ python3 workflow/tools/assetslab.py stage back legs
 godot --path prototype -- --artifacts dist/no-review
 ```
 
+另有**交互式辅助脚本**（Linux/macOS 用 `scripts/build_demo.sh`，Windows 用 `scripts/build_demo.bat`）：列出工作流实例、确保 `dist/<id>` 制品存在（缺失时自动运行 `export.artifacts`），并以窗口模式或 headless 冒烟测试方式运行 demo。
+
 `prototype/scripts/player.gd` 启动时读取 `runtime_manifest.json` 与
 `atlas/<图层>/walk_row<行>_frame<帧>.png`；未传 `--artifacts` 时回退到内置的
 `assets/characters/rebuild_atlas_v1_runtime/male/` 运行时。demo 保留交互移动（WASD/方向键）与放炸弹（空格）。
