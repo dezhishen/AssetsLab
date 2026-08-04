@@ -182,6 +182,27 @@ python -m workflow reject --workflow review-a --action skeleton.front.legs --by 
 - `workflow_id` / `action_id` run through CLI, Web and persistence; multiple
   instances can run in parallel, each persisted to its own JSON.
 
+## Artifacts & Godot demo
+
+The final workflow action `export.artifacts` builds a Godot-ready package under
+`dist/<workflow_id>/` (pure Python, no Godot needed):
+
+```text
+dist/<workflow_id>/
+├── atlas/                      # layered 4×8 frames (feet/lower_body/arms/torso/head_base/ear/face)
+├── runtime_manifest.json       # directions, layer order, head_anchor_offsets
+├── character_walk_4way.gif     # Pillow-composited preview
+└── README.md
+```
+
+Run the minimal interactive demo against the artifact:
+
+```bash
+godot --path prototype -- --artifacts dist/<workflow_id>
+```
+
+The demo keeps interactive movement (WASD/arrows) and bomb placement (Space).
+
 ## Output locations
 
 | Artifact | Path | Git |

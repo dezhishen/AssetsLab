@@ -112,9 +112,12 @@ class WorkflowRunner:
 
         # Long-running subprocess runs outside the lock.
         log_path = step_dir / "run.log"
+        # Expand workflow_id placeholder so actions like export.artifacts can
+        # target dist/<workflow_id>/.
+        expanded_exec = [part.replace("{workflow_id}", self.workflow_id) for part in action.exec]
         try:
             process = subprocess.run(
-                self._cli + list(action.exec),
+                self._cli + expanded_exec,
                 cwd=self.root,
                 capture_output=True,
                 text=True,
@@ -136,6 +139,13 @@ class WorkflowRunner:
                 outputs.append(str(destination.resolve()))
             elif ok:
                 ok = False  # required output missing -> gate failed
+
+        # export.artifacts writes a whole package under dist/<workflow_id>; surface
+        # every produced file as an output so AI/Web can inspect and open them.
+        if expanded_exec[:1] == ["run-script"] and "export_artifacts.py" in expanded_exec:
+            dist_dir = self.root / "dist" / self.workflow_id
+            if dist_dir.is_dir():
+                outputs += [str(p.resolve()) for p in sorted(dist_dir.rglob("*")) if p.is_file()]
 
         with self.store.lock():
             actions = self._state_actions()

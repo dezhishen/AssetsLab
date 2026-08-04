@@ -125,6 +125,16 @@
       "collect": [],
       "approval": "human",
       "description": "重建预览资产并发布时间戳快照"
+    },
+    {
+      "action_id": "export.artifacts",
+      "title": "导出 Godot 制品",
+      "phase": "export",
+      "exec": ["run-script", "export_artifacts.py", "--workflow-id", "{workflow_id}"],
+      "depends": ["preview.publish"],
+      "collect": [],
+      "approval": "human",
+      "description": "打包 dist/<workflow_id>/ 制品包（atlas + manifest + GIF）供 Godot demo 使用"
     }
   ]
 }

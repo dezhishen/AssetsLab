@@ -20,6 +20,7 @@ var rgs_walk_reference := false
 var milestone_body_right := false
 var latest_generated_body := false
 var vertical_body_candidate := false
+var artifacts_dir := ""
 var appearance_seed: int = 20260730
 var appearance_variant: int = 0
 var body_anchor_offsets: Dictionary = {}
@@ -58,6 +59,9 @@ func _ready() -> void:
 	milestone_body_right = "--milestone-body-right" in user_args
 	latest_generated_body = "--latest-generated-body" in user_args
 	vertical_body_candidate = "--vertical-body-candidate" in user_args
+	for argument in user_args:
+		if argument.begins_with("--artifacts="):
+			artifacts_dir = argument.trim_prefix("--artifacts=")
 	appearance_seed = _read_appearance_seed()
 	appearance_variant = appearance_variant_for_seed(appearance_seed, variant == "female")
 	_load_frame_textures()
@@ -82,7 +86,46 @@ func _physics_process(delta: float) -> void:
 	_update_bomb_input()
 
 
+func _load_artifacts_frames() -> void:
+	# Load a dist/<workflow_id>/ artifact package directly from absolute paths
+	# (no Godot import step required). Layer names match the export layout.
+	torso_frame_textures.clear()
+	arms_frame_textures.clear()
+	lower_body_frame_textures.clear()
+	feet_frame_textures.clear()
+	head_frame_textures.clear()
+	ear_frame_textures.clear()
+	face_frame_textures.clear()
+	var layers := {
+		"feet": feet_frame_textures,
+		"lower_body": lower_body_frame_textures,
+		"arms": arms_frame_textures,
+		"torso": torso_frame_textures,
+		"head_base": head_frame_textures,
+		"ear": ear_frame_textures,
+		"face": face_frame_textures,
+	}
+	var manifest_path := artifacts_dir.path_join("runtime_manifest.json")
+	if FileAccess.file_exists(manifest_path):
+		var payload = JSON.parse_string(FileAccess.get_file_as_string(manifest_path))
+		if payload is Dictionary:
+			body_anchor_offsets = payload.get("head_anchor_offsets", {})
+	for layer in layers:
+		for row in range(4):
+			for frame in range(8):
+				var path := artifacts_dir.path_join("atlas/%s/walk_row%d_frame%d.png" % [layer, row, frame])
+				var image := Image.load_from_file(path)
+				if image == null:
+					push_error("Missing artifact frame: " + path)
+				else:
+					layers[layer].append(ImageTexture.create_from_image(image))
+	rebuild_head = true
+
+
 func _load_frame_textures() -> void:
+	if not artifacts_dir.is_empty():
+		_load_artifacts_frames()
+		return
 	torso_frame_textures.clear()
 	arms_frame_textures.clear()
 	lower_body_frame_textures.clear()

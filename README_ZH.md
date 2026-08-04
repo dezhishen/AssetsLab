@@ -176,6 +176,26 @@ python -m workflow reject --workflow review-a --action skeleton.front.legs --by 
 - **Web** 是面向人工的完整通道：`http://<host>:8765/workflow.html`；图片经 `http://<host>:8765/run/workflows/<id>/steps/<action_id>/` 预览。
 - `workflow_id` / `action_id` 贯穿 CLI、Web、持久化三层；多实例可**并行**，各自分文件存储。
 
+## 制品与 Godot demo
+
+工作流的最后一个动作 `export.artifacts` 会用纯 Python（无需 Godot）在 `dist/<workflow_id>/` 下打包一份**Godot 可直接使用**的制品：
+
+```text
+dist/<workflow_id>/
+├── atlas/                      # 分层 4×8 帧（feet/lower_body/arms/torso/head_base/ear/face）
+├── runtime_manifest.json       # 方向、层序、head_anchor_offsets
+├── character_walk_4way.gif     # Pillow 合成预览
+└── README.md
+```
+
+用最小可运行 demo（保留交互玩法）加载制品：
+
+```bash
+godot --path prototype -- --artifacts dist/<workflow_id>
+```
+
+demo 保留 WASD/方向键移动与空格放炸弹的交互验证。
+
 ## 输出位置与说明
 
 | 产物 | 路径 | Git |

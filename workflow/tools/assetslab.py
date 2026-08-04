@@ -44,7 +44,7 @@ from godot_runner import (  # noqa: E402
     run,
 )
 
-TOOLS = ROOT / "tools"
+TOOLS = ROOT / "workflow" / "tools"
 
 # view -> stage -> (godot test script, frame directory name, expected output)
 STAGES: dict[str, dict[str, tuple[str, str | None, str]]] = {
