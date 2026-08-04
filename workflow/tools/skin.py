@@ -79,20 +79,21 @@ def resolve_joint(binding: dict, limb: str | None) -> str:
 
 
 # 逻辑关节名 -> 各视图实际关节名（side/back 用 front_ 侧为主侧；front 用 left_ 系
-# 别名，因为 walk 预设的 front 偏移驱动 left_hand/left_foot/…）
+# 别名，因为 walk 预设的 front 偏移驱动 left_hand/left_foot/…）。
+# back 视图：手臂用 rear_ 侧（外扩、从背面可见），腿用 front_ 侧（walk back 偏移驱动）。
 VIEW_JOINT = {
-    ("shoulder_left", "side"): "front_shoulder", ("shoulder_left", "back"): "front_shoulder_left",
-    ("shoulder_right", "side"): "front_shoulder", ("shoulder_right", "back"): "front_shoulder_right",
-    ("left_elbow", "side"): "front_elbow", ("left_elbow", "back"): "front_elbow_left",
-    ("right_elbow", "side"): "front_elbow", ("right_elbow", "back"): "front_elbow_right",
-    ("left_hand", "side"): "front_hand", ("left_hand", "back"): "front_hand_left",
-    ("right_hand", "side"): "front_hand", ("right_hand", "back"): "front_hand_right",
-    ("left_hip", "side"): "front_hip", ("left_hip", "back"): "front_hip_left",
-    ("right_hip", "side"): "front_hip", ("right_hip", "back"): "front_hip_right",
-    ("left_knee", "side"): "front_knee", ("left_knee", "back"): "front_knee_left",
-    ("right_knee", "side"): "front_knee", ("right_knee", "back"): "front_knee_right",
-    ("left_foot", "side"): "front_foot", ("left_foot", "back"): "front_foot_left",
-    ("right_foot", "side"): "front_foot", ("right_foot", "back"): "front_foot_right",
+    ("shoulder_left", "side"): "front_shoulder", ("shoulder_left", "back"): "rear_shoulder_left",
+    ("shoulder_right", "side"): "front_shoulder", ("shoulder_right", "back"): "rear_shoulder_right",
+    ("left_elbow", "side"): "front_elbow", ("left_elbow", "back"): "rear_elbow_left",
+    ("right_elbow", "side"): "front_elbow", ("right_elbow", "back"): "rear_elbow_right",
+    ("left_hand", "side"): "front_hand", ("left_hand", "back"): "rear_hand_left",
+    ("right_hand", "side"): "front_hand", ("right_hand", "back"): "rear_hand_right",
+    ("left_hip", "side"): "front_hip", ("left_hip", "back"): "left_hip",
+    ("right_hip", "side"): "front_hip", ("right_hip", "back"): "right_hip",
+    ("left_knee", "side"): "front_knee", ("left_knee", "back"): "left_knee",
+    ("right_knee", "side"): "front_knee", ("right_knee", "back"): "right_knee",
+    ("left_foot", "side"): "front_foot", ("left_foot", "back"): "left_foot",
+    ("right_foot", "side"): "front_foot", ("right_foot", "back"): "right_foot",
 }
 
 
