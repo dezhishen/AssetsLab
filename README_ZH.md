@@ -186,23 +186,23 @@ python -m workflow list                                            # 列出实�
 python -m workflow new --definition default --id review-a          # 新建实例
 python -m workflow status --workflow review-a --json               # 查看状态
 python -m workflow next --workflow review-a                        # 推荐下一步
-python -m workflow run --workflow review-a --action skeleton.front.legs --json
-python -m workflow approve --workflow review-a --action skeleton.front.legs --by ai --note "ok"
-python -m workflow reject --workflow review-a --action skeleton.front.legs --by human --note "redraw"
+python -m workflow run --workflow review-a --action skeleton.front --json
+python -m workflow approve --workflow review-a --action skeleton.front --by ai --note "ok"
+python -m workflow reject --workflow review-a --action skeleton.front --by human --note "redraw"
 ```
 
 **动作参数化** — 每个动作可在定义里声明可调旋钮（如 `stride` / `pelvis_bob` / `arm_swing`），运行时可覆盖任意参数，实际使用的参数会记录进该动作状态供评审：
 
 ```bash
-python -m workflow run --workflow review-a --action skeleton.front.legs --param stride=1.2 --param pelvis_bob=1.5 --json
+python -m workflow run --workflow review-a --action skeleton.front --param stride=1.2 --param pelvis_bob=1.5 --json
 ```
 
 **风格参数模板** — 不必从中性参数（stride=1.0）开始，创建实例时可直接选一套业内风格默认参数（`--template realistic|cartoon|bouncy|heavy|light`）。模板值成为该实例的默认旋钮（每次运行仍可用 `--param` 覆盖）；Web 控制台新建实例时提供同样的模板选择，并会用它预填向导的参数滑块。
 
 ```bash
 python -m workflow new --definition default --id hero --template bouncy
-python -m workflow run --workflow hero --action skeleton.front.legs              # 用 bouncy 默认参数
-python -m workflow run --workflow hero --action skeleton.front.legs --param stride=1.5   # 覆盖单个旋钮
+python -m workflow run --workflow hero --action skeleton.front              # 用 bouncy 默认参数
+python -m workflow run --workflow hero --action skeleton.front --param stride=1.5   # 覆盖单个旋钮
 ```
 
 - **CLI** 是面向 AI 的调度通道：`--json` 输出机器可读，`outputs` 返回本地图片**绝对路径**。

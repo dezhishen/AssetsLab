@@ -191,9 +191,9 @@ python -m workflow list                                            # list instan
 python -m workflow new --definition default --id review-a          # create instance
 python -m workflow status --workflow review-a --json               # view state
 python -m workflow next --workflow review-a                        # recommended next action
-python -m workflow run --workflow review-a --action skeleton.front.legs --json
-python -m workflow approve --workflow review-a --action skeleton.front.legs --by ai --note "ok"
-python -m workflow reject --workflow review-a --action skeleton.front.legs --by human --note "redraw"
+python -m workflow run --workflow review-a --action skeleton.front --json
+python -m workflow approve --workflow review-a --action skeleton.front --by ai --note "ok"
+python -m workflow reject --workflow review-a --action skeleton.front --by human --note "redraw"
 ```
 
 **Parameterized actions** — every action can declare tunable knobs in the
@@ -201,7 +201,7 @@ definition (e.g. `stride` / `pelvis_bob` / `arm_swing`), and a run can override
 any of them; the used values are recorded in the action state for review:
 
 ```bash
-python -m workflow run --workflow review-a --action skeleton.front.legs --param stride=1.2 --param pelvis_bob=1.5 --json
+python -m workflow run --workflow review-a --action skeleton.front --param stride=1.2 --param pelvis_bob=1.5 --json
 ```
 
 **Style templates** — instead of starting from neutral knobs (stride=1.0),
@@ -213,8 +213,8 @@ the wizard's parameter sliders with them.
 
 ```bash
 python -m workflow new --definition default --id hero --template bouncy
-python -m workflow run --workflow hero --action skeleton.front.legs              # uses bouncy defaults
-python -m workflow run --workflow hero --action skeleton.front.legs --param stride=1.5   # override one knob
+python -m workflow run --workflow hero --action skeleton.front              # uses bouncy defaults
+python -m workflow run --workflow hero --action skeleton.front --param stride=1.5   # override one knob
 ```
 
 - CLI is the AI-facing scheduling channel: `--json` output is machine-readable

@@ -1,84 +1,10 @@
 {
   "definition_id": "default",
-  "title": "AssetsLab 骨架优先行走流水线",
+  "title": "AssetsLab 骨架优先行走流水线（精简版）",
   "actions": [
     {
-      "action_id": "skeleton.front.skeleton",
-      "title": "正面静态骨架",
-      "phase": "skeleton",
-      "exec": [
-        "stage",
-        "front",
-        "skeleton",
-        "--renderer",
-        "python"
-      ],
-      "depends": [],
-      "collect": [
-        "prototype/test_output/skeleton_pipeline/front_base.png"
-      ],
-      "approval": "human",
-      "description": "对称性与共享脚基线，输出 front_base.png"
-    },
-    {
-      "action_id": "skeleton.front.legs",
-      "title": "正面双腿循环",
-      "phase": "skeleton",
-      "exec": [
-        "stage",
-        "front",
-        "legs",
-        "--renderer",
-        "python",
-        "--stride",
-        "{stride}",
-        "--pelvis-bob",
-        "{pelvis_bob}"
-      ],
-      "params": {
-        "stride": {"default": 1.0, "min": 0.0, "max": 2.5, "label": "步幅"},
-        "pelvis_bob": {"default": 1.0, "min": 0.0, "max": 3.0, "label": "骨盆起伏"}
-      },
-      "depends": [
-        "skeleton.front.skeleton"
-      ],
-      "collect": [
-        "prototype/test_output/skeleton_pipeline/front_legs.gif"
-      ],
-      "approval": "human",
-      "description": "8 帧交替接触/迈步，输出 front_legs.gif"
-    },
-    {
-      "action_id": "skeleton.front.pelvis",
-      "title": "正面骨盆浮动",
-      "phase": "skeleton",
-      "exec": [
-        "stage",
-        "front",
-        "pelvis",
-        "--renderer",
-        "python",
-        "--stride",
-        "{stride}",
-        "--pelvis-bob",
-        "{pelvis_bob}"
-      ],
-      "params": {
-        "stride": {"default": 1.0, "min": 0.0, "max": 2.5, "label": "步幅"},
-        "pelvis_bob": {"default": 1.0, "min": 0.0, "max": 3.0, "label": "骨盆起伏"}
-      },
-      "depends": [
-        "skeleton.front.legs"
-      ],
-      "collect": [
-        "prototype/test_output/skeleton_pipeline/front_pelvis_bob.gif"
-      ],
-      "approval": "human",
-      "description": "≤6px 骨盆起伏，输出 front_pelvis_bob.gif"
-    },
-    {
-      "action_id": "skeleton.front.arms",
-      "title": "正面摆臂",
+      "action_id": "skeleton.front",
+      "title": "正面行走循环",
       "phase": "skeleton",
       "exec": [
         "stage",
@@ -98,91 +24,16 @@
         "pelvis_bob": {"default": 1.0, "min": 0.0, "max": 3.0, "label": "骨盆起伏"},
         "arm_swing": {"default": 1.0, "min": 0.0, "max": 2.0, "label": "摆臂"}
       },
-      "depends": [
-        "skeleton.front.pelvis"
-      ],
+      "depends": [],
       "collect": [
         "prototype/test_output/skeleton_pipeline/front_arm_swing.gif"
       ],
       "approval": "human",
-      "description": "与腿反相摆臂，输出 front_arm_swing.gif"
+      "description": "正面完整行走循环（骨架+腿+骨盆+手臂全合成），三个参数均生效"
     },
     {
-      "action_id": "skeleton.side.skeleton",
-      "title": "右向侧面静态骨架",
-      "phase": "skeleton",
-      "exec": [
-        "stage",
-        "side",
-        "skeleton",
-        "--renderer",
-        "python"
-      ],
-      "depends": [
-        "skeleton.front.arms"
-      ],
-      "collect": [
-        "prototype/test_output/skeleton_pipeline/side_base.png"
-      ],
-      "approval": "human"
-    },
-    {
-      "action_id": "skeleton.side.legs",
-      "title": "右向侧面双腿循环",
-      "phase": "skeleton",
-      "exec": [
-        "stage",
-        "side",
-        "legs",
-        "--renderer",
-        "python",
-        "--stride",
-        "{stride}",
-        "--pelvis-bob",
-        "{pelvis_bob}"
-      ],
-      "params": {
-        "stride": {"default": 1.0, "min": 0.0, "max": 2.5, "label": "步幅"},
-        "pelvis_bob": {"default": 1.0, "min": 0.0, "max": 3.0, "label": "骨盆起伏"}
-      },
-      "depends": [
-        "skeleton.side.skeleton"
-      ],
-      "collect": [
-        "prototype/test_output/skeleton_pipeline/side_legs.gif"
-      ],
-      "approval": "human"
-    },
-    {
-      "action_id": "skeleton.side.pelvis",
-      "title": "右向侧面骨盆浮动",
-      "phase": "skeleton",
-      "exec": [
-        "stage",
-        "side",
-        "pelvis",
-        "--renderer",
-        "python",
-        "--stride",
-        "{stride}",
-        "--pelvis-bob",
-        "{pelvis_bob}"
-      ],
-      "params": {
-        "stride": {"default": 1.0, "min": 0.0, "max": 2.5, "label": "步幅"},
-        "pelvis_bob": {"default": 1.0, "min": 0.0, "max": 3.0, "label": "骨盆起伏"}
-      },
-      "depends": [
-        "skeleton.side.legs"
-      ],
-      "collect": [
-        "prototype/test_output/skeleton_pipeline/side_pelvis_bob.gif"
-      ],
-      "approval": "human"
-    },
-    {
-      "action_id": "skeleton.side.arms",
-      "title": "右向侧面摆臂",
+      "action_id": "skeleton.side",
+      "title": "右向侧面行走循环",
       "phase": "skeleton",
       "exec": [
         "stage",
@@ -203,35 +54,17 @@
         "arm_swing": {"default": 1.0, "min": 0.0, "max": 2.0, "label": "摆臂"}
       },
       "depends": [
-        "skeleton.side.pelvis"
+        "skeleton.front"
       ],
       "collect": [
         "prototype/test_output/skeleton_pipeline/side_arm_swing.gif"
       ],
-      "approval": "human"
+      "approval": "human",
+      "description": "右向侧面完整行走循环，三个参数均生效"
     },
     {
-      "action_id": "skeleton.back.skeleton",
-      "title": "背面静态骨架",
-      "phase": "skeleton",
-      "exec": [
-        "stage",
-        "back",
-        "skeleton",
-        "--renderer",
-        "python"
-      ],
-      "depends": [
-        "skeleton.side.arms"
-      ],
-      "collect": [
-        "prototype/test_output/skeleton_pipeline/back_base.png"
-      ],
-      "approval": "human"
-    },
-    {
-      "action_id": "skeleton.back.legs",
-      "title": "背面双腿循环",
+      "action_id": "skeleton.back",
+      "title": "背面行走循环",
       "phase": "skeleton",
       "exec": [
         "stage",
@@ -249,12 +82,13 @@
         "pelvis_bob": {"default": 1.0, "min": 0.0, "max": 3.0, "label": "骨盆起伏"}
       },
       "depends": [
-        "skeleton.back.skeleton"
+        "skeleton.side"
       ],
       "collect": [
         "prototype/test_output/skeleton_pipeline/back_legs.gif"
       ],
-      "approval": "human"
+      "approval": "human",
+      "description": "背面行走循环（背面仅腿循环阶段，stride 与骨盆起伏均生效）"
     },
     {
       "action_id": "test.smoke",
@@ -263,7 +97,9 @@
       "exec": [
         "test"
       ],
-      "depends": [],
+      "depends": [
+        "skeleton.back"
+      ],
       "collect": [],
       "approval": "auto",
       "description": "生成随机外观并校验全部资产，再跑 Godot 冒烟测试"
