@@ -104,7 +104,7 @@ def draw_neck(joints: dict, view: str) -> tuple[Image.Image, tuple[int, int]]:
     head = joints[joint_view("head", view)]
     neck = joints[joint_view("neck", view)]
     h = max(neck[1] - (head[1] + HEAD_R), 4)  # head 底到 neck 的长度
-    size = 2 * (h + MARGIN)
+    size = 2 * (int(math.ceil(h)) + MARGIN)
     img, d, c = _box(size)
     d.rectangle([c - NECK_W // 2, c - h, c + NECK_W // 2, c], fill=COLOR_BODY)
     r = NECK_W // 2
@@ -123,7 +123,7 @@ def draw_torso(joints: dict, view: str) -> tuple[Image.Image, tuple[int, int]]:
         left = joints[joint_view("shoulder_left", view)]
         right = joints[joint_view("shoulder_right", view)]
         w = max(right[0] - left[0], 8)
-    size = 2 * (h + MARGIN)
+    size = 2 * (int(math.ceil(h)) + MARGIN)
     img, d, c = _box(size)
     d.rectangle([c - w // 2, c - h, c + w // 2, c], fill=COLOR_BODY)
     r = 9
@@ -144,11 +144,33 @@ def draw_segment(length: float, seg: str, color: tuple) -> tuple[Image.Image, tu
     return img, (c, c)
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
+    import argparse
+
+    parser = argparse.ArgumentParser(description="生成人体模特皮肤包（可按体型实例化）")
+    parser.add_argument("--body", action="append", metavar="NAME=VALUE",
+                        help="体型比例覆盖（可重复），如 --body arm_length=1.2 --body leg_length=1.3")
+    parser.add_argument("--out", default="mannequin", help="皮肤包名（默认 mannequin）")
+    args = parser.parse_args(argv)
+
+    body: dict[str, float] = {}
+    for item in args.body or []:
+        if "=" in item:
+            k, v = item.split("=", 1)
+            body[k] = float(v)
+
+    from motion import apply_proportions
     base = json.loads((ROOT / "workflow" / "motions" / "base.json").read_text(encoding="utf-8"))
     views = base["views"]
-    skin_root = ROOT / "skins" / "mannequin"
+    skin_root = ROOT / "skins" / args.out
     skin_root.mkdir(parents=True, exist_ok=True)
+
+    # 按体型生成各视图关节（复制避免污染 base.json）——部件段长随体型缩放，蒙皮贴合
+    scaled_views: dict[str, dict] = {}
+    for view in VIEWS:
+        joints = {k: list(v) for k, v in views[view].items()}
+        apply_proportions(joints, body or None, view)
+        scaled_views[view] = joints
 
     # 分配区域序号：百位=区域，十位/个位=区域内顺序（每区预留 100 槽）
     seq_of: dict[str, int] = {}
@@ -159,7 +181,7 @@ def main() -> int:
 
     for layer, joint, child in [(l, j, c) for _, l, j, c in ZONES]:
         for view in VIEWS:
-            joints = views[view]
+            joints = scaled_views[view]
             if layer == "head":
                 img, _ = draw_head()
             elif layer == "neck":
@@ -182,17 +204,17 @@ def main() -> int:
         bindings[layer] = {"joint": joint, "rotate": False}
         if child:
             bindings[layer]["rotate_child"] = child
+    body_desc = f"，体型 {body or '标准 1.0'}" if body else ""
     skin = {
-        "skin_id": "mannequin",
+        "skin_id": args.out,
         "schema": "assetslab_skin_v1",
         "layout": "pack",
-        "description": "通用人体模特皮肤：按 base.json 骨架 1:1 绘制的中性人体几何部件。"
+        "description": f"人体模特皮肤（{args.out}）：按 base.json 骨架 1:1 绘制的中性人体几何部件{body_desc}。"
                        "锚点=部件图中心（精确=关节），肢体段按骨骼段方向旋转（rotate_child），rest 天然贴合。"
-                       "皮肤包独立于制品：skins/mannequin/（skin.json + <NNN>_<layer>_<view>.png），"
-                       "序号按区域分段（3 位）：000头颈/100左臂/200右臂/300躯干/400左腿/500右腿/600脚（每区预留 100 槽）。",
+                       "皮肤包独立于制品；序号按区域分段（3 位）：000头颈/100左臂/200右臂/300躯干/400左腿/500右腿/600脚。",
         "views": list(VIEWS),
         "coordinates": "skeleton",
-        "atlas_dir": "skins/mannequin",
+        "atlas_dir": f"skins/{args.out}",
         "layers": [{"name": l, "zone": z, "order": seq_of[l] % 100} for z, l, _, _ in ZONES],
         "bindings": bindings,
         "anchors": {},
