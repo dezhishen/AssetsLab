@@ -480,7 +480,8 @@ def main() -> int:
                         help="Data-driven motion preset id (walk/run/idle/jump/...). When set, the pose math is driven by workflow/motions/<id>.json instead of the built-in functions.")
     parser.add_argument("--ik", action="store_true", help="Apply two-bone IK leg solve (motion engine only).")
     parser.add_argument("--fps", type=int, default=8, help="GIF frame rate (motion engine only).")
-    for name in ("arm_length", "leg_length", "torso_length", "shoulder_width", "head_scale", "neck_length", "height"):
+    for name in ("head_scale", "neck_length", "torso_length", "shoulder_width",
+                 "upper_arm_length", "forearm_length", "thigh_length", "shin_length"):
         parser.add_argument(f"--proportion-{name.replace('_', '-')}", type=float,
                             help=f"Body proportion {name} (1.0 = reference base).")
     args = parser.parse_args()

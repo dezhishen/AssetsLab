@@ -83,11 +83,11 @@ ROOT_MIN_STAGE = "pelvis"  # root motion applies from the pelvis stage onward
 
 # ------------------------------------------------------------ proportions --
 
-# Tunable body proportions (industry character-customisation): each scales a
-# bone segment around its anchor joint on the static base, so the same motion
-# presets drive any body shape. Default 1.0 == the reference base.
-PROPORTION_NAMES = ("arm_length", "leg_length", "torso_length",
-                    "shoulder_width", "head_scale", "neck_length", "height")
+# Tunable body proportions (per bone segment, so height is the SUM of the
+# segments — no whole-body scale that would cascade into odd proportions).
+# Each scales its own bone segment around its anchor joint; 1.0 == reference.
+PROPORTION_NAMES = ("head_scale", "neck_length", "torso_length", "shoulder_width",
+                    "upper_arm_length", "forearm_length", "thigh_length", "shin_length")
 
 # Joints that ride up when the torso lengthens (neck/head/shoulders/arms).
 _UPPER_JOINTS = {
@@ -130,28 +130,22 @@ def apply_proportions(coords: dict, proportions: dict | None, view: str) -> None
         if name in p and value is not None:
             p[name] = float(value)
 
-    # 1. Overall height — scale all Y from the floor (feet stay planted).
-    if p["height"] != 1.0:
-        h = p["height"]
-        for pt in coords.values():
-            if isinstance(pt, list):
-                pt[1] = FLOOR_Y - (FLOOR_Y - pt[1]) * h
-    # 2. Torso length — neck/head/shoulders/arms ride up from the pelvis.
+    # 1. Torso length — neck/head/shoulders/arms ride up from the pelvis.
     if p["torso_length"] != 1.0 and "neck" in coords and "pelvis" in coords:
         dy = (coords["neck"][1] - coords["pelvis"][1]) * (p["torso_length"] - 1.0)
         for name in _UPPER_JOINTS.get(view, []):
             if name in coords:
                 coords[name][1] += dy
-    # 3. Head scale — move the head away from the neck.
-    if p["head_scale"] != 1.0 and "neck" in coords and "head" in coords:
-        nx, ny = coords["neck"]
-        hx, hy = coords["head"]
-        coords["head"] = [nx + (hx - nx) * p["head_scale"], ny + (hy - ny) * p["head_scale"]]
-    # 3.5 Neck length — head rides further from / closer to the neck (neck segment).
+    # 2. Neck length — head rides from the neck (neck segment length).
     if p["neck_length"] != 1.0 and "neck" in coords and "head" in coords:
         nx, ny = coords["neck"]
         hx, hy = coords["head"]
         coords["head"] = [nx + (hx - nx) * p["neck_length"], ny + (hy - ny) * p["neck_length"]]
+    # 3. Head scale — head centre rides from the neck with head size (skin head disc follows).
+    if p["head_scale"] != 1.0 and "neck" in coords and "head" in coords:
+        nx, ny = coords["neck"]
+        hx, hy = coords["head"]
+        coords["head"] = [nx + (hx - nx) * p["head_scale"], ny + (hy - ny) * p["head_scale"]]
     # 4. Shoulder width — spread shoulders around the spine centre; elbows/hands follow.
     if p["shoulder_width"] != 1.0 and "pelvis" in coords:
         cx = coords["pelvis"][0]
@@ -164,30 +158,49 @@ def apply_proportions(coords: dict, proportions: dict | None, view: str) -> None
             for child in children:
                 if child in coords:
                     coords[child][0] += dx
-    # 5. Arm length — elbows/hands extend from the shoulders.
-    if p["arm_length"] != 1.0:
+    # 5. Upper arm length — elbows extend from the shoulders.
+    if p["upper_arm_length"] != 1.0:
         for sh, children in _ARM_CHAINS.get(view, {}).items():
             if sh not in coords:
                 continue
             sx, sy = coords[sh]
-            for child in children:
-                if child in coords:
-                    cx, cy = coords[child]
-                    coords[child] = [sx + (cx - sx) * p["arm_length"], sy + (cy - sy) * p["arm_length"]]
-    # 6. Leg length — knees extend from hips; feet stay planted on the floor.
-    if p["leg_length"] != 1.0:
+            for c in children:
+                if "elbow" in c and c in coords:
+                    cx, cy = coords[c]
+                    coords[c] = [sx + (cx - sx) * p["upper_arm_length"], sy + (cy - sy) * p["upper_arm_length"]]
+    # 6. Forearm length — hands extend from the elbows.
+    if p["forearm_length"] != 1.0:
+        for sh, children in _ARM_CHAINS.get(view, {}).items():
+            elbow = next((coords[c] for c in children if "elbow" in c and c in coords), None)
+            if elbow is None:
+                continue
+            ex, ey = elbow
+            for c in children:
+                if "hand" in c and c in coords:
+                    cx, cy = coords[c]
+                    coords[c] = [ex + (cx - ex) * p["forearm_length"], ey + (cy - ey) * p["forearm_length"]]
+    # 7. Thigh length — knees extend from the hips.
+    if p["thigh_length"] != 1.0:
         for hip, chain in _LEG_CHAINS.get(view, {}).items():
             if hip not in coords:
                 continue
             hx, hy = coords[hip]
-            for name in chain:
-                if name not in coords:
+            for k in chain:
+                if "knee" in k and k in coords:
+                    kx, ky = coords[k]
+                    coords[k] = [hx + (kx - hx) * p["thigh_length"], hy + (ky - hy) * p["thigh_length"]]
+    # 8. Shin length — feet stay planted; knees adjust so knee->foot matches.
+    if p["shin_length"] != 1.0:
+        for _hip, chain in _LEG_CHAINS.get(view, {}).items():
+            for k in chain:
+                if "knee" not in k or k not in coords:
                     continue
-                cx, cy = coords[name]
-                if "foot" in name:
-                    coords[name] = [cx, FLOOR_Y]
-                else:
-                    coords[name] = [hx + (cx - hx) * p["leg_length"], hy + (cy - hy) * p["leg_length"]]
+                foot = next((coords[f] for f in chain if "foot" in f and f in coords), None)
+                if foot is None:
+                    continue
+                fx, fy = foot
+                kx, ky = coords[k]
+                coords[k] = [fx + (kx - fx) * p["shin_length"], fy + (ky - fy) * p["shin_length"]]
 
 
 # ------------------------------------------------------------ expressions --
