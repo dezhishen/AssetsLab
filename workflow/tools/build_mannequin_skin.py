@@ -90,20 +90,20 @@ def _box(size: int) -> tuple[Image.Image, ImageDraw.ImageDraw, int]:
     return img, ImageDraw.Draw(img), size // 2
 
 
-def draw_head() -> tuple[Image.Image, tuple[int, int]]:
-    """纯头（圆）。锚点=圆心（head 关节）。脖子独立为 neck 层。"""
-    size = 2 * (HEAD_R + MARGIN)
+def draw_head(radius: int) -> tuple[Image.Image, tuple[int, int]]:
+    """纯头（圆）。锚点=圆心（head 关节）。半径随身高/头大小缩放，保持头身比例。"""
+    size = 2 * (radius + MARGIN)
     img, d, c = _box(size)
-    d.ellipse([c - HEAD_R, c - HEAD_R, c + HEAD_R, c + HEAD_R], fill=COLOR_BODY)
+    d.ellipse([c - radius, c - radius, c + radius, c + radius], fill=COLOR_BODY)
     return img, (c, c)
 
 
-def draw_neck(joints: dict, view: str) -> tuple[Image.Image, tuple[int, int]]:
+def draw_neck(joints: dict, view: str, head_radius: int) -> tuple[Image.Image, tuple[int, int]]:
     """脖子：head 底 -> neck 关节的垂直段。锚点=图中心（neck 端），向上延伸。
-    随 neck 关节运动（base torso 传导 neck=1.0 刚性），调身躯时脖子独立跟随。"""
+    头随身高缩放后，脖子长度（head 底到 neck）相对头协调，不再显得过长。"""
     head = joints[joint_view("head", view)]
     neck = joints[joint_view("neck", view)]
-    h = max(neck[1] - (head[1] + HEAD_R), 4)  # head 底到 neck 的长度
+    h = max(neck[1] - (head[1] + head_radius), 4)  # head 底到 neck 的长度
     size = 2 * (int(math.ceil(h)) + MARGIN)
     img, d, c = _box(size)
     d.rectangle([c - NECK_W // 2, c - h, c + NECK_W // 2, c], fill=COLOR_BODY)
@@ -182,10 +182,12 @@ def main(argv: list[str] | None = None) -> int:
     for layer, joint, child in [(l, j, c) for _, l, j, c in ZONES]:
         for view in VIEWS:
             joints = scaled_views[view]
+            # 头随身高/头大小缩放，保持头身比例（身高拉长时头也变大，脖子协调）
+            head_radius = max(int(HEAD_R * (body.get("height", 1.0) or 1.0) * (body.get("head_scale", 1.0) or 1.0)), 20)
             if layer == "head":
-                img, _ = draw_head()
+                img, _ = draw_head(head_radius)
             elif layer == "neck":
-                img, _ = draw_neck(joints, view)
+                img, _ = draw_neck(joints, view, head_radius)
             elif layer == "torso":
                 img, _ = draw_torso(joints, view)
             elif layer.startswith("foot"):
