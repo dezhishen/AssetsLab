@@ -62,7 +62,19 @@ def list_skins() -> list[str]:
 
 
 def resolve_atlas(skin: dict, atlas_arg: str | Path | None) -> Path:
-    """皮肤部件目录：优先 --atlas 参数，否则用皮肤定义自带的 atlas_dir。"""
+    """皮肤部件目录。
+
+    - skeleton 坐标皮肤（coordinates="skeleton"）：程序化固定部件，自包含
+      atlas_dir，忽略 --atlas 覆盖（工作流传的实例 atlas 不适用）。
+    - 预烘焙皮肤：优先 --atlas（如工作流的 dist/<workflow_id>/atlas），
+      否则用皮肤定义的 atlas_dir。
+    """
+    if skin.get("coordinates") == "skeleton":
+        default = skin.get("atlas_dir")
+        if default:
+            p = ROOT / default
+            if p.is_dir():
+                return p
     if atlas_arg:
         return Path(atlas_arg)
     default = skin.get("atlas_dir")

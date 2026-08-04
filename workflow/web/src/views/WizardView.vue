@@ -170,7 +170,11 @@ onMounted(async () => {
           <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
             <label v-for="(spec, k) in currentAction.params" :key="k" class="flex items-center justify-between gap-2 bg-slate-100 rounded-lg px-3 py-2 dark:bg-slate-900">
               <span class="text-sm">{{ spec.label || k }}</span>
-              <el-input-number v-model="paramValues[k]" :min="spec.min ?? 0" :max="spec.max ?? 3" :step="0.05" size="small" controls-position="right" />
+              <el-select v-if="spec.choices" v-model="paramValues[k]" size="small" style="width: 150px">
+                <el-option v-for="c in spec.choices" :key="c" :label="c" :value="c" />
+              </el-select>
+              <el-input-number v-else-if="typeof spec.default === 'number' || spec.min !== undefined || spec.max !== undefined" v-model="paramValues[k]" :min="spec.min ?? 0" :max="spec.max ?? 3" :step="0.05" size="small" controls-position="right" />
+              <el-input v-else v-model="paramValues[k]" size="small" style="width: 150px" />
             </label>
           </div>
         </div>
