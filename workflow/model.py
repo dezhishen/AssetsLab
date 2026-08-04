@@ -28,15 +28,16 @@ class Status(str, Enum):
 # shared by every action, so front/side/back views stay consistent for the same
 # character.  Each value is a multiplier (1.0 = reference base).
 BODY_NAMES = ("arm_length", "leg_length", "torso_length",
-              "shoulder_width", "head_scale", "height")
+              "shoulder_width", "head_scale", "neck_length", "height")
 BODY_LABELS = {
     "arm_length": "臂长", "leg_length": "腿长", "torso_length": "躯干长",
-    "shoulder_width": "肩宽", "head_scale": "头大小", "height": "身高",
+    "shoulder_width": "肩宽", "head_scale": "头大小", "neck_length": "脖子长", "height": "身高",
 }
 BODY_RANGES = {  # name -> (min, max, step)
     "arm_length": (0.6, 1.6, 0.05), "leg_length": (0.6, 1.6, 0.05),
     "torso_length": (0.6, 1.6, 0.05), "shoulder_width": (0.6, 1.6, 0.05),
-    "head_scale": (0.6, 1.6, 0.05), "height": (0.8, 1.4, 0.05),
+    "head_scale": (0.6, 1.6, 0.05), "neck_length": (0.6, 1.6, 0.05),
+    "height": (0.8, 1.4, 0.05),
 }
 
 
