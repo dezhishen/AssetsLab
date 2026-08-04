@@ -9,6 +9,7 @@ AI (via absolute paths) and the Web console (via HTTP) can inspect them.
 from __future__ import annotations
 
 import json
+import os
 import shutil
 import subprocess
 import sys
@@ -125,7 +126,25 @@ class WorkflowRunner:
         self.definition = definition
         self.workflow_id = workflow_id
         self.store = store
-        self._cli = [sys.executable, str(self.root / "workflow" / "tools" / "assetslab.py")]
+        if getattr(sys, "frozen", False):
+            # A bundled binary cannot re-execute itself as Python. Delegate
+            # rendering to a real interpreter (PYTHON_BIN -> .venv -> PATH).
+            # The renderer script is preferred from the source tree (cwd, so
+            # it can reach prototype/ assets); fall back to the bundled copy.
+            renderer = self.root / "workflow" / "tools" / "assetslab.py"
+            if not renderer.is_file():
+                bundled = Path(getattr(sys, "_MEIPASS", Path.cwd()))
+                renderer = bundled / "workflow" / "tools" / "assetslab.py"
+            python = os.environ.get("PYTHON_BIN")
+            if not python:
+                for name in ("python3", "python"):
+                    candidate = shutil.which(name)
+                    if candidate:
+                        python = candidate
+                        break
+            self._cli = [python, str(renderer)] if python and renderer.is_file() else []
+        else:
+            self._cli = [sys.executable, str(self.root / "workflow" / "tools" / "assetslab.py")]
 
     # ------------------------------------------------------------- state --
 
