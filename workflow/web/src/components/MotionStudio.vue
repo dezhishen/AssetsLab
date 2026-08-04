@@ -18,9 +18,9 @@ const MV_PARAM_KEYS = ['stride', 'pelvis_bob', 'arm_swing']
 const MV_LABEL = { stride: '步幅', pelvis_bob: '骨盆起伏', arm_swing: '摆臂' }
 const params = reactive({})
 const body = reactive({
-  arm_length: 1, leg_length: 1, torso_length: 1, shoulder_width: 1, head_scale: 1, height: 1,
+  arm_length: 1, leg_length: 1, torso_length: 1, shoulder_width: 1, head_scale: 1, neck_length: 1, height: 1,
 })
-const BODY_LABEL = { arm_length: '臂长', leg_length: '腿长', torso_length: '躯干长', shoulder_width: '肩宽', head_scale: '头大小', height: '身高' }
+const BODY_LABEL = { arm_length: '臂长', leg_length: '腿长', torso_length: '躯干长', shoulder_width: '肩宽', head_scale: '头大小', neck_length: '脖子长', height: '身高' }
 
 const currentMotion = computed(() => motions.value.find((m) => m.id === motionId.value) || motions.value[0])
 

@@ -8,6 +8,7 @@
     "torso_length": 0.8,
     "shoulder_width": 1.1,
     "head_scale": 1.4,
+    "neck_length": 1.0,
     "height": 0.9
   }
 }

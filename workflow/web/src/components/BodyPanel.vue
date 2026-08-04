@@ -14,10 +14,10 @@ const open = ref(false)
 const local = reactive({})
 watch(() => props.body, (v) => Object.assign(local, v || {}), { immediate: true, deep: true })
 
-const BODY_KEYS = ['arm_length', 'leg_length', 'torso_length', 'shoulder_width', 'head_scale', 'height']
-const BODY_LABEL = { arm_length: '臂长', leg_length: '腿长', torso_length: '躯干长', shoulder_width: '肩宽', head_scale: '头大小', height: '身高' }
-const BODY_MIN = { arm_length: 0.6, leg_length: 0.6, torso_length: 0.6, shoulder_width: 0.6, head_scale: 0.6, height: 0.8 }
-const BODY_MAX = { arm_length: 1.6, leg_length: 1.6, torso_length: 1.6, shoulder_width: 1.6, head_scale: 1.6, height: 1.4 }
+const BODY_KEYS = ['arm_length', 'leg_length', 'torso_length', 'shoulder_width', 'head_scale', 'neck_length', 'height']
+const BODY_LABEL = { arm_length: '臂长', leg_length: '腿长', torso_length: '躯干长', shoulder_width: '肩宽', head_scale: '头大小', neck_length: '脖子长', height: '身高' }
+const BODY_MIN = { arm_length: 0.6, leg_length: 0.6, torso_length: 0.6, shoulder_width: 0.6, head_scale: 0.6, neck_length: 0.6, height: 0.8 }
+const BODY_MAX = { arm_length: 1.6, leg_length: 1.6, torso_length: 1.6, shoulder_width: 1.6, head_scale: 1.6, neck_length: 1.6, height: 1.4 }
 
 const presetTitle = computed(() => {
   const t = props.bodyTemplates.find((x) => x.id === props.bodyTemplate)

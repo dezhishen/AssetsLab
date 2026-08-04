@@ -30,6 +30,8 @@
         "{shoulder_width}",
         "--proportion-head-scale",
         "{head_scale}",
+        "--proportion-neck-length",
+        "{neck_length}",
         "--proportion-height",
         "{height}"
       ],
@@ -72,6 +74,8 @@
         "{shoulder_width}",
         "--proportion-head-scale",
         "{head_scale}",
+        "--proportion-neck-length",
+        "{neck_length}",
         "--proportion-height",
         "{height}"
       ],
@@ -114,6 +118,8 @@
         "{shoulder_width}",
         "--proportion-head-scale",
         "{head_scale}",
+        "--proportion-neck-length",
+        "{neck_length}",
         "--proportion-height",
         "{height}"
       ],

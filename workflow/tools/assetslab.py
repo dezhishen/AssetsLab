@@ -437,7 +437,7 @@ def cmd_stage(args: argparse.Namespace) -> int:
             extra += ["--ik"]
         if args.fps:
             extra += ["--fps", str(args.fps)]
-        for name in ("arm_length", "leg_length", "torso_length", "shoulder_width", "head_scale", "height"):
+        for name in ("arm_length", "leg_length", "torso_length", "shoulder_width", "head_scale", "neck_length", "height"):
             value = getattr(args, f"proportion_{name}", None)
             if value is not None:
                 extra += [f"--proportion-{name.replace('_', '-')}", str(value)]
@@ -551,6 +551,10 @@ def cmd_motion(args: argparse.Namespace) -> int:
             cmd += ["--fps", str(args.fps)]
         if args.blend:
             cmd += ["--blend", args.blend, "--blend-t", str(args.blend_t)]
+        for name in ("arm_length", "leg_length", "torso_length", "shoulder_width", "head_scale", "neck_length", "height"):
+            value = getattr(args, f"proportion_{name}", None)
+            if value is not None:
+                cmd += [f"--proportion-{name.replace('_', '-')}", str(value)]
         if args.output:
             cmd += ["--output", str(args.output)]
     else:
@@ -645,7 +649,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--motion", help="Data-driven motion preset id (python renderer): walk/run/idle/jump.")
     p.add_argument("--ik", action="store_true", help="Apply two-bone IK leg solve (python renderer).")
     p.add_argument("--fps", type=int, help="GIF frame rate (python renderer).")
-    for name in ("arm_length", "leg_length", "torso_length", "shoulder_width", "head_scale", "height"):
+    for name in ("arm_length", "leg_length", "torso_length", "shoulder_width", "head_scale", "neck_length", "height"):
         p.add_argument(f"--proportion-{name.replace('_', '-')}", type=float,
                        help=f"Body proportion {name} (1.0 = reference base).")
     add_tool_args(p)
@@ -679,6 +683,9 @@ def build_parser() -> argparse.ArgumentParser:
     pr.add_argument("--ik", action="store_true", help="Apply two-bone IK leg solve.")
     pr.add_argument("--blend", metavar="MOTION", help="Blend toward another motion by joint interpolation.")
     pr.add_argument("--blend-t", type=float, default=0.0)
+    for name in ("arm_length", "leg_length", "torso_length", "shoulder_width", "head_scale", "neck_length", "height"):
+        pr.add_argument(f"--proportion-{name.replace('_', '-')}", type=float,
+                        help=f"Body proportion {name} (1.0 = reference base).")
     pr.add_argument("--output", type=Path, default=ROOT / "prototype" / "test_output" / "skeleton_pipeline")
     p.add_argument("--python", help="Python executable.")
 

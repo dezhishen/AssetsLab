@@ -87,7 +87,7 @@ ROOT_MIN_STAGE = "pelvis"  # root motion applies from the pelvis stage onward
 # bone segment around its anchor joint on the static base, so the same motion
 # presets drive any body shape. Default 1.0 == the reference base.
 PROPORTION_NAMES = ("arm_length", "leg_length", "torso_length",
-                    "shoulder_width", "head_scale", "height")
+                    "shoulder_width", "head_scale", "neck_length", "height")
 
 # Joints that ride up when the torso lengthens (neck/head/shoulders/arms).
 _UPPER_JOINTS = {
@@ -147,6 +147,11 @@ def apply_proportions(coords: dict, proportions: dict | None, view: str) -> None
         nx, ny = coords["neck"]
         hx, hy = coords["head"]
         coords["head"] = [nx + (hx - nx) * p["head_scale"], ny + (hy - ny) * p["head_scale"]]
+    # 3.5 Neck length — head rides further from / closer to the neck (neck segment).
+    if p["neck_length"] != 1.0 and "neck" in coords and "head" in coords:
+        nx, ny = coords["neck"]
+        hx, hy = coords["head"]
+        coords["head"] = [nx + (hx - nx) * p["neck_length"], ny + (hy - ny) * p["neck_length"]]
     # 4. Shoulder width — spread shoulders around the spine centre; elbows/hands follow.
     if p["shoulder_width"] != 1.0 and "pelvis" in coords:
         cx = coords["pelvis"][0]
