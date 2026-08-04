@@ -14,6 +14,8 @@ datas = [
     (str(ROOT / "workflow" / "templates"), "workflow/templates"),
     (str(ROOT / "workflow" / "body"), "workflow/body"),
     (str(ROOT / "workflow" / "motions"), "workflow/motions"),
+    # Renderer + helper tools so a source checkout (cwd) can drive rendering.
+    (str(ROOT / "workflow" / "tools"), "workflow/tools"),
 ]
 
 a = Analysis(
