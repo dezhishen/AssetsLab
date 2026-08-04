@@ -89,6 +89,17 @@ python workflow/tools/assetslab.py stage front arms --renderer godot            
   - `GET /api/motions`、`POST /api/motions/<id>/render`（body: view/stage/stride/pelvis_bob/arm_swing/ik/blend/blend_t/比例参数）
 - 图片产物经 `http://127.0.0.1:8765/run/...` 提供（带 `?t=` 缓存失效）。
 
+## 构建与 CI（GitHub Actions）
+
+- **本地构建前端**：`cd workflow/web && pnpm install && pnpm build` → `workflow/web/dist`（含 `version.json`，CI 写入 commit/branch/build_time）。
+- **CI**：`.github/workflows/webflow-build.yml` 在 push（main / feature/workflow-engine）或 workflow_dispatch / release 时：构建前端 → 写版本信息 → 校验 Python CLI/后端（`compileall` + `workflow --help`）→ 打包 `webflow-dist.zip` 上传为 CI artifact，并在 Release 发布时附加为 release 资产。
+- **后端自动下载制品**：`lan_preview_server.py` 启动时若本地 `workflow/web/dist` 缺失，按构建参数从 GitHub Release 下载 `webflow-dist.zip` 并解压：
+  - `--webflow-repo <owner/repo>`（默认从 git remote 推断）
+  - `--webflow-version <tag>`（默认 latest release）
+  - `--webflow-token <PAT>`（私有仓库/限流；也读 `GITHUB_TOKEN` 环境变量）
+  - `--no-webflow-download`（禁用下载，缺失时回退旧页面）
+  - 下载失败时静默回退 `--directory`（旧 prototype/preview 页面）。
+
 ## 制品与 Godot demo
 
 - 最后动作 `export.artifacts` 打包 `dist/<workflow_id>/`：`atlas/`（7 层 4 方向×8 帧）+ `runtime_manifest.json`（方向/层序/head_anchor_offsets/runtime_params）+ `character_walk_4way.gif`。

@@ -1,0 +1,78 @@
+name: Build Webflow (CLI + Backend + Frontend)
+
+# Builds the workflow web frontend (Vue SPA), validates the Python CLI/backend,
+# embeds version info, and publishes the dist zip — to a GitHub Release (for
+# the backend's on-demand download) and as a CI artifact.
+
+on:
+  push:
+    branches: [main, feature/workflow-engine]
+  workflow_dispatch:
+  release:
+    types: [published]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: workflow/web/pnpm-lock.yaml
+
+      - name: Install + build frontend
+        working-directory: workflow/web
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm build
+
+      - name: Write version info into dist
+        run: |
+          VERSION=$(node -p "require('./workflow/web/package.json').version")
+          cat > workflow/web/dist/version.json <<EOF
+          {
+            "package_version": "$VERSION",
+            "commit": "${{ github.sha }}",
+            "branch": "${{ github.ref_name }}",
+            "ref": "${{ github.ref }}",
+            "release_tag": "${GITHUB_REF_NAME#v}",
+            "build_time": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "repo": "${{ github.repository }}"
+          }
+          EOF
+          echo "== version.json ==" && cat workflow/web/dist/version.json
+
+      - name: Validate Python CLI + backend
+        run: |
+          python -m compileall -q workflow
+          python -m workflow --help > /dev/null
+          .venv/bin/python -c "import ast; ast.parse(open('workflow/tools/lan_preview_server.py').read())" 2>/dev/null || \
+          python -c "import ast; ast.parse(open('workflow/tools/lan_preview_server.py').read())"
+
+      - name: Package dist zip
+        run: |
+          mkdir -p dist-artifact
+          (cd workflow/web/dist && zip -r ../../dist-artifact/webflow-dist.zip .)
+
+      - name: Upload dist artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: webflow-dist
+          path: workflow/web/dist
+
+      - name: Attach dist zip to GitHub Release
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist-artifact/webflow-dist.zip

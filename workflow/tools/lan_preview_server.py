@@ -2,9 +2,14 @@ from __future__ import annotations
 
 import argparse
 import base64
+import io
 import json
 import os
+import subprocess
 import sys
+import urllib.error
+import urllib.request
+import zipfile
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlparse
@@ -424,6 +429,69 @@ class PreviewHandler(SimpleHTTPRequestHandler):
         self.wfile.write(data)
 
 
+def _infer_repo(repo_root: Path) -> str | None:
+    """Infer owner/repo from git remote origin (ssh or https)."""
+    try:
+        out = subprocess.run(
+            ["git", "config", "--get", "remote.origin.url"],
+            cwd=repo_root, capture_output=True, text=True, timeout=10,
+        ).stdout.strip()
+        for sep in ("github.com:", "github.com/"):
+            if sep in out:
+                rest = out.split(sep, 1)[1].removesuffix(".git").strip("/")
+                if "/" in rest:
+                    return rest
+    except Exception:
+        pass
+    return None
+
+
+def ensure_webflow_dist(repo_root: Path, repo: str | None = None, version: str | None = None,
+                        token: str | None = None, log=print) -> Path | None:
+    """Return a usable ``workflow/web/dist``, downloading the ``webflow-dist.zip``
+    asset from a GitHub Release when the local build is missing.
+
+    ``repo`` defaults to the git remote origin; ``version`` is a release tag
+    (None/latest = newest release). ``token`` is an optional GitHub PAT for
+    private repos / rate limits. Returns None if nothing usable is available.
+    """
+    dist = repo_root / "workflow" / "web" / "dist"
+    if dist.is_dir() and (dist / "index.html").is_file():
+        return dist
+    repo = repo or _infer_repo(repo_root)
+    if not repo:
+        log(f"[webflow] no local dist and could not infer GitHub repo; serving --directory instead")
+        return None
+    try:
+        api = f"https://api.github.com/repos/{repo}/releases/{version or 'latest'}"
+        headers = {"Accept": "application/vnd.github+json", "User-Agent": "assetslab",
+                   "X-GitHub-Api-Version": "2022-11-28"}
+        if token:
+            headers["Authorization"] = f"Bearer {token}"
+        with urllib.request.urlopen(urllib.request.Request(api, headers=headers), timeout=30) as resp:
+            release = json.loads(resp.read().decode("utf-8"))
+        asset = next((a for a in release.get("assets", []) if a.get("name") == "webflow-dist.zip"), None)
+        if not asset:
+            log(f"[webflow] release {release.get('tag_name', '?')} has no webflow-dist.zip asset")
+            return None
+        log(f"[webflow] downloading {asset['browser_download_url']}")
+        dl = urllib.request.Request(asset["browser_download_url"], headers={"User-Agent": "assetslab"})
+        with urllib.request.urlopen(dl, timeout=180) as resp:
+            data = resp.read()
+        dist.mkdir(parents=True, exist_ok=True)
+        with zipfile.ZipFile(io.BytesIO(data)) as zf:
+            zf.extractall(dist)
+        if (dist / "index.html").is_file():
+            log(f"[webflow] extracted {len(data)} bytes into {dist}")
+            return dist
+        log("[webflow] downloaded zip did not contain index.html")
+    except urllib.error.HTTPError as error:
+        log(f"[webflow] GitHub download failed: HTTP {error.code} {error.reason}")
+    except Exception as error:
+        log(f"[webflow] GitHub download failed: {error}")
+    return None
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="AssetsLab LAN preview server with workflow console API")
     parser.add_argument("--port", type=int, required=True)
@@ -432,6 +500,14 @@ def main() -> int:
     parser.add_argument("--frontend-dir", type=Path,
                         help="Vue build output (workflow/web/dist) served at /. Defaults to workflow/web/dist if present, "
                              "otherwise --directory.")
+    parser.add_argument("--webflow-repo", type=str,
+                        help="GitHub owner/repo to fetch the webflow dist from (default: inferred from git remote).")
+    parser.add_argument("--webflow-version", type=str,
+                        help="GitHub Release tag to fetch (default: latest release).")
+    parser.add_argument("--webflow-token", type=str,
+                        help="GitHub token for private repos / rate limits (env GITHUB_TOKEN also honoured).")
+    parser.add_argument("--no-webflow-download", action="store_true",
+                        help="Never download the frontend from GitHub; fall back to --directory when dist is missing.")
     args = parser.parse_args()
     global REPO_ROOT, RUN_ROOT, DEFINITIONS_ROOT, _SDK
     REPO_ROOT = (args.repo_root or args.directory.parents[1]).resolve()
@@ -445,10 +521,19 @@ def main() -> int:
     from workflow.runner import WorkflowRunner, create_instance, list_instances  # noqa: E402
     from workflow.store import Store  # noqa: E402
     _SDK = (WorkflowRunner, create_instance, list_instances, Store, WorkflowDef)
-    # Static root: prefer the built Vue frontend (workflow/web/dist), fall back
-    # to the legacy --directory (prototype/preview) pages.
+    # Static root: prefer the built Vue frontend (workflow/web/dist); if the
+    # local build is missing, download it from a GitHub Release (based on the
+    # build params: --webflow-repo/--webflow-version); otherwise fall back to
+    # the legacy --directory (prototype/preview) pages.
     frontend_dir = args.frontend_dir or (REPO_ROOT / "workflow" / "web" / "dist")
-    root = frontend_dir if frontend_dir.is_dir() else args.directory.resolve()
+    usable = frontend_dir.is_dir() and (frontend_dir / "index.html").is_file()
+    if not usable and not args.no_webflow_download:
+        token = args.webflow_token or os.environ.get("GITHUB_TOKEN")
+        downloaded = ensure_webflow_dist(REPO_ROOT, args.webflow_repo, args.webflow_version, token)
+        if downloaded is not None:
+            frontend_dir = downloaded
+            usable = True
+    root = frontend_dir if usable else args.directory.resolve()
     os.chdir(root)
     server = ThreadingHTTPServer(("0.0.0.0", args.port), PreviewHandler)
     server.daemon_threads = True
