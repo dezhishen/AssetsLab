@@ -328,28 +328,30 @@ python workflow/tools/assetslab.py stage side arms --renderer python --motion ru
 ## Procedural skinning (skin layered parts onto the skeleton)
 
 Skinning reuses the same skeleton + motion engine: `workflow/tools/skin.py`
-maps the layered atlas **static parts** onto `base.json` joints (skeleton
-coordinates are scaled to the part set and calibrated to rest). A **skin** is a
-swappable definition under `workflow/skins/<name>.json` — `atlas_dir`
-(which parts) + `bindings` (part → joint + anchor policy). New skin = new JSON.
+maps **skin parts** onto `base.json` joints. A **skin** is an independent
+**skin pack** under `skins/<name>/` — `skin.json` (definition: `bindings`,
+anchor policy, coordinates) + standard part files `01_head_front.png` …
+(`<NN>_<layer>_<view>.png`, numeric prefix = draw order) + `preview/` (rendered
+animations). New skin = new folder (or a legacy `workflow/skins/<name>.json`
+for pre-baked skins tied to an instance atlas).
 
 ```bash
-python workflow/tools/assetslab.py skin list                                  # list skins
-python workflow/tools/assetslab.py skin verify --skin skeleton                # bindings + rest-fit IoU
-python workflow/tools/assetslab.py skin render walk --view front --skin skeleton --gif out.gif
-python workflow/tools/assetslab.py skin anchors --skin skeleton --view front  # extract per-layer anchors
+python workflow/tools/assetslab.py skin list                                  # list skins (packs + legacy)
+python workflow/tools/assetslab.py skin verify --skin mannequin               # bindings + rest-fit check
+python workflow/tools/assetslab.py skin render walk --view front --skin mannequin --gif out.gif
+python workflow/tools/assetslab.py skin anchors --skin mannequin --view front  # per-layer anchors
 ```
 
-- Atlas layer frames are **static parts** (frame0–7 bbox is essentially
-  constant), so skinning = placing each part on its joint (paired layers like
-  arms/feet sit on the midpoint of their limbs).
-- `skin verify` reports a rest-fit IoU vs the frame-aligned reference
-  (front=0.683 / side=0.557 / back=0.568 baseline) — no eyeballing needed.
-  Anchors can be hand-calibrated into `skin.anchors` to tighten the fit.
+- **Skin pack** = independent folder (not inside `dist/` artifacts):
+  `skins/mannequin/` ships 12 layers × 3 views with numeric-prefixed names.
+- `skin verify` reports a rest-fit composite (skeleton-coordinate skins anchor
+  exactly on joints; normalized skins report IoU vs the frame-aligned
+  reference) — no eyeballing needed.
 - The workflow appends `skin.verify` + `skin.render` after `export.artifacts`
-  (`--param skin/motion/view` switches skin & view), writing
-  `dist/<workflow_id>/skins/` (GIF + PNG frame sequence).
-- Godot demo: `--skin-mode` plays the skinned sequence over the baked frames.
+  (`--param skin/motion/view` switches skin & view); rendering defaults to the
+  skin pack's `skins/<name>/preview/` (GIF + PNG frame sequence).
+- Godot demo: `--skin-mode --skin-pack=<name>` plays the skinned sequence from
+  the skin pack's `preview/` over the baked frames.
 
 ## Artifacts & Godot demo
 

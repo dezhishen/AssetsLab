@@ -111,7 +111,7 @@ assetslab skin verify --skin skeleton   # 绑定校验 + rest 贴合 IoU
 assetslab skin render walk --view front --skin skeleton --gif out.gif
 assetslab skin anchors --skin skeleton --view front   # 提取各层锚点
 ```
-  - 皮肤可替换：新建 `workflow/skins/<name>.json`（`atlas_dir` + `bindings` + `anchor_policy`）即为一套新皮肤；换皮肤 = 换定义。默认 `skeleton` 皮肤指向 `dist/精灵女弓箭手/atlas`。
+  - 皮肤可替换：独立皮肤包 `skins/<name>/`（`skin.json` + `<NN>_<layer>_<view>.png` 部件 + `preview/` 动画）即为一套新皮肤，不在制品里；换皮肤 = 换目录。默认 `mannequin`（人体模特）在 `skins/mannequin/`；预烘焙 `skeleton` 在 `workflow/skins/skeleton.json`。
   - Godot 演示：`godot --headless --path prototype -- --artifacts=dist/<id> --skin-mode --skin-view=front` 预览蒙皮动画。
 - **启动预览服务器**（REST API + Web 控制台，供人工通道）：
 ```bash

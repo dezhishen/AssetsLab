@@ -3,7 +3,7 @@
 
 按 base.json 骨架 rest 姿势 1:1 绘制中性人体几何部件（头/躯干/左右上臂·前臂·
 大腿·小腿·脚），输出 dist/mannequin/atlas/<layer>/walk_row{row}_frame0.png，
-并生成 workflow/skins/mannequin.json（coordinates=skeleton）。
+并生成独立皮肤包 skins/mannequin/（skin.json + <NN>_<layer>_<view>.png + preview/）。
 
 约定：锚点=部件图中心；肢体段从中心沿 +x 水平延伸，由 skin.py 的 rotate_to_joint
 绕锚点旋转到 关节->子关节 方向 → rest 时锚点=关节、段两端=起点/终点关节，天然贴合。
