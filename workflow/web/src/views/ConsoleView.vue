@@ -110,7 +110,7 @@ onMounted(async () => { await loadAll(); updateBodyTplDesc() })
 <template>
   <div class="space-y-6">
     <!-- create instance -->
-    <div class="rounded-xl border border-slate-700 bg-slate-900/60 p-4">
+    <div class="rounded-xl border border-slate-200 bg-white/70 dark:border-slate-700 dark:bg-slate-900/60 p-4">
       <div class="flex flex-wrap items-center gap-3">
         <el-button @click="loadAll">⟳ 刷新</el-button>
         <el-select v-model="newDef" style="width: 130px">
@@ -129,42 +129,42 @@ onMounted(async () => { await loadAll(); updateBodyTplDesc() })
     </div>
 
     <!-- motion studio -->
-    <div class="rounded-xl border border-slate-700 bg-slate-900/60 p-4">
+    <div class="rounded-xl border border-slate-200 bg-white/70 dark:border-slate-700 dark:bg-slate-900/60 p-4">
       <h2 class="text-lg font-semibold m-0 mb-1">动作预览台 <span class="text-xs text-slate-500 font-normal">数据驱动动作预设 · pose library</span></h2>
       <MotionStudio />
     </div>
 
     <!-- instances -->
-    <div class="rounded-xl border border-slate-700 bg-slate-900/60 p-4">
+    <div class="rounded-xl border border-slate-200 bg-white/70 dark:border-slate-700 dark:bg-slate-900/60 p-4">
       <h2 class="text-lg font-semibold m-0 mb-3">工作流实例</h2>
       <div v-if="!instances.length" class="text-slate-500 py-6 text-center">暂无实例，点击上方「新建实例」开始。</div>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <div v-for="it in instances" :key="it.workflow_id" class="rounded-lg border border-slate-700 bg-slate-950 p-3 flex items-center gap-3 hover:border-cyan-600 cursor-pointer" @click="gotoWizard(it.workflow_id)">
+        <div v-for="it in instances" :key="it.workflow_id" class="rounded-lg border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-950 p-3 flex items-center gap-3 hover:border-cyan-600 cursor-pointer" @click="gotoWizard(it.workflow_id)">
           <div class="flex-1 min-w-0">
             <div class="font-medium">{{ it.workflow_id }}</div>
             <div class="text-xs text-slate-500">{{ it.definition_id }} · v{{ it.version }} · {{ it.updated_at }}</div>
             <el-progress :percentage="progressPct(it.progress)" :show-text="false" class="mt-2" />
           </div>
-          <span class="text-xs text-slate-400 whitespace-nowrap">{{ it.progress }}</span>
+          <span class="text-xs text-slate-500 whitespace-nowrap dark:text-slate-400">{{ it.progress }}</span>
           <el-button size="small" @click.stop="openDetail(it.workflow_id)">详情</el-button>
         </div>
       </div>
     </div>
 
     <!-- detail -->
-    <div v-if="detail" class="rounded-xl border border-slate-700 bg-slate-900/60 p-4">
+    <div v-if="detail" class="rounded-xl border border-slate-200 bg-white/70 dark:border-slate-700 dark:bg-slate-900/60 p-4">
       <div class="flex items-center gap-3 flex-wrap mb-3">
         <el-button size="small" @click="detail = null">← 返回列表</el-button>
-        <h2 class="text-lg font-semibold m-0">{{ detail.workflow_id }} <span class="text-sm font-normal text-slate-400">· {{ detail.title }}</span></h2>
+        <h2 class="text-lg font-semibold m-0">{{ detail.workflow_id }} <span class="text-sm font-normal text-slate-500 dark:text-slate-400">· {{ detail.title }}</span></h2>
         <el-button size="small" type="primary" @click="gotoWizard(detail.workflow_id)">进入向导</el-button>
       </div>
       <div v-if="detail.body" class="text-xs text-slate-500 mb-3">
         体型：{{ JSON.stringify(detail.body) }}
       </div>
       <div v-for="(list, phase) in groups" :key="phase" class="mb-4">
-        <div class="text-sm font-medium text-cyan-300 mb-2">{{ PHASE_LABEL[phase] || phase }}</div>
+        <div class="text-sm font-medium text-cyan-600 dark:text-cyan-300 mb-2">{{ PHASE_LABEL[phase] || phase }}</div>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <div v-for="a in list" :key="a.action_id" class="rounded-lg border border-slate-700 bg-slate-950 p-3">
+          <div v-for="a in list" :key="a.action_id" class="rounded-lg border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-950 p-3">
             <div class="flex items-center gap-2">
               <span class="font-medium text-sm">{{ a.title }}</span>
               <span class="text-xs text-slate-500 font-mono">{{ a.action_id }}</span>
@@ -174,7 +174,7 @@ onMounted(async () => { await loadAll(); updateBodyTplDesc() })
             </div>
             <div class="text-xs text-slate-500 mt-1">{{ a.description }}</div>
             <div v-if="stFor(a.action_id).outputs?.length" class="mt-2">
-              <img v-for="u in stFor(a.action_id).outputs.map((p) => p.split('/run/')[1] ? '/run/' + p.split('/run/')[1] : null).filter(Boolean)" :key="u" :src="u" class="max-h-40 rounded border border-slate-700 image-render-pixel" />
+              <img v-for="u in stFor(a.action_id).outputs.map((p) => p.split('/run/')[1] ? '/run/' + p.split('/run/')[1] : null).filter(Boolean)" :key="u" :src="u" class="max-h-40 rounded border border-slate-200 dark:border-slate-700 image-render-pixel" />
             </div>
             <div class="flex gap-2 mt-3">
               <el-button v-if="Object.keys(a.params || {}).length" size="small" type="primary" @click="openParams(detail.workflow_id, a)">▶ 运行（带参数）</el-button>
@@ -186,9 +186,9 @@ onMounted(async () => { await loadAll(); updateBodyTplDesc() })
     </div>
 
     <!-- log -->
-    <div class="rounded-xl border border-slate-700 bg-slate-900/60 p-4">
-      <div class="text-sm font-medium text-cyan-300 mb-2">最近操作日志</div>
-      <pre class="text-xs text-slate-400 whitespace-pre-wrap max-h-72 overflow-auto m-0">{{ log.join('\n') || '—' }}</pre>
+    <div class="rounded-xl border border-slate-200 bg-white/70 dark:border-slate-700 dark:bg-slate-900/60 p-4">
+      <div class="text-sm font-medium text-cyan-600 dark:text-cyan-300 mb-2">最近操作日志</div>
+      <pre class="text-xs text-slate-600 whitespace-pre-wrap max-h-72 overflow-auto m-0 dark:text-slate-400">{{ log.join('\n') || '—' }}</pre>
     </div>
 
     <!-- run-with-params dialog -->

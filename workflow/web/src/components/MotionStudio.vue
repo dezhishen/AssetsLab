@@ -88,7 +88,7 @@ onMounted(load)
       </el-select>
       <el-checkbox v-model="ik">IK 落地锁定</el-checkbox>
       <el-button type="primary" :loading="loading" @click="render">⟳ 渲染循环</el-button>
-      <span class="text-xs text-slate-400">{{ status }}</span>
+      <span class="text-xs text-slate-500 dark:text-slate-400">{{ status }}</span>
     </div>
 
     <div class="text-xs text-slate-500">动作参数（怎么动）</div>
@@ -118,7 +118,7 @@ onMounted(load)
     </div>
 
     <div v-if="result" class="mt-2">
-      <img :src="result" class="max-w-full max-h-64 rounded-lg border border-slate-700 image-render-pixel" />
+      <img :src="result" class="max-w-full max-h-64 rounded-lg border border-slate-200 dark:border-slate-700 image-render-pixel" />
     </div>
   </div>
 </template>

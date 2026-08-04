@@ -102,7 +102,7 @@ onMounted(async () => {
 <template>
   <div class="space-y-4">
     <div class="flex flex-wrap items-center gap-3">
-      <span class="text-sm text-slate-400">流程实例</span>
+      <span class="text-sm text-slate-500 dark:text-slate-400">流程实例</span>
       <el-select v-model="wfId" filterable placeholder="选择实例" style="width: 260px" @change="onInstanceChange">
         <el-option v-for="it in instances" :key="it.workflow_id" :label="`${it.workflow_id} · ${it.progress}`" :value="it.workflow_id" />
       </el-select>
@@ -122,7 +122,7 @@ onMounted(async () => {
       <BodyPanel :workflow-id="wfId" :body="body" :body-template="state.body_template" :body-templates="bodyTemplates" @saved="(b) => (state.body = b)" />
 
       <!-- current step -->
-      <div class="rounded-xl border border-slate-700 bg-slate-900/60 p-5 space-y-4">
+      <div class="rounded-xl border border-slate-200 bg-white/70 dark:border-slate-700 dark:bg-slate-900/60 p-5 space-y-4">
         <div class="flex flex-wrap items-center gap-3">
           <el-tag size="small" type="info">{{ current + 1 }} / {{ actions.length }}</el-tag>
           <h2 class="text-lg font-semibold m-0">{{ currentAction.title }}</h2>
@@ -131,12 +131,12 @@ onMounted(async () => {
             {{ STATUS_LABEL[currentState.status] || currentState.status }}
           </el-tag>
         </div>
-        <p class="text-slate-400 text-sm m-0">{{ currentAction.description }}</p>
+        <p class="text-slate-500 text-sm m-0 dark:text-slate-400">{{ currentAction.description }}</p>
 
         <div v-if="Object.keys(currentAction.params || {}).length" class="space-y-2">
-          <div class="text-sm font-medium text-cyan-300">参数</div>
+          <div class="text-sm font-medium text-cyan-600 dark:text-cyan-300">参数</div>
           <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
-            <label v-for="(spec, k) in currentAction.params" :key="k" class="flex items-center justify-between gap-2 bg-slate-900 rounded-lg px-3 py-2">
+            <label v-for="(spec, k) in currentAction.params" :key="k" class="flex items-center justify-between gap-2 bg-slate-100 rounded-lg px-3 py-2 dark:bg-slate-900">
               <span class="text-sm">{{ spec.label || k }}</span>
               <el-input-number v-model="paramValues[k]" :min="spec.min ?? 0" :max="spec.max ?? 3" :step="0.05" size="small" controls-position="right" />
             </label>
@@ -146,12 +146,12 @@ onMounted(async () => {
         <!-- outputs: previous vs current -->
         <div v-if="outputImages(currentState.outputs).length || outputImages(currentState.prev_outputs).length" class="flex flex-wrap gap-6">
           <div v-if="outputImages(currentState.prev_outputs).length">
-            <div class="text-xs text-slate-400 mb-1">上一版</div>
-            <img v-for="u in outputImages(currentState.prev_outputs)" :key="u" :src="`${u}?t=${encodeURIComponent(currentState.finished_at || Date.now())}`" class="max-h-56 rounded-lg border border-slate-700 image-render-pixel" />
+            <div class="text-xs text-slate-500 mb-1 dark:text-slate-400">上一版</div>
+            <img v-for="u in outputImages(currentState.prev_outputs)" :key="u" :src="`${u}?t=${encodeURIComponent(currentState.finished_at || Date.now())}`" class="max-h-56 rounded-lg border border-slate-200 dark:border-slate-700 image-render-pixel" />
           </div>
           <div>
-            <div class="text-xs text-slate-400 mb-1">当前版</div>
-            <img v-for="u in outputImages(currentState.outputs)" :key="u" :src="`${u}?t=${encodeURIComponent(currentState.finished_at || Date.now())}`" class="max-h-56 rounded-lg border border-slate-700 image-render-pixel" />
+            <div class="text-xs text-slate-500 mb-1 dark:text-slate-400">当前版</div>
+            <img v-for="u in outputImages(currentState.outputs)" :key="u" :src="`${u}?t=${encodeURIComponent(currentState.finished_at || Date.now())}`" class="max-h-56 rounded-lg border border-slate-200 dark:border-slate-700 image-render-pixel" />
           </div>
         </div>
         <div v-else class="text-slate-500 text-sm">（尚无输出）</div>
@@ -176,9 +176,9 @@ onMounted(async () => {
     </div>
 
     <!-- log -->
-    <div class="rounded-xl border border-slate-700 bg-slate-900/60 p-4">
-      <div class="text-sm font-medium text-cyan-300 mb-2">操作日志</div>
-      <pre class="text-xs text-slate-400 whitespace-pre-wrap max-h-64 overflow-auto m-0">{{ log.join('\n') || '—' }}</pre>
+    <div class="rounded-xl border border-slate-200 bg-white/70 dark:border-slate-700 dark:bg-slate-900/60 p-4">
+      <div class="text-sm font-medium text-cyan-600 dark:text-cyan-300 mb-2">操作日志</div>
+      <pre class="text-xs text-slate-600 whitespace-pre-wrap max-h-64 overflow-auto m-0 dark:text-slate-400">{{ log.join('\n') || '—' }}</pre>
     </div>
   </div>
 </template>

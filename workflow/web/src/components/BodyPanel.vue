@@ -50,18 +50,18 @@ async function save() {
 </script>
 
 <template>
-  <el-collapse v-model="open" class="rounded-lg border border-slate-700 bg-slate-900/60">
+  <el-collapse v-model="open" class="rounded-lg border border-slate-200 bg-white/70 dark:border-slate-700 dark:bg-slate-900/60">
     <el-collapse-item name="body">
       <template #title>
         <div class="flex items-center gap-3 text-sm">
-          <span class="font-medium text-cyan-300">角色体型</span>
-          <span class="text-slate-400 text-xs truncate max-w-md">{{ summary }}</span>
+          <span class="font-medium text-cyan-600 dark:text-cyan-300">角色体型</span>
+          <span class="text-slate-500 text-xs truncate max-w-md dark:text-slate-400">{{ summary }}</span>
           <span v-if="saving" class="text-slate-500 text-xs">保存中…</span>
         </div>
       </template>
       <p class="text-xs text-slate-500 mb-3">骨骼比例（臂长/腿长/躯干长/肩宽/头大小/身高）属于「角色」而非「动作」；三视图共享，修改后自动保存到该实例。</p>
       <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
-        <label v-for="k in BODY_KEYS" :key="k" class="flex items-center justify-between gap-2 bg-slate-900 rounded-lg px-3 py-2">
+        <label v-for="k in BODY_KEYS" :key="k" class="flex items-center justify-between gap-2 bg-slate-100 rounded-lg px-3 py-2 dark:bg-slate-900">
           <span class="text-sm">{{ BODY_LABEL[k] }}</span>
           <el-input-number v-model="local[k]" :min="BODY_MIN[k]" :max="BODY_MAX[k]" :step="0.05" size="small" controls-position="right" />
         </label>
