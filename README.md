@@ -325,6 +325,32 @@ python workflow/tools/assetslab.py stage side arms --renderer python --motion ru
   across motions, all rendered live in the browser via
   `POST /api/motions/<id>/render`.
 
+## Procedural skinning (skin layered parts onto the skeleton)
+
+Skinning reuses the same skeleton + motion engine: `workflow/tools/skin.py`
+maps the layered atlas **static parts** onto `base.json` joints (skeleton
+coordinates are scaled to the part set and calibrated to rest). A **skin** is a
+swappable definition under `workflow/skins/<name>.json` — `atlas_dir`
+(which parts) + `bindings` (part → joint + anchor policy). New skin = new JSON.
+
+```bash
+python workflow/tools/assetslab.py skin list                                  # list skins
+python workflow/tools/assetslab.py skin verify --skin skeleton                # bindings + rest-fit IoU
+python workflow/tools/assetslab.py skin render walk --view front --skin skeleton --gif out.gif
+python workflow/tools/assetslab.py skin anchors --skin skeleton --view front  # extract per-layer anchors
+```
+
+- Atlas layer frames are **static parts** (frame0–7 bbox is essentially
+  constant), so skinning = placing each part on its joint (paired layers like
+  arms/feet sit on the midpoint of their limbs).
+- `skin verify` reports a rest-fit IoU vs the frame-aligned reference
+  (front=0.683 / side=0.557 / back=0.568 baseline) — no eyeballing needed.
+  Anchors can be hand-calibrated into `skin.anchors` to tighten the fit.
+- The workflow appends `skin.verify` + `skin.render` after `export.artifacts`
+  (`--param skin/motion/view` switches skin & view), writing
+  `dist/<workflow_id>/skins/` (GIF + PNG frame sequence).
+- Godot demo: `--skin-mode` plays the skinned sequence over the baked frames.
+
 ## Artifacts & Godot demo
 
 The final workflow action `export.artifacts` builds a Godot-ready package under
@@ -335,6 +361,7 @@ dist/<workflow_id>/
 ├── atlas/                      # layered 4×8 frames (feet/lower_body/arms/torso/head_base/ear/face)
 ├── runtime_manifest.json       # directions, layer order, head_anchor_offsets
 ├── character_walk_4way.gif     # Pillow-composited preview
+├── skins/                      # procedural skinning previews (walk_front/side/back: GIF + frame PNGs)
 └── README.md
 ```
 

@@ -20,6 +20,10 @@ var rgs_walk_reference := false
 var milestone_body_right := false
 var latest_generated_body := false
 var vertical_body_candidate := false
+var skin_mode := false
+var skin_view := "front"
+var skin_frames: Array[Texture2D] = []
+var skin_sprite: Sprite2D
 var artifacts_dir := ""
 var layer_y := -26.0
 var appearance_seed: int = 20260730
@@ -60,6 +64,10 @@ func _ready() -> void:
 	milestone_body_right = "--milestone-body-right" in user_args
 	latest_generated_body = "--latest-generated-body" in user_args
 	vertical_body_candidate = "--vertical-body-candidate" in user_args
+	skin_mode = "--skin-mode" in user_args
+	for argument in user_args:
+		if argument.begins_with("--skin-view="):
+			skin_view = argument.trim_prefix("--skin-view=")
 	for argument in user_args:
 		if argument.begins_with("--artifacts="):
 			artifacts_dir = argument.trim_prefix("--artifacts=")
@@ -81,6 +89,8 @@ func _ready() -> void:
 	_load_latest_generated_body_frames()
 	_load_vertical_body_candidate_frames()
 	_load_body_anchor_offsets()
+	if skin_mode:
+		_load_skin_preview_frames()
 	spawn_position = global_position
 	_apply_frame(0)
 
@@ -321,6 +331,55 @@ func _load_vertical_body_candidate_frames() -> void:
 			vertical_back_frame_textures.append(back_texture)
 
 
+func _load_skin_preview_frames() -> void:
+	# 蒙皮预览：加载 dist/<id>/skins/<skin>_<motion>_<view>/frameN.png 序列
+	# （由 skin.py render 输出）。用 --skin-view 指定 front/side/back，默认 front。
+	skin_frames.clear()
+	if artifacts_dir.is_empty():
+		return
+	var skins_root := artifacts_dir.path_join("skins")
+	var dir := DirAccess.open(skins_root)
+	if dir == null:
+		return
+	var seq_name := ""
+	dir.list_dir_begin()
+	while true:
+		var name := dir.get_next()
+		if name == "":
+			break
+		if dir.current_is_dir() and name.contains(skin_view) and name.begins_with("skeleton"):
+			seq_name = name
+	dir.list_dir_end()
+	if seq_name.is_empty():
+		push_warning("Skin preview: no sequence for view '" + skin_view + "' under " + skins_root)
+		return
+	var seq_path := skins_root.path_join(seq_name)
+	var frame_dir := DirAccess.open(seq_path)
+	if frame_dir == null:
+		return
+	var frame_paths: Array[String] = []
+	frame_dir.list_dir_begin()
+	while true:
+		var file := frame_dir.get_next()
+		if file == "":
+			break
+		if file.begins_with("frame") and file.ends_with(".png"):
+			frame_paths.append(seq_path.path_join(file))
+	frame_dir.list_dir_end()
+	frame_paths.sort()
+	for path in frame_paths:
+		var image := Image.load_from_file(path)
+		if image != null:
+			skin_frames.append(ImageTexture.create_from_image(image))
+	if skin_frames.is_empty():
+		return
+	skin_sprite = Sprite2D.new()
+	skin_sprite.name = "SkinPreview"
+	skin_sprite.z_index = 60
+	add_child(skin_sprite)
+	print("SKIN_PREVIEW_FRAMES=%d seq=%s" % [skin_frames.size(), seq_path])
+
+
 func _current_body_anchor_offset() -> Vector2:
 	if not rebuild_head:
 		return Vector2.ZERO
@@ -373,6 +432,12 @@ func _update_walk_frame(delta: float, is_moving: bool) -> void:
 
 
 func _apply_frame(frame: int) -> void:
+	if skin_mode and not skin_frames.is_empty() and skin_sprite != null:
+		for sprite in [torso_sprite, arms_sprite, lower_body_sprite, feet_sprite, ear_sprite, head_sprite, face_sprite, rgs_walk_reference_sprite]:
+			sprite.visible = false
+		skin_sprite.visible = true
+		skin_sprite.texture = skin_frames[posmod(frame, skin_frames.size())]
+		return
 	if torso_frame_textures.is_empty() or arms_frame_textures.is_empty() or lower_body_frame_textures.is_empty() or feet_frame_textures.is_empty() or head_frame_textures.is_empty() or ear_frame_textures.is_empty() or face_frame_textures.is_empty():
 		return
 	var use_rgs_reference := rgs_walk_reference and direction_row == 1 and rgs_walk_reference_frame_textures.size() == 8

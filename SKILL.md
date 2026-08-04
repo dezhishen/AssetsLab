@@ -83,7 +83,7 @@ webflow-cli delete --workflow hero --remove-artifacts    # 删实例 + 制品
 webflow-cli delete-artifacts --workflow hero             # 仅删制品，实例保留
 ```
 
-**动作 id（6 步精简版）**：`skeleton.front` → `skeleton.side` → `skeleton.back` → `test.smoke` → `capture.walk` → `export.artifacts`。定义在 `workflow/definitions/default.json`。
+**动作 id（8 步）**：`skeleton.front` → `skeleton.side` → `skeleton.back` → `test.smoke` → `capture.walk` → `export.artifacts` → `skin.verify` → `skin.render`。定义在 `workflow/definitions/default.json`。
 
 ## 动作 / 体型分离
 
@@ -103,6 +103,16 @@ webflow-cli delete-artifacts --workflow hero             # 仅删制品，实例
 - **动作预设**：`workflow/motions/{walk,run,idle,jump}.json`，声明式（波形信号 + 关节偏移 + root + ik）。新动作 = 新 JSON。`motion check` 验证与内置姿态逐像素一致。
 - **根驱动**：骨盆运动（bob/跳跃/前倾）经 `base.json` 的 `torso` 系数传导到肩/臂/头。
 - **IK**：`--ik`（run/jump 预设声明）腿长恒定 + 脚落地锁定。
+- **程序化蒙皮**（把 atlas 静态分层部件贴到骨架关节）：
+```bash
+webflow-cli run --workflow hero --action skin.render --param skin=skeleton --param motion=walk --param view=front
+assetslab skin list                  # 列出皮肤
+assetslab skin verify --skin skeleton   # 绑定校验 + rest 贴合 IoU
+assetslab skin render walk --view front --skin skeleton --gif out.gif
+assetslab skin anchors --skin skeleton --view front   # 提取各层锚点
+```
+  - 皮肤可替换：新建 `workflow/skins/<name>.json`（`atlas_dir` + `bindings` + `anchor_policy`）即为一套新皮肤；换皮肤 = 换定义。默认 `skeleton` 皮肤指向 `dist/精灵女弓箭手/atlas`。
+  - Godot 演示：`godot --headless --path prototype -- --artifacts=dist/<id> --skin-mode --skin-view=front` 预览蒙皮动画。
 - **启动预览服务器**（REST API + Web 控制台，供人工通道）：
 ```bash
 # 二进制（curl 安装 webflow-server-<linux|macos|windows>.zip）
@@ -114,7 +124,7 @@ webflow-server --port 8765 --directory <仓库>/dist --repo-root <仓库>
 1. `new --template <风格> --body-template <体型>` 建实例 → `status` 确认 template_params + body
 2. `next` 取推荐动作 → `run`（`--param` 调动作、`--body` 调体型；也可先 `set-body` 固化角色）
 3. `status --json` 看该动作 `outputs`（本地图片绝对路径）+ `params`（实际所用动作+体型）；不满意可重新 `run` 调参
-4. 走完 6 步 → `export.artifacts` → 制品供 Godot demo
+4. 走完 8 步 → `export.artifacts` → 制品供 Godot demo；`skin.render` 生成程序化蒙皮预览（`dist/<id>/skins/`）
 
 ## 约定与注意事项
 

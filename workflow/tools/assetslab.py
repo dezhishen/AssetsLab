@@ -558,6 +558,41 @@ def cmd_motion(args: argparse.Namespace) -> int:
     return subprocess.call(cmd)
 
 
+def cmd_skin(args: argparse.Namespace) -> int:
+    """Procedural skinning: list / anchors / render / verify."""
+    python = resolve_python(args.python)
+    base = [python, str(TOOLS / "skin.py")]
+    sub = args.skin_sub
+    if sub == "list":
+        cmd = [*base, "list"]
+    elif sub == "anchors":
+        cmd = [*base, "anchors"]
+        if args.atlas:
+            cmd.append(args.atlas)
+        cmd += ["--skin", args.skin]
+        if args.view:
+            cmd += ["--view", args.view]
+    elif sub == "render":
+        cmd = [*base, "render", args.motion, "--view", args.view, "--stage", args.stage,
+               "--skin", args.skin]
+        if args.atlas:
+            cmd += ["--atlas", args.atlas]
+        if args.gif:
+            cmd += ["--gif", str(args.gif)]
+        for kv in args.param or []:
+            cmd += ["--param", kv]
+        for kv in args.body or []:
+            cmd += ["--body", kv]
+    elif sub == "verify":
+        cmd = [*base, "verify"]
+        if args.atlas:
+            cmd.append(args.atlas)
+        cmd += ["--skin", args.skin]
+    else:
+        raise SystemExit(f"unknown skin subcommand: {sub}")
+    return subprocess.call(cmd)
+
+
 # -------------------------------------------------------------------- main --
 
 
@@ -647,6 +682,29 @@ def build_parser() -> argparse.ArgumentParser:
     pr.add_argument("--output", type=Path, default=ROOT / "prototype" / "test_output" / "skeleton_pipeline")
     p.add_argument("--python", help="Python executable.")
 
+    skin_files = sorted((ROOT / "workflow" / "skins").glob("*.json")) if (ROOT / "workflow" / "skins").is_dir() else []
+    skin_ids = [s.stem for s in skin_files]
+    p = sub.add_parser("skin", help="Procedural skinning (skin a layered atlas onto the skeleton).")
+    s = p.add_subparsers(dest="skin_sub", required=True)
+    s.add_parser("list", help="List available skins.")
+    sa = s.add_parser("anchors", help="Extract per-layer anchors from an atlas.")
+    sa.add_argument("atlas", nargs="?", default=None, help="Atlas directory (default: skin.atlas_dir).")
+    sa.add_argument("--skin", choices=skin_ids or ["skeleton"], default="skeleton")
+    sa.add_argument("--view", choices=["front", "side", "back"], default="front")
+    sr = s.add_parser("render", help="Render a skinned motion GIF.")
+    sr.add_argument("motion", choices=motion_ids or ["walk"])
+    sr.add_argument("--view", choices=["front", "side", "back"], required=True)
+    sr.add_argument("--stage", choices=["skeleton", "legs", "pelvis", "arms"], default="arms")
+    sr.add_argument("--skin", choices=skin_ids or ["skeleton"], default="skeleton")
+    sr.add_argument("--atlas", default=None, help="Atlas directory (default: skin.atlas_dir).")
+    sr.add_argument("--gif", type=Path, help="Output GIF path.")
+    sr.add_argument("--param", action="append", metavar="NAME=VALUE")
+    sr.add_argument("--body", action="append", metavar="NAME=VALUE")
+    sv = s.add_parser("verify", help="Verify a skin's bindings/anchors against an atlas (incl. rest-skin IoU).")
+    sv.add_argument("atlas", nargs="?", default=None, help="Atlas directory (default: skin.atlas_dir).")
+    sv.add_argument("--skin", choices=skin_ids or ["skeleton"], default="skeleton")
+    p.add_argument("--python", help="Python executable.")
+
     return parser
 
 
@@ -660,6 +718,7 @@ def main(argv: list[str] | None = None) -> int:
         "preview": cmd_preview,
         "run-script": cmd_run_script,
         "motion": cmd_motion,
+        "skin": cmd_skin,
     }
     try:
         return handlers[args.command](args)

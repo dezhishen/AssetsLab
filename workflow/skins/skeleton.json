@@ -1,0 +1,19 @@
+{
+  "skin_id": "skeleton",
+  "schema": "assetslab_skin_v1",
+  "description": "默认骨骼皮肤：把 7 层 atlas 部件蒙到 base.json 骨架上（皮肤可替换——换皮肤只需新建 skins/<name>.json + 对应部件）。",
+  "views": ["front", "side", "back"],
+  "atlas_dir": "dist/精灵女弓箭手/atlas",
+  "atlas_layers": ["feet", "lower_body", "arms", "torso", "head_base", "ear", "face"],
+  "bindings": {
+    "feet":       { "joint": "foot_%s",     "anchor": null, "rotate": false, "limb": "left/right", "anchor_policy": "center" },
+    "lower_body": { "joint": "pelvis",      "anchor": null, "rotate": false, "anchor_policy": "center" },
+    "arms":       { "joint": "shoulder_%s", "anchor": null, "rotate": false, "limb": "left/right", "anchor_policy": "center" },
+    "torso":      { "joint": "pelvis",      "anchor": null, "rotate": false, "anchor_policy": "center" },
+    "head_base":  { "joint": "head",        "anchor": null, "rotate": false, "anchor_policy": "center" },
+    "ear":        { "joint": "head",        "anchor": null, "rotate": false, "anchor_policy": "center" },
+    "face":       { "joint": "head",        "anchor": null, "rotate": false, "anchor_policy": "center" }
+  },
+  "limbs": { "arms": ["left", "right"], "feet": ["left", "right"] },
+  "anchors": {}
+}
