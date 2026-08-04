@@ -7,5 +7,8 @@
 # Windows:
 #   py -m venv .venv
 #   .venv\Scripts\python.exe -m pip install -r requirements.txt
+#
+# Versions are pinned (==) for reproducibility. To refresh the lockfile:
+#   .venv/bin/python -m pip freeze > requirements.txt
 
-Pillow>=10.0
+Pillow==12.3.0
