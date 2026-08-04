@@ -93,9 +93,17 @@ class WorkflowRunner:
             self._save_actions(actions)
         return state.to_dict()
 
-    def run(self, action_id: str) -> dict[str, Any]:
-        """Run one action, collect outputs, verify the gate, update state."""
+    def run(self, action_id: str, params: dict | None = None) -> dict[str, Any]:
+        """Run one action, collect outputs, verify the gate, update state.
+
+        ``params`` override the tunable knobs declared in the action definition
+        (e.g. stride / pelvis_bob / arm_swing).  ``{name}`` placeholders in the
+        exec list are replaced by the resolved value, so the same action can be
+        re-run with different parameters and the used values are recorded in
+        the action state for review.
+        """
         action = self._require(action_id)
+        resolved = self._resolve_params(action, params)
         step_dir = self.store.steps_dir(action_id)
 
         with self.store.lock():
@@ -106,15 +114,16 @@ class WorkflowRunner:
             state = self._action_state(actions, action_id)
             state.status = Status.RUNNING.value
             state.ran_at = now_iso()
+            state.params = resolved
             actions[action_id] = state
             self._save_actions(actions)
             step_dir.mkdir(parents=True, exist_ok=True)
 
         # Long-running subprocess runs outside the lock.
         log_path = step_dir / "run.log"
-        # Expand workflow_id placeholder so actions like export.artifacts can
-        # target dist/<workflow_id>/.
-        expanded_exec = [part.replace("{workflow_id}", self.workflow_id) for part in action.exec]
+        # Expand {workflow_id} and {param} placeholders so exec can target
+        # dist/<workflow_id>/ and accept tunable knobs.
+        expanded_exec = self._expand_exec(action, resolved)
         try:
             process = subprocess.run(
                 self._cli + expanded_exec,
@@ -172,3 +181,27 @@ class WorkflowRunner:
         if action is None:
             raise KeyError(f"unknown action: {action_id}")
         return action
+
+    # ------------------------------------------------------------- params --
+
+    def _resolve_params(self, action: ActionDef, overrides: dict | None) -> dict:
+        """Merge declared defaults with the run-time overrides."""
+        resolved: dict[str, Any] = {}
+        for name, spec in action.params.items():
+            if isinstance(spec, dict):
+                resolved[name] = spec.get("default")
+            else:
+                resolved[name] = spec
+        for name, value in (overrides or {}).items():
+            resolved[name] = value
+        return resolved
+
+    def _expand_exec(self, action: ActionDef, params: dict) -> list[str]:
+        """Replace {workflow_id} and {param} placeholders in the exec list."""
+        out: list[str] = []
+        for part in action.exec:
+            part = part.replace("{workflow_id}", self.workflow_id)
+            for name, value in params.items():
+                part = part.replace("{" + name + "}", "" if value is None else str(value))
+            out.append(part)
+        return out

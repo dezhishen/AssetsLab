@@ -96,10 +96,23 @@
   </section>
 </main>
 
+<div id="paramModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:50;align-items:center;justify-content:center">
+  <div style="background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px;width:min(540px,92vw);max-height:80vh;overflow:auto">
+    <h3 id="pmTitle" style="margin:0 0 10px"></h3>
+    <p id="pmHint" class="muted" style="margin:0 0 6px">运行前调整该动作的动画参数，跑完在卡片上看效果并评审。</p>
+    <div id="pmParams"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px">
+      <button id="pmCancel">取消</button>
+      <button id="pmRun">▶ 用参数运行</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const $ = id => document.getElementById(id);
 const PHASE_LABEL = {skeleton:'骨架流水线', test:'测试', capture:'捕获', preview:'预览', calibration:'校准', publish:'发布', export:'导出制品'};
 const BADGE = {passed:'passed 已通过', running:'running 运行中', failed:'failed 失败', pending:'pending 待办', skipped:'skipped 跳过'};
+let ACTIONS_PARAMS = {};  // action_id -> {param: {default,min,max,label}} from the definition
 
 async function api(path, opts) {
   const res = await fetch(path, opts);
@@ -228,6 +241,13 @@ async function openDetail(id) {
   const nextId = nr.ok ? nr.data.next : null;
   $('detailMeta').textContent = `definition=${state.definition_id} · updated=${state.updated_at} · version=${state.version}`;
   $('nextLine').textContent = nextId ? `→ 推荐下一步：${nextId}` : '→ 无待办（已完成或依赖未满足）';
+  // Load the definition so each action card knows its tunable params.
+  ACTIONS_PARAMS = {};
+  try {
+    const defRes = await fetch(`/api/workflow/definitions/${encodeURIComponent(state.definition_id)}`);
+    const defData = await defRes.json().catch(() => ({}));
+    for (const a of (defData.actions || [])) if (a.params) ACTIONS_PARAMS[a.action_id] = a.params;
+  } catch (e) { /* keep empty */ }
   renderActions(id, state.actions || {});
 }
 
@@ -244,11 +264,14 @@ function renderActions(id, actions) {
       const imgs = (st.outputs || []).map(urlFromPath).filter(Boolean)
         .map(u => `<img src="${u}" alt="${aid}" loading="lazy">`).join('');
       const note = st.note ? `<div class="note">备注：${st.note}${st.approved_by ? '（' + st.approved_by + '）' : ''}</div>` : '';
+      const pused = (st.params && Object.keys(st.params).length)
+        ? `<div class="muted" style="font-size:12px">参数：${Object.entries(st.params).map(([k,v]) => `${k}=${v}`).join(' · ')}</div>` : '';
       html += `<div class="card">
         <div class="title">${aid} <span class="badge ${st.status}">${BADGE[st.status] || st.status}</span></div>
         <div class="id">${aid}</div>
         ${imgs}
         ${note}
+        ${pused}
         <div class="ops">
           <button data-v="run" data-aid="${aid}">运行</button>
           ${st.status === 'passed' ? `<button data-v="approve" data-aid="${aid}">通过 ✓</button>` : ''}
@@ -262,6 +285,10 @@ function renderActions(id, actions) {
   document.querySelectorAll('#actions button[data-v]').forEach(btn => {
     btn.onclick = async () => {
       const verb = btn.dataset.v, aid = btn.dataset.aid;
+      if (verb === 'run' && ACTIONS_PARAMS[aid] && Object.keys(ACTIONS_PARAMS[aid]).length) {
+        openParamModal(id, aid);
+        return;
+      }
       btn.disabled = true; btn.textContent = '处理中…';
       const note = verb !== 'run' ? (prompt('评审备注（可选）') || '') : '';
       const body = note ? JSON.stringify({ note, by: 'web' }) : '{}';
@@ -272,6 +299,43 @@ function renderActions(id, actions) {
     };
   });
 }
+
+// ------------------------------------------------------- parameter tuning --
+
+let pmWorkflow = null, pmAction = null;
+
+function openParamModal(workflowId, actionId) {
+  pmWorkflow = workflowId; pmAction = actionId;
+  const params = ACTIONS_PARAMS[actionId] || {};
+  $('pmTitle').textContent = `调整参数 · ${actionId}`;
+  const entries = Object.entries(params);
+  if (!entries.length) { $('pmParams').innerHTML = '<span class="muted">该动作没有可调参数，直接运行。</span>'; return; }
+  $('pmParams').innerHTML = entries.map(([k, spec]) => {
+    const s = spec || {};
+    const d = s.default ?? 1.0;
+    return `<label style="display:flex;align-items:center;gap:10px;margin:8px 0">
+      <span style="min-width:110px">${s.label || k}</span>
+      <input type="range" data-key="${k}" min="${s.min ?? 0}" max="${s.max ?? 3}" step="0.05" value="${d}" style="flex:1">
+      <span class="muted" style="min-width:40px;text-align:right">${d}</span>
+    </label>`;
+  }).join('');
+  document.querySelectorAll('#pmParams input[type=range]').forEach(r => {
+    r.oninput = () => { r.closest('label').querySelector('span:last-child').textContent = r.value; };
+  });
+  $('paramModal').style.display = 'flex';
+}
+
+$('pmCancel').onclick = () => { $('paramModal').style.display = 'none'; };
+$('pmRun').onclick = async () => {
+  const params = {};
+  document.querySelectorAll('#pmParams input[type=range]').forEach(r => { params[r.dataset.key] = parseFloat(r.value); });
+  $('paramModal').style.display = 'none';
+  const r = await api(`/api/workflow/instances/${encodeURIComponent(pmWorkflow)}/actions/${encodeURIComponent(pmAction)}/run`,
+    { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ params }) });
+  log(`[run] ${pmWorkflow}/${pmAction} params=${JSON.stringify(params)} → ${JSON.stringify(r.data)}`);
+  await openDetail(pmWorkflow);
+  await loadList();
+};
 
 $('refresh').onclick = async () => { await loadDefs(); await loadList(); };
 $('newBtn').onclick = async () => {

@@ -159,6 +159,12 @@ class PreviewHandler(SimpleHTTPRequestHandler):
             if len(parts) == 1 and DEFINITIONS_ROOT is not None:
                 self._send_json({"definitions": sorted(p.stem for p in DEFINITIONS_ROOT.glob("*.json"))})
                 return
+            if len(parts) == 2 and DEFINITIONS_ROOT is not None:
+                # Full definition (incl. per-action tunable params) for the Web console.
+                path = DEFINITIONS_ROOT / f"{parts[1]}.json"
+                if path.exists():
+                    self._send_json(json.loads(path.read_text(encoding="utf-8")))
+                    return
             self.send_error(404)
             return
         if len(parts) == 2 and parts[0] == "instances":
@@ -187,6 +193,9 @@ class PreviewHandler(SimpleHTTPRequestHandler):
         if len(parts) == 5 and parts[0] == "instances" and parts[2] == "actions":
             workflow_id, action_id, verb = parts[1], parts[3], parts[4]
             args = [verb, "--workflow", workflow_id, "--action", action_id, "--json"]
+            if verb == "run" and isinstance(body.get("params"), dict):
+                for key, value in body["params"].items():
+                    args += ["--param", f"{key}={value}"]
             if verb in ("approve", "reject"):
                 args += ["--by", body.get("by", "web")]
                 if body.get("note"):

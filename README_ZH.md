@@ -191,8 +191,14 @@ python -m workflow approve --workflow review-a --action skeleton.front.legs --by
 python -m workflow reject --workflow review-a --action skeleton.front.legs --by human --note "redraw"
 ```
 
+**动作参数化** — 每个动作可在定义里声明可调旋钮（如 `stride` / `pelvis_bob` / `arm_swing`），运行时可覆盖任意参数，实际使用的参数会记录进该动作状态供评审：
+
+```bash
+python -m workflow run --workflow review-a --action skeleton.front.legs --param stride=1.2 --param pelvis_bob=1.5 --json
+```
+
 - **CLI** 是面向 AI 的调度通道：`--json` 输出机器可读，`outputs` 返回本地图片**绝对路径**。
-- **Web** 是面向人工的完整通道：`http://<host>:8765/workflow.html`；图片经 `http://<host>:8765/run/workflows/<id>/steps/<action_id>/` 预览。
+- **Web** 是面向人工的完整通道：`http://<host>:8765/workflow.html`；图片经 `http://<host>:8765/run/workflows/<id>/steps/<action_id>/` 预览。带可调参数的动作在运行前会弹出**参数调优窗**（拖动 stride/pelvis-bob/arm-swing 再运行），人真正参与调姿态，而不只是点「通过」。
 - `workflow_id` / `action_id` 贯穿 CLI、Web、持久化三层；多实例可**并行**，各自分文件存储。
 
 ## 预览渲染（纯 Python）

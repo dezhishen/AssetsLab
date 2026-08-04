@@ -196,10 +196,21 @@ python -m workflow approve --workflow review-a --action skeleton.front.legs --by
 python -m workflow reject --workflow review-a --action skeleton.front.legs --by human --note "redraw"
 ```
 
+**Parameterized actions** — every action can declare tunable knobs in the
+definition (e.g. `stride` / `pelvis_bob` / `arm_swing`), and a run can override
+any of them; the used values are recorded in the action state for review:
+
+```bash
+python -m workflow run --workflow review-a --action skeleton.front.legs --param stride=1.2 --param pelvis_bob=1.5 --json
+```
+
 - CLI is the AI-facing scheduling channel: `--json` output is machine-readable
   and `outputs` returns absolute paths to local images.
 - Web is the human-facing full channel: `http://<host>:8765/workflow.html`;
   images are served under `http://<host>:8765/run/workflows/<id>/steps/<action_id>/`.
+  Actions with tunable params open a parameter dialog before running (drag
+  stride/pelvis-bob/arm-swing, then run), so a human actually tunes the pose
+  instead of only clicking approve.
 - `workflow_id` / `action_id` run through CLI, Web and persistence; multiple
   instances can run in parallel, each persisted to its own JSON.
 

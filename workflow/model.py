@@ -41,6 +41,7 @@ class ActionDef:
     collect: list[str] = field(default_factory=list)     # repo-relative outputs copied into the run step dir
     approval: str = Approval.HUMAN.value
     description: str = ""
+    params: dict = field(default_factory=dict)           # tunable knobs: name -> {default,min,max,label}
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "ActionDef":
@@ -61,6 +62,7 @@ class ActionState:
     outputs: list[str] = field(default_factory=list)     # absolute paths to local images/files
     ran_at: str | None = None
     finished_at: str | None = None
+    params: dict = field(default_factory=dict)           # params used for the last run
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "ActionState":

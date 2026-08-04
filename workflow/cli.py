@@ -157,8 +157,15 @@ def cmd_next(args: argparse.Namespace) -> int:
 
 def cmd_run(args: argparse.Namespace) -> int:
     runner = _runner(args)
+    params: dict[str, object] = {}
+    for item in args.param or []:
+        if "=" in item:
+            key, value = item.split("=", 1)
+            params[key] = value
+        else:
+            params[item] = True
     try:
-        result = runner.run(args.action)
+        result = runner.run(args.action, params=params or None)
     except (KeyError, RuntimeError) as error:
         _emit({"ok": False, "error": str(error)}, args.json)
         return 1
@@ -240,6 +247,9 @@ def build_parser() -> argparse.ArgumentParser:
         p = sub.add_parser(name, parents=[common], help=f"{name} an action of a workflow instance.")
         p.add_argument("--workflow", required=True)
         p.add_argument("--action", required=True, help="action_id, e.g. skeleton.front.legs.")
+        if name == "run":
+            p.add_argument("--param", action="append", metavar="NAME=VALUE",
+                           help="Tunable knob for the action (repeatable), e.g. --param stride=1.2 --param pelvis_bob=1.5.")
         if name in ("approve", "reject"):
             p.add_argument("--by", default="cli", help="Who approves/rejects (e.g. ai, human).")
             p.add_argument("--note", help="Review note.")

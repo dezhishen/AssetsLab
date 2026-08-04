@@ -29,8 +29,16 @@
         "front",
         "legs",
         "--renderer",
-        "python"
+        "python",
+        "--stride",
+        "{stride}",
+        "--pelvis-bob",
+        "{pelvis_bob}"
       ],
+      "params": {
+        "stride": {"default": 1.0, "min": 0.0, "max": 2.5, "label": "步幅"},
+        "pelvis_bob": {"default": 1.0, "min": 0.0, "max": 3.0, "label": "骨盆起伏"}
+      },
       "depends": [
         "skeleton.front.skeleton"
       ],
@@ -49,8 +57,16 @@
         "front",
         "pelvis",
         "--renderer",
-        "python"
+        "python",
+        "--stride",
+        "{stride}",
+        "--pelvis-bob",
+        "{pelvis_bob}"
       ],
+      "params": {
+        "stride": {"default": 1.0, "min": 0.0, "max": 2.5, "label": "步幅"},
+        "pelvis_bob": {"default": 1.0, "min": 0.0, "max": 3.0, "label": "骨盆起伏"}
+      },
       "depends": [
         "skeleton.front.legs"
       ],
@@ -69,8 +85,19 @@
         "front",
         "arms",
         "--renderer",
-        "python"
+        "python",
+        "--stride",
+        "{stride}",
+        "--pelvis-bob",
+        "{pelvis_bob}",
+        "--arm-swing",
+        "{arm_swing}"
       ],
+      "params": {
+        "stride": {"default": 1.0, "min": 0.0, "max": 2.5, "label": "步幅"},
+        "pelvis_bob": {"default": 1.0, "min": 0.0, "max": 3.0, "label": "骨盆起伏"},
+        "arm_swing": {"default": 1.0, "min": 0.0, "max": 2.0, "label": "摆臂"}
+      },
       "depends": [
         "skeleton.front.pelvis"
       ],
@@ -108,8 +135,16 @@
         "side",
         "legs",
         "--renderer",
-        "python"
+        "python",
+        "--stride",
+        "{stride}",
+        "--pelvis-bob",
+        "{pelvis_bob}"
       ],
+      "params": {
+        "stride": {"default": 1.0, "min": 0.0, "max": 2.5, "label": "步幅"},
+        "pelvis_bob": {"default": 1.0, "min": 0.0, "max": 3.0, "label": "骨盆起伏"}
+      },
       "depends": [
         "skeleton.side.skeleton"
       ],
@@ -127,8 +162,16 @@
         "side",
         "pelvis",
         "--renderer",
-        "python"
+        "python",
+        "--stride",
+        "{stride}",
+        "--pelvis-bob",
+        "{pelvis_bob}"
       ],
+      "params": {
+        "stride": {"default": 1.0, "min": 0.0, "max": 2.5, "label": "步幅"},
+        "pelvis_bob": {"default": 1.0, "min": 0.0, "max": 3.0, "label": "骨盆起伏"}
+      },
       "depends": [
         "skeleton.side.legs"
       ],
@@ -146,8 +189,19 @@
         "side",
         "arms",
         "--renderer",
-        "python"
+        "python",
+        "--stride",
+        "{stride}",
+        "--pelvis-bob",
+        "{pelvis_bob}",
+        "--arm-swing",
+        "{arm_swing}"
       ],
+      "params": {
+        "stride": {"default": 1.0, "min": 0.0, "max": 2.5, "label": "步幅"},
+        "pelvis_bob": {"default": 1.0, "min": 0.0, "max": 3.0, "label": "骨盆起伏"},
+        "arm_swing": {"default": 1.0, "min": 0.0, "max": 2.0, "label": "摆臂"}
+      },
       "depends": [
         "skeleton.side.pelvis"
       ],
@@ -184,8 +238,16 @@
         "back",
         "legs",
         "--renderer",
-        "python"
+        "python",
+        "--stride",
+        "{stride}",
+        "--pelvis-bob",
+        "{pelvis_bob}"
       ],
+      "params": {
+        "stride": {"default": 1.0, "min": 0.0, "max": 2.5, "label": "步幅"},
+        "pelvis_bob": {"default": 1.0, "min": 0.0, "max": 3.0, "label": "骨盆起伏"}
+      },
       "depends": [
         "skeleton.back.skeleton"
       ],
