@@ -76,8 +76,10 @@ python workflow/tools/assetslab.py stage front arms --renderer godot            
 
 ## Web 与 API
 
-- **`workflow.html`**：总控台（实例管理、动作预览台、日志）
-- **`flow.html?id=<workflow_id>`**：分步流程向导（上一步/下一步，每步调动作参数→运行→评审；顶部「角色体型」面板改角色三视图）
+前端是 **Vue 3 + Element Plus + Tailwind CSS + Vite（pnpm）** 工程化 SPA，位于 `workflow/web/`；`pnpm build` 产出 `workflow/web/dist`，由 Python 服务端静态 serve（`lan_preview_server.py` 优先 serve dist，回退旧 `prototype/preview` 页面）。开发：`cd workflow/web && pnpm dev`（/api 代理到 :8765）。
+
+- **`#/console`**：控制台（新建实例=定义+参数模板+体型模板、实例管理、动作预览台）
+- **`#/wizard?id=<workflow_id>`**：分步流程向导（上一步/下一步，每步调动作参数→运行→评审；「角色体型」折叠面板改角色三视图）
 - **API**（前缀 `http://127.0.0.1:8765`）：
   - `GET /api/workflow/list|templates|body-templates|definitions`
   - `GET /api/workflow/instances/<id>` / `.../next`

@@ -236,19 +236,22 @@ python -m workflow run --workflow hero --action skeleton.front --body height=1.1
   and `outputs` returns absolute paths to local images. The CLI drives the
   workflow SDK (`workflow.runner`) directly and does **not** depend on the
   Web server — you can run the whole schedule without starting any service.
-- Web is the human-facing full channel: `http://<host>:8765/workflow.html`;
-  images are served under `http://<host>:8765/run/workflows/<id>/steps/<action_id>/`.
+- Web is the human-facing full channel: the frontend is a **Vue 3 + Element
+  Plus + Tailwind CSS** SPA built with pnpm (`workflow/web/`, `pnpm build`
+  → `workflow/web/dist` served at `http://<host>:8765/`); images are served
+  under `http://<host>:8765/run/workflows/<id>/steps/<action_id>/`.
   The CLI and the Web API are **two peer adapters over the same SDK** — the
   web server also calls `workflow.runner` in-process (it no longer shells out
   to the CLI), so neither depends on the other.
   Actions with tunable params open a parameter dialog before running (drag
   stride/pelvis-bob/arm-swing, then run), so a human actually tunes the pose
   instead of only clicking approve.
-- **Step wizard**: `http://<host>:8765/flow.html?id=<workflow_id>` renders one
+- **Step wizard**: `http://<host>:8765/#/wizard?id=<workflow_id>` renders one
   step at a time (stepper + prev/next navigation, like an installer). Each step
-  shows its params, output and review buttons; clicking an instance in
-  `workflow.html` opens the wizard. First-open lands on a passed-but-unreviewed
-  step (approve backlog first), otherwise the recommended next action.
+  shows its params, output and review buttons; clicking an instance in the
+  console (`#/console`) opens the wizard. First-open lands on a
+  passed-but-unreviewed step (approve backlog first), otherwise the recommended
+  next action.
 - `workflow_id` / `action_id` run through CLI, Web and persistence; multiple
   instances can run in parallel, each persisted to its own JSON.
 
@@ -315,9 +318,9 @@ python workflow/tools/assetslab.py stage side arms --renderer python --motion ru
   ```
 - **Cross-motion blending**: `--blend run --blend-t 0.5` interpolates joints
   for a parameterized walk↔run transition.
-- **Web**: the workflow console `/workflow.html` gained a *Motion Studio*
-  panel — pick a preset/view/stage, drag stride/pelvis-bob/arm-swing, toggle
-  IK, blend between motions, and render the loop in the browser via
+- **Web**: the workflow console (`#/console`) includes a *Motion Studio* — pick
+  a motion/view/stage, drag stride/pelvis-bob/arm-swing, toggle IK, blend
+  across motions, all rendered live in the browser via
   `POST /api/motions/<id>/render`.
 
 ## Artifacts & Godot demo

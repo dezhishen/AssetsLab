@@ -214,8 +214,8 @@ python -m workflow run --workflow hero --action skeleton.front --body height=1.1
 ```
 
 - **CLI** 是面向 AI 的调度通道：`--json` 输出机器可读，`outputs` 返回本地图片**绝对路径**。CLI 直接驱动工作流 SDK（`workflow.runner`），**不依赖 Web 服务**，无需启动服务器即可独立完成全部调度。
-- **Web** 是面向人工的完整通道：`http://<host>:8765/workflow.html`；图片经 `http://<host>:8765/run/workflows/<id>/steps/<action_id>/` 预览。CLI 与 Web API 是**同一 SDK 的两个平级适配器**——Web 服务器也直接调用 `workflow.runner`（不再外部调用 CLI），二者互不依赖。带可调参数的动作在运行前会弹出**参数调优窗**（拖动 stride/pelvis-bob/arm-swing 再运行），人真正参与调姿态，而不只是点「通过」。
-- **分步流程向导**：`http://<host>:8765/flow.html?id=<workflow_id>` 一次只渲染一个步骤（步进器 + 上一步/下一步，类似安装向导）。每步展示参数、输出与评审按钮；`workflow.html` 中点击实例即进入向导。首次打开优先定位「已通过但未审核」的步骤（先补审核），否则定位推荐的下一步。
+- **Web** 是面向人工的完整通道：前端是 **Vue 3 + Element Plus + Tailwind CSS** 的 pnpm 工程化 SPA（`workflow/web/`，`pnpm build` → `workflow/web/dist` 由 `http://<host>:8765/` 提供）；图片经 `http://<host>:8765/run/workflows/<id>/steps/<action_id>/` 预览。CLI 与 Web API 是**同一 SDK 的两个平级适配器**——Web 服务器也直接调用 `workflow.runner`（不再外部调用 CLI），二者互不依赖。带可调参数的动作在运行前会弹出**参数调优窗**（拖动 stride/pelvis-bob/arm-swing 再运行），人真正参与调姿态，而不只是点「通过」。
+- **分步流程向导**：`http://<host>:8765/#/wizard?id=<workflow_id>` 一次只渲染一个步骤（步进器 + 上一步/下一步，类似安装向导）。每步展示参数、输出与评审按钮；控制台（`#/console`）中点击实例即进入向导。首次打开优先定位「已通过但未审核」的步骤（先补审核），否则定位推荐的下一步。
 - `workflow_id` / `action_id` 贯穿 CLI、Web、持久化三层；多实例可**并行**，各自分文件存储。
 
 ## 预览渲染（纯 Python）
@@ -253,7 +253,7 @@ python workflow/tools/assetslab.py stage side arms --renderer python --motion ru
       --proportion-head-scale 1.4 --proportion-arm-length 1.3
   ```
 - **跨动作混合**：`--blend run --blend-t 0.5` 对关节做插值，实现 walk↔run 参数化过渡。
-- **Web**：工作流控制台 `/workflow.html` 新增 **动作预览台（Motion Studio）**——选动作/视角/阶段、拖动 stride/pelvis-bob/arm-swing 滑块、勾选 IK、跨动作混合，浏览器内通过 `POST /api/motions/<id>/render` 实时渲染循环。
+- **Web**：工作流控制台（`#/console`）含 **动作预览台（Motion Studio）**——选动作/视角/阶段、拖动 stride/pelvis-bob/arm-swing 滑块、勾选 IK、跨动作混合，浏览器内通过 `POST /api/motions/<id>/render` 实时渲染循环。
 
 ## 制品与 Godot demo
 

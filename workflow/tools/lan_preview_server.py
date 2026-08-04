@@ -429,6 +429,9 @@ def main() -> int:
     parser.add_argument("--port", type=int, required=True)
     parser.add_argument("--directory", type=Path, required=True)
     parser.add_argument("--repo-root", type=Path, help="Repository root (defaults to the parent of --directory).")
+    parser.add_argument("--frontend-dir", type=Path,
+                        help="Vue build output (workflow/web/dist) served at /. Defaults to workflow/web/dist if present, "
+                             "otherwise --directory.")
     args = parser.parse_args()
     global REPO_ROOT, RUN_ROOT, DEFINITIONS_ROOT, _SDK
     REPO_ROOT = (args.repo_root or args.directory.parents[1]).resolve()
@@ -442,7 +445,10 @@ def main() -> int:
     from workflow.runner import WorkflowRunner, create_instance, list_instances  # noqa: E402
     from workflow.store import Store  # noqa: E402
     _SDK = (WorkflowRunner, create_instance, list_instances, Store, WorkflowDef)
-    root = args.directory.resolve()
+    # Static root: prefer the built Vue frontend (workflow/web/dist), fall back
+    # to the legacy --directory (prototype/preview) pages.
+    frontend_dir = args.frontend_dir or (REPO_ROOT / "workflow" / "web" / "dist")
+    root = frontend_dir if frontend_dir.is_dir() else args.directory.resolve()
     os.chdir(root)
     server = ThreadingHTTPServer(("0.0.0.0", args.port), PreviewHandler)
     server.daemon_threads = True
