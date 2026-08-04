@@ -127,7 +127,7 @@ def load_offsets() -> dict[str, tuple[int, int]]:
 
 def main() -> int:
     subprocess.run(
-        [sys.executable, str(ROOT / "tools/build_recommended_horizontal_fix.py")],
+        [sys.executable, str(ROOT / "workflow/tools/build_recommended_horizontal_fix.py")],
         cwd=ROOT,
         check=True,
     )

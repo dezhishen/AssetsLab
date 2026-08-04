@@ -82,8 +82,17 @@ async function goNext() {
   if (st.status !== 'passed') { ElMessage.warning('当前步骤尚未运行通过，请先「运行」。'); return }
   const nr = await workflowApi.next(wfId.value).catch(() => ({ next: null }))
   const idx = nr.next ? actions.value.findIndex((a) => a.action_id === nr.next) : -1
-  if (idx >= 0) { current.value = idx }
-  else { ElMessage.success('✅ 全部步骤已完成。') }
+  if (idx >= 0) { current.value = idx; return }
+  // No next action: either everything passed, or a failed step is blocking the
+  // pipeline. Jump to the failed step so the user can re-run it.
+  const failed = actions.value.find((a) => (state.value?.actions?.[a.action_id] || {}).status === 'failed')
+  if (failed) {
+    const failedIdx = actions.value.findIndex((a) => a.action_id === failed.action_id)
+    if (failedIdx >= 0) current.value = failedIdx
+    ElMessage.error(`存在未通过步骤「${failed.title}」，请先处理该步骤。`)
+  } else {
+    ElMessage.success('✅ 全部步骤已完成。')
+  }
 }
 
 // ---- outputs (previous vs current side by side) --------------------------
