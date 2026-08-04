@@ -68,6 +68,12 @@
         "right_foot": {"x": {"mul": [{"signal": "sin_r"}, 24]}, "y": {"mul": [{"signal": "sin_r_rect"}, -26]}},
         "head":      {"y": {"mul": [{"signal": "bob"}, 0.5]}},
         "neck":      {"y": {"mul": [{"signal": "bob"}, 0.5]}}
+      },
+      "arms": {
+        "rear_elbow_left":  {"x": {"mul": [{"signal": "sin_r"}, 5]}, "y": {"mul": [{"signal": "sin_r"}, 6]}},
+        "rear_hand_left":   {"x": {"mul": [{"signal": "sin_r"}, 10]}, "y": {"mul": [{"signal": "sin_r"}, 14]}},
+        "rear_elbow_right": {"x": {"mul": [{"signal": "sin"}, 5]}, "y": {"mul": [{"signal": "sin"}, 6]}},
+        "rear_hand_right":  {"x": {"mul": [{"signal": "sin"}, 10]}, "y": {"mul": [{"signal": "sin"}, 14]}}
       }
     }
   },
