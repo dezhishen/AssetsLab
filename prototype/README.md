@@ -12,7 +12,7 @@ This prototype is intentionally UI-free. It is a command-line validated gameplay
 - deterministic front-facing ear and eye/blush layers selected by an appearance seed.
 
 Body source rule: new horizontal walk work starts from the recommended neutral
-base `../walk-base-4way-male-4frame-sheet.png`. The current eight-frame review
+base `assets/characters/walk_base/walk-base-4way-male-4frame-sheet.png`. The current eight-frame review
 candidate is `assets/characters/generated/recommended_base_horizontal_layer_fix_v1/`.
 The later `female_adventurer_reference_mannequin_v1_adapted` output is a redraw
 comparison fixture and must not be treated as the recommended base.

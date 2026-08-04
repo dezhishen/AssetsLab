@@ -208,11 +208,11 @@ def process_variant(source_name: str, variant_name: str) -> dict[str, object]:
 def main() -> int:
     manifests = [
         process_variant(
-            "walk-base-4way-male-4frame-sheet.png",
+            "prototype/assets/characters/walk_base/walk-base-4way-male-4frame-sheet.png",
             "male",
         ),
         process_variant(
-            "walk-base-4way-female-4frame-sheet.png",
+            "prototype/assets/characters/walk_base/walk-base-4way-female-4frame-sheet.png",
             "female",
         ),
     ]

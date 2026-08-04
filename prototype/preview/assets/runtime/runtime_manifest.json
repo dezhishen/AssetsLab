@@ -1,0 +1,433 @@
+{
+  "generator": "build_rebuild_runtime_assets.py",
+  "generator_version": 2,
+  "source": "prototype/assets/characters/rebuild_atlas_v1",
+  "directions": [
+    "front",
+    "right",
+    "back",
+    "left"
+  ],
+  "frames_per_direction": 8,
+  "cell_size": [
+    64,
+    64
+  ],
+  "target_frame_height": 34,
+  "target_baseline_y": 34,
+  "anchor_schema": "head_contour_anchors_v1",
+  "anchor_space": "runtime_64x64",
+  "anchor_targets": {
+    "front": {
+      "face_center": [
+        32,
+        19
+      ],
+      "ear_left": [
+        19,
+        22
+      ],
+      "ear_right": [
+        44,
+        22
+      ]
+    },
+    "right": {
+      "face_center": [
+        42,
+        20
+      ],
+      "ear": [
+        32,
+        22
+      ]
+    },
+    "back": {
+      "ear_left": [
+        15,
+        20
+      ],
+      "ear_right": [
+        45,
+        20
+      ]
+    },
+    "left": {
+      "face_center": [
+        22,
+        20
+      ],
+      "ear": [
+        32,
+        22
+      ]
+    }
+  },
+  "calibration_source": "prototype/preview/calibration/latest.json",
+  "body_calibration_source": "prototype/preview/calibration/body_latest.json",
+  "body_anchor_offsets": {
+    "front": [
+      3,
+      2
+    ],
+    "right": [
+      -2,
+      0
+    ],
+    "back": [
+      5,
+      3
+    ],
+    "left": [
+      4,
+      1
+    ]
+  },
+  "mirror_policy": "right_left_anchor_average_around_x32",
+  "feature_source_direction": {
+    "front": "front",
+    "right": "left",
+    "back": "back",
+    "left": "right"
+  },
+  "registrations": {
+    "front": {
+      "head": {
+        "bbox": [
+          15,
+          0,
+          49,
+          34
+        ],
+        "center": [
+          32.0,
+          17.0
+        ],
+        "left_edge": [
+          15,
+          17.0
+        ],
+        "right_edge": [
+          49,
+          17.0
+        ],
+        "top": [
+          32.0,
+          0
+        ],
+        "neck": [
+          32.0,
+          34
+        ]
+      },
+      "targets": {
+        "face_center": [
+          32,
+          19
+        ],
+        "ear_left": [
+          17,
+          22
+        ],
+        "ear_right": [
+          47,
+          22
+        ]
+      },
+      "applied": {
+        "face": {
+          "target": [
+            32,
+            19
+          ],
+          "source": [
+            34.0,
+            18.0
+          ],
+          "shift": [
+            -2,
+            1
+          ]
+        },
+        "ears": {
+          "left": {
+            "target": [
+              17,
+              22
+            ],
+            "source": [
+              18.5,
+              23.0
+            ],
+            "shift": [
+              -2,
+              -1
+            ]
+          },
+          "right": {
+            "target": [
+              47,
+              22
+            ],
+            "source": [
+              48.0,
+              23.0
+            ],
+            "shift": [
+              -1,
+              -1
+            ]
+          }
+        }
+      },
+      "frame_bbox": [
+        12,
+        18,
+        229,
+        238
+      ]
+    },
+    "right": {
+      "head": {
+        "bbox": [
+          16,
+          0,
+          50,
+          34
+        ],
+        "center": [
+          33.0,
+          17.0
+        ],
+        "left_edge": [
+          16,
+          17.0
+        ],
+        "right_edge": [
+          50,
+          17.0
+        ],
+        "top": [
+          33.0,
+          0
+        ],
+        "neck": [
+          33.0,
+          34
+        ]
+      },
+      "targets": {
+        "face_center": [
+          42,
+          20
+        ],
+        "ear": [
+          32,
+          22
+        ]
+      },
+      "applied": {
+        "face": {
+          "target": [
+            42,
+            20
+          ],
+          "source": [
+            32.0,
+            13.5
+          ],
+          "shift": [
+            10,
+            6
+          ]
+        },
+        "ears": {
+          "target": [
+            32,
+            22
+          ],
+          "source": [
+            16.0,
+            23.5
+          ],
+          "shift": [
+            16,
+            -2
+          ]
+        }
+      },
+      "frame_bbox": [
+        15,
+        18,
+        256,
+        238
+      ]
+    },
+    "back": {
+      "head": {
+        "bbox": [
+          14,
+          0,
+          48,
+          34
+        ],
+        "center": [
+          31.0,
+          17.0
+        ],
+        "left_edge": [
+          14,
+          17.0
+        ],
+        "right_edge": [
+          48,
+          17.0
+        ],
+        "top": [
+          31.0,
+          0
+        ],
+        "neck": [
+          31.0,
+          34
+        ]
+      },
+      "targets": {
+        "ear_left": [
+          15,
+          20
+        ],
+        "ear_right": [
+          45,
+          20
+        ]
+      },
+      "applied": {
+        "ears": {
+          "left": {
+            "target": [
+              15,
+              20
+            ],
+            "source": [
+              16.0,
+              17.0
+            ],
+            "shift": [
+              -1,
+              3
+            ]
+          },
+          "right": {
+            "target": [
+              45,
+              20
+            ],
+            "source": [
+              48.0,
+              17.0
+            ],
+            "shift": [
+              -3,
+              3
+            ]
+          }
+        }
+      },
+      "frame_bbox": [
+        6,
+        18,
+        240,
+        238
+      ]
+    },
+    "left": {
+      "head": {
+        "bbox": [
+          15,
+          0,
+          48,
+          34
+        ],
+        "center": [
+          31.5,
+          17.0
+        ],
+        "left_edge": [
+          15,
+          17.0
+        ],
+        "right_edge": [
+          48,
+          17.0
+        ],
+        "top": [
+          31.5,
+          0
+        ],
+        "neck": [
+          31.5,
+          34
+        ]
+      },
+      "targets": {
+        "face_center": [
+          22,
+          20
+        ],
+        "ear": [
+          32,
+          22
+        ]
+      },
+      "applied": {
+        "face": {
+          "target": [
+            22,
+            20
+          ],
+          "source": [
+            34.0,
+            19.0
+          ],
+          "shift": [
+            -12,
+            1
+          ]
+        },
+        "ears": {
+          "target": [
+            32,
+            22
+          ],
+          "source": [
+            46.0,
+            23.5
+          ],
+          "shift": [
+            -14,
+            -2
+          ]
+        }
+      },
+      "frame_bbox": [
+        22,
+        18,
+        241,
+        238
+      ]
+    }
+  },
+  "layers": [
+    "face_base",
+    "face",
+    "ears"
+  ],
+  "hair_included": false,
+  "notes": "Every detachable layer is positioned from explicit head-contour anchors. Face and ear layers use the 2/4 source exchange without implicit mirroring.",
+  "files": {
+    "face_base": "prototype/assets/characters/rebuild_atlas_v1_runtime/male/face_base_walk_4way.png",
+    "face": "prototype/assets/characters/rebuild_atlas_v1_runtime/male/face_walk_4way.png",
+    "ears": "prototype/assets/characters/rebuild_atlas_v1_runtime/male/ears_walk_4way.png"
+  }
+}

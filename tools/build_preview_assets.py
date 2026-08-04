@@ -15,6 +15,7 @@ ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / "prototype/preview/assets"
 BODY_ROOT = ROOT / "prototype/assets/characters/generated/female_adventurer_reference_mannequin_v1_adapted/body_frames"
 HEAD_ROOT = ROOT / "prototype/assets/characters/rebuild_atlas_v1_runtime/male"
+CHIBI_ROOT = ROOT / "prototype/assets/characters/chibi"
 VERTICAL_ROOT = ROOT / "prototype/assets/characters/generated/body_vertical_update_v1/runtime"
 STYLE_ROOT = ROOT / "prototype/assets/characters/generated/skill_pixel_art_experiment_v1"
 RECOMMENDED_FIX_ROOT = ROOT / "prototype/assets/characters/generated/recommended_base_horizontal_layer_fix_v1"
@@ -214,6 +215,28 @@ def main() -> int:
     shutil.copy2(recommended_source, OUTPUT / "recommended_horizontal_layer_fix_source.png")
     shutil.copy2(recommended_runtime / "right_walk_8.png", OUTPUT / "recommended_horizontal_layer_fix_8frames.png")
     shutil.copy2(recommended_runtime / "right_walk_8.gif", OUTPUT / "recommended_horizontal_layer_fix.gif")
+
+    # The interactive calibration pages read the calibrated runtime layers and
+    # anchor manifest from assets/runtime/. Stage them alongside the preview so
+    # the pages stay usable after every rebuild.
+    runtime_stage = OUTPUT / "runtime"
+    runtime_stage.mkdir(parents=True, exist_ok=True)
+    runtime_sources = [
+        (HEAD_ROOT, "face_base_walk_4way.png"),
+        (HEAD_ROOT, "face_walk_4way.png"),
+        (HEAD_ROOT, "ears_walk_4way.png"),
+        (HEAD_ROOT, "runtime_manifest.json"),
+        (CHIBI_ROOT, "feet_walk_4way.png"),
+        (CHIBI_ROOT, "lower_body_walk_4way.png"),
+        (CHIBI_ROOT, "arms_walk_4way.png"),
+        (CHIBI_ROOT, "torso_walk_4way.png"),
+    ]
+    for runtime_root, runtime_name in runtime_sources:
+        runtime_source = runtime_root / runtime_name
+        if runtime_source.exists():
+            shutil.copy2(runtime_source, runtime_stage / runtime_name)
+        else:
+            print(f"WARNING missing runtime calibration asset: {runtime_source}")
 
     manifest = {
         "schema": "assetslab_current_preview_v2",

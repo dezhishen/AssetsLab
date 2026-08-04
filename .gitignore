@@ -1,20 +1,36 @@
+# ============================================================
+# AssetsLab .gitignore
+# Grouped by concern. Keep entries that match paths that may be
+# regenerated on any branch; drop stale entries for retired assets.
+# ============================================================
+
+# --- Environment / toolchain ---
 .tools/
+.venv/
+.venv*/
+
+# --- Python caches ---
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# --- Godot project cache ---
 prototype/.godot/
+
+# --- Generated / test artifacts (build outputs, never committed) ---
 prototype/test_output/
-prototype/test_output/random_appearance/
 prototype/preview/snapshots/
 prototype/preview/calibration/*.json
+
+# --- Third-party reference assets (downloaded on demand, never committed) ---
 third_party/rgs_modular_animated_characters/
-prototype/archive/retired_keyframe_rig/
-prototype/archive/retired_walk_candidates/
-prototype/assets/characters/chibi_phase_v1/
-prototype/assets/characters/rebuild_body_pose_v1/
-prototype/assets/characters/walk_pose_board.json
-prototype/assets/characters/limb_puzzle_refined_v2.json
-prototype/preview/walk_pose_board.html
-tools/build_phase_corrected_body.py
-tools/validate_phase_corrected_body.py
-tools/build_pose_board_body.py
-tools/refine_limb_puzzle_motion.py
+
+# --- Godot import metadata ---
 *.import
-__pycache__/
+
+# --- OS junk ---
+.DS_Store
+Thumbs.db
