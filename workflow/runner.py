@@ -268,7 +268,8 @@ class WorkflowRunner:
                         pass
 
         outputs: list[str] = []
-        for rel in action.collect:
+        collect_rel = self._expand_collect(action, resolved, body)
+        for rel in collect_rel:
             source = (self.root / rel).resolve()
             if source.exists():
                 destination = step_dir / source.name
@@ -360,13 +361,22 @@ class WorkflowRunner:
     def _expand_exec(self, action: ActionDef, params: dict, body: dict | None = None) -> list[str]:
         """Replace {workflow_id}, {motion param} and {body proportion}
         placeholders in the exec list."""
+        out: list[str] = []
+        for part in action.exec:
+            out.append(self._expand_string(part, params, body))
+        return out
+
+    def _expand_collect(self, action: ActionDef, params: dict, body: dict | None = None) -> list[str]:
+        """Replace the same placeholders in the collect list (so artifact paths
+        like dist/{workflow_id}/skins/{skin}_{motion}_{view}.gif resolve)."""
+        return [self._expand_string(rel, params, body) for rel in action.collect]
+
+    def _expand_string(self, value: str, params: dict, body: dict | None = None) -> str:
+        """Substitute {workflow_id} plus {param}/{body} placeholders in a string."""
         values: dict[str, Any] = dict(params)
         if body:
             values.update(body)
-        out: list[str] = []
-        for part in action.exec:
-            part = part.replace("{workflow_id}", self.workflow_id)
-            for name, value in values.items():
-                part = part.replace("{" + name + "}", "" if value is None else str(value))
-            out.append(part)
-        return out
+        value = value.replace("{workflow_id}", self.workflow_id)
+        for name, val in values.items():
+            value = value.replace("{" + name + "}", "" if val is None else str(val))
+        return value
