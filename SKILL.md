@@ -1,7 +1,7 @@
 ---
 name: webflow-cli
 description: >-
-  AssetsLab 工作流 CLI（python -m workflow / webflow-cli）命令行手册。
+  AssetsLab 工作流 CLI（webflow-cli）命令行手册。
   调度骨架→测试→捕获→预览→导出流水线；参数化动作（stride/pelvis_bob/arm_swing）、
   风格模板（realistic/cartoon/bouncy/heavy/light）、体型比例（实例级 body）、
   制品导出（dist/<workflow_id>）与更新（GitHub Releases 三制品）。
@@ -10,29 +10,38 @@ description: >-
 
 # webflow-cli — 命令行手册（SKILL）
 
-纯命令行的工作流引擎。源码入口 `python -m workflow`，或打包二进制 `webflow-cli`，二者命令完全一致。Web/API 是另一通道（见 README），本 skill 只讲命令行操作。
+纯命令行的 AssetsLab 工作流引擎，基于 GitHub Releases 发布的 `webflow-cli` 二进制（curl 一键安装）。Web/API 是另一通道（见 README），本 skill 只讲命令行操作。
 
-## 安装
+## 安装（curl 二进制）
 
-**方式 A：源码（推荐，含完整渲染工具链）**
+从 GitHub Releases 用 `curl` 下载 `webflow-cli` 二进制安装（无需 Python）。
+
+**Linux / macOS**：
 ```bash
-git clone git@github.com:dezhishen/AssetsLab.git && cd AssetsLab
-python3 -m venv .venv && .venv/bin/python -m pip install -r requirements.txt
-# CLI 入口：.venv/bin/python -m workflow <verb>
+mkdir -p ~/.local/bin && cd ~/.local/bin
+OS=linux; [ "$(uname)" = "Darwin" ] && OS=macos
+TAG=latest                                        # 或指定版本，如 v1.0.0
+BASE="releases/latest/download"; [ "$TAG" != "latest" ] && BASE="releases/download/$TAG"
+curl -L -o webflow-cli.zip "https://github.com/dezhishen/AssetsLab/$BASE/webflow-cli-$OS.zip"
+unzip -o webflow-cli.zip && chmod +x webflow-cli/webflow-cli
+ln -sf "$PWD/webflow-cli/webflow-cli" ~/.local/bin/webflow-cli
+export PATH="$HOME/.local/bin:$PATH"
+webflow-cli --help
 ```
 
-**方式 B：二进制（免 Python）**
-```bash
-# 从 GitHub Releases 下载 webflow-cli-<linux|macos|windows>.zip 并解压
-./webflow-cli <verb> ...        # Linux/macOS 若缺执行权限：chmod +x webflow-cli
+**Windows（PowerShell）**：
+```powershell
+curl.exe -L -o webflow-cli.zip https://github.com/dezhishen/AssetsLab/releases/latest/download/webflow-cli-windows.zip
+tar -xf webflow-cli.zip
+.\webflow-cli\webflow-cli.exe --help
 ```
 
-**更新 CLI 与制品**：
+**更新 CLI 与制品**（用 CLI 自身）：
 ```bash
-python -m workflow update --component cli        # 更新 CLI 二进制
-python -m workflow update --component frontend   # 更新前端 dist（供 server 用）
-python -m workflow update --component server     # 更新 server 二进制
-# 参数：--webflow-repo <owner/repo>（默认 git remote 推断）、--webflow-version <tag>、--webflow-token <PAT>
+webflow-cli update --component cli        # 更新 CLI 二进制（自身）
+webflow-cli update --component frontend   # 更新前端 dist（供 server 用）
+webflow-cli update --component server     # 更新 server 二进制
+# 参数：--webflow-repo <owner/repo>（非仓库目录运行需显式）、--webflow-version <tag>、--webflow-token <PAT>
 ```
 
 ## 命令一览
@@ -55,22 +64,22 @@ python -m workflow update --component server     # 更新 server 二进制
 
 ```bash
 # 1. 建实例（风格模板 + 体型模板）
-python -m workflow new --definition default --id hero --template cartoon --body-template chibi --json
+webflow-cli new --definition default --id hero --template cartoon --body-template chibi --json
 
 # 2. 查看状态与推荐下一步
-python -m workflow status --workflow hero --json
-python -m workflow next --workflow hero
+webflow-cli status --workflow hero --json
+webflow-cli next --workflow hero
 
 # 3. 运行动作（可调动作参数 / 体型覆盖）
-python -m workflow run --workflow hero --action skeleton.front --param stride=1.2 --param pelvis_bob=1.5
-python -m workflow run --workflow hero --action skeleton.front --body head_scale=1.4
+webflow-cli run --workflow hero --action skeleton.front --param stride=1.2 --param pelvis_bob=1.5
+webflow-cli run --workflow hero --action skeleton.front --body head_scale=1.4
 
 # 4. 评审
-python -m workflow approve --workflow hero --action skeleton.front --by ai --note "ok"
-python -m workflow reject --workflow hero --action skeleton.front --by ai --note "改大步幅"
+webflow-cli approve --workflow hero --action skeleton.front --by ai --note "ok"
+webflow-cli reject --workflow hero --action skeleton.front --by ai --note "改大步幅"
 
 # 5. 走完 7 步 → 导出制品（atlas + runtime_manifest.json + gif → dist/<workflow_id>/）
-python -m workflow run --workflow hero --action export.artifacts
+webflow-cli run --workflow hero --action export.artifacts
 ```
 
 **动作 id（7 步精简版）**：`skeleton.front` → `skeleton.side` → `skeleton.back` → `test.smoke` → `capture.walk` → `preview.publish` → `export.artifacts`。定义在 `workflow/definitions/default.json`。
@@ -87,27 +96,17 @@ python -m workflow run --workflow hero --action export.artifacts
 
 **体型模板**（`workflow/body/*.json`）：`standard`(标准成人)、`chibi`(大头Q版)、`tall`(高挑模特)、`stocky`(矮壮力量型)。体型=角色属性，实例级共享。
 
-## 渲染执行（底层 assetslab CLI）
+## 渲染执行与 Server
 
-工作流的 `run` 会调用 `assetslab.py` 渲染；也可直接调底层命令：
-
-```bash
-# 动作预设（pose library：walk/run/idle/jump）
-python workflow/tools/assetslab.py motion list
-python workflow/tools/assetslab.py motion render run --view front --stage arms --ik --proportion-head-scale 1.4
-python workflow/tools/assetslab.py motion check        # walk == 内置姿态逐像素一致
-
-# 骨架阶段渲染（Pillow python 渲染器）
-python workflow/tools/assetslab.py stage front arms --renderer python --motion walk --stride 1.2
-
-# 启动预览服务器（REST API + Web 控制台，供人工通道）
-python workflow/tools/lan_preview_server.py --port 8765 --directory prototype/preview
-```
-
-- **动作预设**：`workflow/motions/{walk,run,idle,jump}.json`，声明式（波形信号 + 关节偏移 + root + ik）。新动作 = 新 JSON，无需改渲染器。
-- **一致性**：`motion check` 验证数据驱动 walk 与内置姿态逐像素一致（默认参数/比例）。
+- 工作流的 `run` 会调用底层 `assetslab.py`（Pillow 渲染 walk/run/idle/jump、骨架阶段）。二进制 `webflow-cli` 的**调度/管理命令独立可用**；渲染类命令在目标机无 Python 时受限（完整进程内化见 README）。
+- **动作预设**：`workflow/motions/{walk,run,idle,jump}.json`，声明式（波形信号 + 关节偏移 + root + ik）。新动作 = 新 JSON。`motion check` 验证与内置姿态逐像素一致。
 - **根驱动**：骨盆运动（bob/跳跃/前倾）经 `base.json` 的 `torso` 系数传导到肩/臂/头。
 - **IK**：`--ik`（run/jump 预设声明）腿长恒定 + 脚落地锁定。
+- **启动预览服务器**（REST API + Web 控制台，供人工通道）：
+```bash
+# 二进制（curl 安装 webflow-server-<linux|macos|windows>.zip）
+webflow-server --port 8765 --directory <仓库>/prototype/preview --repo-root <仓库>
+```
 
 ## 给 AI 的推荐执行路径
 
@@ -119,8 +118,8 @@ python workflow/tools/lan_preview_server.py --port 8765 --directory prototype/pr
 
 ## 约定与注意事项
 
-- 所有命令默认在**仓库根**执行；`--json` 输出机器可读，`outputs` 返回本地图片绝对路径。
-- 状态按实例持久化 `run/workflows/<id>/state.json`（git 忽略）。
-- 二进制（`webflow-cli`）的**管理/调度命令独立可用**；渲染类命令（run/stage）在目标机无 Python 时需用源码方式（二进制完整进程内化见 README）。
+- 所有命令默认在当前工作目录执行（二进制把 `run/`、`dist/` 放在 cwd）；`--json` 输出机器可读，`outputs` 返回本地图片绝对路径。
+- 状态按实例持久化 `run/workflows/<id>/state.json`。
+- 二进制（`webflow-cli`）的**管理/调度命令独立可用**；渲染类命令（run/stage）在目标机无 Python 时受限（完整进程内化见 README）。
 - 修改骨架基座/动作后跑 `motion check` 确认与内置姿态一致。
 - 渲染默认 `--renderer python`（Pillow）；`godot` 渲染器仅一致性验证。
