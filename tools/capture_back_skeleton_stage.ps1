@@ -1,4 +1,0 @@
-param([string]$GodotPath)
-$ErrorActionPreference="Stop"; $root=(Resolve-Path (Join-Path $PSScriptRoot "..")).Path; $prototype=Join-Path $root "prototype"; . (Join-Path $PSScriptRoot "resolve_godot.ps1"); $godot=Resolve-GodotExecutable -RequestedPath $GodotPath -AssetsLabRoot $root
-$a=@("--headless","--display-driver","windows","--rendering-driver","opengl3","--rendering-method","gl_compatibility","--audio-driver","Dummy","--path",$prototype,"--script","res://tests/back_skeleton_stage_test.gd"); $p=Start-Process -FilePath $godot -ArgumentList $a -WindowStyle Hidden -PassThru -Wait
-if($p.ExitCode-ne 0){throw "Back skeleton failed with exit code $($p.ExitCode)"}; $out=Join-Path $prototype "test_output\skeleton_pipeline\back_base.png"; if(-not(Test-Path -LiteralPath $out)){throw "Back skeleton did not produce capture"}; Write-Output "BACK_SKELETON_CAPTURE_PASS=$out"

@@ -1,0 +1,13 @@
+{
+  "body_id": "standard",
+  "title": "标准成人",
+  "description": "参考基准体型，所有比例 = 1.0。",
+  "body": {
+    "arm_length": 1.0,
+    "leg_length": 1.0,
+    "torso_length": 1.0,
+    "shoulder_width": 1.0,
+    "head_scale": 1.0,
+    "height": 1.0
+  }
+}

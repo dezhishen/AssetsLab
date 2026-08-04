@@ -116,12 +116,13 @@ func _run() -> void:
 	if player.walk_phase != phase_before_idle:
 		_fail("walk phase reset when movement stopped")
 		return
-	# All visual layers share the scene's fixed -26px visual anchor. Rebuild
+	# All visual layers share the scene's visual anchor (default -26px; the
+	# artifact runtime_params can override it via player.layer_y). Rebuild
 	# head mode adds its direction-specific calibration offset on top.
-	var expected_head_position := Vector2(0.0, -26.0)
+	var expected_head_position := Vector2(0.0, player.layer_y)
 	if player.rebuild_head and not player.vertical_body_candidate:
 		expected_head_position = player._current_body_anchor_offset()
-		expected_head_position.y -= 26.0
+		expected_head_position.y += player.layer_y
 	if head_sprite.position != expected_head_position:
 		_fail("head anchor drifted during frame application")
 		return
