@@ -281,6 +281,29 @@ def rotate_to_joint(image: Image.Image, anchor: tuple[int, int],
     deg = math.degrees(math.atan2(dy, dx))
     return image.rotate(-deg, center=anchor, resample=Image.Resampling.NEAREST)
 
+def _side_layer_order(layers: list[str]) -> list[str]:
+    """side 视图深度排序（后→前）：后侧肢体(rear/_right) → 躯干 → 脖子 → 前侧肢体(front/_left) → 头。
+
+    默认按 skin.json 的层序叠加时，后腿/后臂（right→rear）画在躯干之后（前面），
+    前后肢交替会在躯干前穿进穿出，造成视觉闪烁。side 视图应让 rear 在底层、
+    front 在顶层，脖子在躯干之上、头最顶。
+    """
+    rear: list[str] = []
+    front: list[str] = []
+    for layer in layers:
+        if layer.endswith("_right"):
+            rear.append(layer)
+        elif layer.endswith("_left"):
+            front.append(layer)
+    mid: list[str] = []
+    if "torso" in layers:
+        mid.append("torso")
+    if "neck" in layers:
+        mid.append("neck")
+    head = [l for l in layers if l == "head"]
+    return rear + mid + front + head
+
+
 def skin_frame(motion: dict, view: str, stage: str, index: int,
                params: dict | None, proportions: dict | None,
                skin: dict, atlas_dir: Path, layout: dict,
@@ -290,9 +313,12 @@ def skin_frame(motion: dict, view: str, stage: str, index: int,
     apply_ik(motion, view, stage, coords)
     canvas = Image.new("RGBA", (layout["canvas_w"], layout["canvas_h"]), (0, 0, 0, 0))
     images = joint_images(skin, atlas_dir, view)
-    for layer in skin_layers(skin):
-        if only_layers is not None and layer not in only_layers:
-            continue
+    layers = skin_layers(skin)
+    if only_layers is not None:
+        layers = [l for l in layers if l in only_layers]
+    if view == "side":
+        layers = _side_layer_order(layers)
+    for layer in layers:
         binding = skin.get("bindings", {}).get(layer)
         img = images.get(layer)
         if img is None or binding is None:
