@@ -20,7 +20,9 @@
       "pelvis": {
         "pelvis":    {"mul": [{"signal": "breath"}, {"param": "pelvis_bob"}, 1.5]},
         "left_hip":  {"mul": [{"signal": "breath"}, {"param": "pelvis_bob"}, 1.5]},
-        "right_hip": {"mul": [{"signal": "breath"}, {"param": "pelvis_bob"}, 1.5]}
+        "right_hip": {"mul": [{"signal": "breath"}, {"param": "pelvis_bob"}, 1.5]},
+        "head":     {"x": {"mul": [{"signal": "sway"}, 1.5]}, "y": {"mul": [{"signal": "breath"}, {"param": "pelvis_bob"}, 1.2]}},
+        "neck":     {"x": {"mul": [{"signal": "sway"}, 1.5]}, "y": {"mul": [{"signal": "breath"}, {"param": "pelvis_bob"}, 1.2]}}
       },
       "arms": {
         "left_elbow":  {"x": {"mul": [{"signal": "arm"}, 2]}, "y": {"mul": [{"signal": "arm"}, 3]}},
@@ -33,7 +35,9 @@
       "pelvis": {
         "pelvis":   {"mul": [{"signal": "breath"}, {"param": "pelvis_bob"}, 1.5]},
         "rear_hip": {"mul": [{"signal": "breath"}, {"param": "pelvis_bob"}, 1.5]},
-        "front_hip": {"mul": [{"signal": "breath"}, {"param": "pelvis_bob"}, 1.5]}
+        "front_hip": {"mul": [{"signal": "breath"}, {"param": "pelvis_bob"}, 1.5]},
+        "head":     {"x": {"mul": [{"signal": "sway"}, 1.5]}, "y": {"mul": [{"signal": "breath"}, {"param": "pelvis_bob"}, 1.2]}},
+        "neck":     {"x": {"mul": [{"signal": "sway"}, 1.5]}, "y": {"mul": [{"signal": "breath"}, {"param": "pelvis_bob"}, 1.2]}}
       },
       "arms": {
         "rear_elbow":  {"x": {"mul": [{"signal": "arm"}, 2]}, "y": {"mul": [{"signal": "arm"}, 3]}},

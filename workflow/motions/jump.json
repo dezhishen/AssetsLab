@@ -29,7 +29,9 @@
         "left_hip":  {"y": {"signal": "pelvis_dy"}},
         "right_hip": {"y": {"signal": "pelvis_dy"}},
         "left_knee":  {"y": {"mul": [{"signal": "pelvis_dy"}, 0.6]}},
-        "right_knee": {"y": {"mul": [{"signal": "pelvis_dy"}, 0.6]}}
+        "right_knee": {"y": {"mul": [{"signal": "pelvis_dy"}, 0.6]}},
+        "head":      {"y": {"mul": [{"signal": "pelvis_dy"}, 0.9]}},
+        "neck":      {"y": {"mul": [{"signal": "pelvis_dy"}, 0.9]}}
       },
       "arms": {
         "left_elbow":  {"y": {"neg": {"signal": "arm_raise"}}},
@@ -48,7 +50,9 @@
       "pelvis": {
         "pelvis":   {"y": {"signal": "pelvis_dy"}},
         "rear_hip": {"y": {"signal": "pelvis_dy"}},
-        "front_hip": {"y": {"signal": "pelvis_dy"}}
+        "front_hip": {"y": {"signal": "pelvis_dy"}},
+        "head":     {"y": {"mul": [{"signal": "pelvis_dy"}, 0.9]}},
+        "neck":     {"y": {"mul": [{"signal": "pelvis_dy"}, 0.9]}}
       },
       "arms": {
         "rear_elbow":  {"y": {"neg": {"signal": "arm_raise"}}},
@@ -62,7 +66,9 @@
         "left_knee":  {"y": {"neg": {"signal": "knee_bend"}}},
         "right_knee": {"y": {"neg": {"signal": "knee_bend"}}},
         "left_foot":  {"y": {"neg": {"signal": "foot_lift"}}},
-        "right_foot": {"y": {"neg": {"signal": "foot_lift"}}}
+        "right_foot": {"y": {"neg": {"signal": "foot_lift"}}},
+        "head":      {"y": {"mul": [{"signal": "pelvis_dy"}, 0.9]}},
+        "neck":      {"y": {"mul": [{"signal": "pelvis_dy"}, 0.9]}}
       }
     }
   },

@@ -405,17 +405,17 @@ def _joints_to_compare(view: str, stage: str) -> list[str]:
         if stage == "legs":
             return legs
         if stage == "pelvis":
-            return legs + ["pelvis"]
-        return legs + ["pelvis", "left_elbow", "left_hand", "right_elbow", "right_hand"]
+            return legs + ["pelvis", "head", "neck"]
+        return legs + ["pelvis", "head", "neck", "left_elbow", "left_hand", "right_elbow", "right_hand"]
     if view == "side":
         legs = ["rear_hip", "front_hip", "rear_knee", "front_knee", "rear_foot", "front_foot"]
         if stage == "legs":
             return legs
         if stage == "pelvis":
-            return legs + ["pelvis"]
-        return legs + ["pelvis", "rear_elbow", "rear_hand", "front_elbow", "front_hand"]
+            return legs + ["pelvis", "head", "neck"]
+        return legs + ["pelvis", "head", "neck", "rear_elbow", "rear_hand", "front_elbow", "front_hand"]
     # back
-    return ["left_hip", "right_hip", "left_knee", "right_knee", "left_foot", "right_foot"]
+    return ["left_hip", "right_hip", "left_knee", "right_knee", "left_foot", "right_foot", "head", "neck"]
 
 
 def check_walk(tolerance: float = 1e-6) -> int:

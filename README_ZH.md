@@ -220,6 +220,7 @@ python workflow/tools/assetslab.py stage side arms --renderer python --motion ru
 ```
 
 - `walk` 为参照预设：`motion check` 与像素级对比证明它与 Godot 一致的旧内置姿态**逐像素完全相同**（全部视图/阶段）。
+- **头部运动**：`head`/`neck` 以骨盆起伏的一半幅度跟随浮动，侧视图还有前后摆动——经典的「反向补偿」动画，头不再锁死（walk/run 上下浮动、idle 呼吸点头、jump 随身体升降）。
 - **双骨骼 IK**（`--ik`；预设内声明 `ik` 组）在大步幅下保持腿长恒定，并做「落地锁定」——脚目标超出可达半径时锁定回可达边界，用于 `run` / `jump`。
 - **跨动作混合**：`--blend run --blend-t 0.5` 对关节做插值，实现 walk↔run 参数化过渡。
 - **Web**：工作流控制台 `/workflow.html` 新增 **动作预览台（Motion Studio）**——选动作/视角/阶段、拖动 stride/pelvis-bob/arm-swing 滑块、勾选 IK、跨动作混合，浏览器内通过 `POST /api/motions/<id>/render` 实时渲染循环。

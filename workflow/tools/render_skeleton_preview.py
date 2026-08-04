@@ -173,6 +173,9 @@ def front_pelvis_pose(index, stride=1.0, bob=1.0):
     pose["right_hip"] = vadd(pose["right_hip"], (0.0, dy))
     pose["left_knee"] = vadd(pose["left_knee"], vmul((0.0, dy), 0.5))
     pose["right_knee"] = vadd(pose["right_knee"], vmul((0.0, dy), 0.5))
+    # head bob: head/neck follow the pelvis at ~half amplitude (counter-animation)
+    pose["head"] = vadd(base["head"], (0.0, dy * 0.5))
+    pose["neck"] = vadd(base["neck"], (0.0, dy * 0.5))
     return pose
 
 
@@ -220,6 +223,10 @@ def side_pelvis_pose(index, stride=1.0, bob=1.0):
     pose["pelvis"] = vadd(base["pelvis"], (0.0, dy))
     pose["rear_hip"] = vadd(pose["rear_hip"], (0.0, dy))
     pose["front_hip"] = vadd(pose["front_hip"], (0.0, dy))
+    # head: vertical bob at half pelvis amplitude + forward/back sway per stride
+    hx = math.cos(phase(index)) * 4.0
+    pose["head"] = (base["head"][0] + hx, base["head"][1] + dy * 0.5)
+    pose["neck"] = (base["neck"][0] + hx, base["neck"][1] + dy * 0.5)
     return pose
 
 
@@ -236,16 +243,21 @@ def side_arm_pose(index, swing=1.0):
     }
 
 
-def back_leg_pose(index, stride=1.0):
+def back_leg_pose(index, stride=1.0, bob=1.0):
     base = back_base()
     s = math.sin(phase(index)) * stride
     r = -s
+    # head bob on the back view uses the same pelvis-bob table (half amplitude)
+    bob_offsets = [-2.0, -1.0, 1.0, 3.0, -2.0, -1.0, 1.0, 3.0]
+    dy = bob_offsets[index % FRAME_COUNT] * bob * 0.5
     return {
         "left_hip": base["front_hip_left"], "right_hip": base["front_hip_right"],
         "left_knee": (456 + s * 15, 410 - max(0.0, s) * 22),
         "right_knee": (504 + r * 15, 410 - max(0.0, r) * 22),
         "left_foot": (456 + s * 24, FLOOR_Y - max(0.0, s) * 26),
         "right_foot": (504 + r * 24, FLOOR_Y - max(0.0, r) * 26),
+        "head": (base["head"][0], base["head"][1] + dy),
+        "neck": (base["neck"][0], base["neck"][1] + dy),
         "foreground": "left" if index < 4 else "right",
     }
 
@@ -273,13 +285,15 @@ def render_front_skeleton(image, draw, base):
 
 def draw_front_legs(image, draw, pose, base):
     pelvis_point = pose.get("pelvis", base["pelvis"])
-    bone(draw, base["head"], base["neck"], BONE)
+    head_point = pose.get("head", base["head"])
+    neck_point = pose.get("neck", base["neck"])
+    bone(draw, head_point, neck_point, BONE)
     bone(draw, base["shoulder_left"], base["shoulder_right"], BONE)
     for side in ("left", "right"):
         bone(draw, base[f"shoulder_{side}"], base[f"elbow_{side}"], BONE)
         bone(draw, base[f"elbow_{side}"], base[f"hand_{side}"], BONE)
-    bone(draw, base["neck"], pelvis_point, BONE)
-    head(draw, base["head"])
+    bone(draw, neck_point, pelvis_point, BONE)
+    head(draw, head_point)
     rear = "right" if pose["front_leg"] == "left" else "left"
     for name, color in ((rear, REAR), (pose["front_leg"], FRONT)):
         bone(draw, pose[f"{name}_hip"], pose[f"{name}_knee"], color, 8)
@@ -290,10 +304,12 @@ def draw_front_legs(image, draw, pose, base):
 
 
 def draw_front_arms(image, draw, pose, arms, base):
-    bone(draw, base["head"], base["neck"], BONE)
+    head_point = pose.get("head", base["head"])
+    neck_point = pose.get("neck", base["neck"])
+    bone(draw, head_point, neck_point, BONE)
     bone(draw, base["shoulder_left"], base["shoulder_right"], BONE)
-    bone(draw, base["neck"], pose["pelvis"], BONE)
-    head(draw, base["head"])
+    bone(draw, neck_point, pose["pelvis"], BONE)
+    head(draw, head_point)
     bone(draw, base["shoulder_left"], arms["left_elbow"], ARM, 7)
     bone(draw, arms["left_elbow"], arms["left_hand"], ARM, 7)
     bone(draw, base["shoulder_right"], arms["right_elbow"], ARM, 7)
@@ -323,9 +339,11 @@ def render_side_base(image, draw, base):
 
 def draw_side_legs(image, draw, pose, base):
     pelvis_point = pose.get("pelvis", base["pelvis"])
-    bone(draw, base["head"], base["neck"], BONE)
-    bone(draw, base["neck"], pelvis_point, BONE)
-    head(draw, base["head"])
+    head_point = pose.get("head", base["head"])
+    neck_point = pose.get("neck", base["neck"])
+    bone(draw, head_point, neck_point, BONE)
+    bone(draw, neck_point, pelvis_point, BONE)
+    head(draw, head_point)
     rear_name = "rear" if pose["foreground_leg"] == "front" else "front"
     for name, color in ((rear_name, REAR), (pose["foreground_leg"], FRONT)):
         bone(draw, pose[f"{name}_hip"], pose[f"{name}_knee"], color, 8)
@@ -336,9 +354,11 @@ def draw_side_legs(image, draw, pose, base):
 
 
 def draw_side_arms(image, draw, pose, arms, base):
-    bone(draw, base["head"], base["neck"], BONE)
-    bone(draw, base["neck"], pose["pelvis"], BONE)
-    head(draw, base["head"])
+    head_point = pose.get("head", base["head"])
+    neck_point = pose.get("neck", base["neck"])
+    bone(draw, head_point, neck_point, BONE)
+    bone(draw, neck_point, pose["pelvis"], BONE)
+    head(draw, head_point)
     for limb, color in (("rear", ARM), ("front", ARM)):
         bone(draw, base[f"{limb}_shoulder"], arms[f"{limb}_elbow"], color, 7)
         bone(draw, arms[f"{limb}_elbow"], arms[f"{limb}_hand"], color, 7)
@@ -365,9 +385,11 @@ def render_back_skeleton(image, draw, base):
 
 
 def draw_back_legs(image, draw, pose, base):
-    bone(draw, base["head"], base["neck"], BONE)
-    bone(draw, base["neck"], base["pelvis"], BONE)
-    head(draw, base["head"])
+    head_point = pose.get("head", base["head"])
+    neck_point = pose.get("neck", base["neck"])
+    bone(draw, head_point, neck_point, BONE)
+    bone(draw, neck_point, base["pelvis"], BONE)
+    head(draw, head_point)
     for side, color in ((pose["foreground"], FRONT), ("right" if pose["foreground"] == "left" else "left", REAR)):
         bone(draw, pose[f"{side}_hip"], pose[f"{side}_knee"], color, 8)
         bone(draw, pose[f"{side}_knee"], pose[f"{side}_foot"], color, 8)
@@ -406,7 +428,7 @@ def render_frame(view, stage, index, stride, bob, swing, base=None):
         if stage == "skeleton":
             render_back_skeleton(image, draw, base)
         else:  # legs
-            draw_back_legs(image, draw, back_leg_pose(index, stride), base)
+            draw_back_legs(image, draw, back_leg_pose(index, stride, bob), base)
     return image
 
 

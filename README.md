@@ -236,6 +236,10 @@ python workflow/tools/assetslab.py stage side arms --renderer python --motion ru
 
 - `walk` is the reference preset: `motion check` and a pixel comparison prove
   it matches the Godot-consistent built-in poses exactly (all views/stages).
+- **Head motion**: `head`/`neck` follow the pelvis bob at half amplitude, and
+  sway forward/back on the side view — the classic counter-animation so the
+  head is never locked (walk/run bob, idle breathing nod, jump follows the
+  body lift).
 - **Two-bone IK** (`--ik`; presets declare `ik` groups) keeps leg lengths
   constant at large strides, and "foot-plant" locks an unreachable foot back
   onto the reachable radius — used by `run` / `jump`.

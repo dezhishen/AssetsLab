@@ -36,7 +36,9 @@
         "left_hip":  {"y": {"signal": "bob"}},
         "right_hip": {"y": {"signal": "bob"}},
         "left_knee":  {"y": {"mul": [{"signal": "bob"}, 0.5]}},
-        "right_knee": {"y": {"mul": [{"signal": "bob"}, 0.5]}}
+        "right_knee": {"y": {"mul": [{"signal": "bob"}, 0.5]}},
+        "head":      {"y": {"mul": [{"signal": "bob"}, 0.5]}},
+        "neck":      {"y": {"mul": [{"signal": "bob"}, 0.5]}}
       },
       "arms": {
         "left_elbow":  {"x": {"mul": [{"signal": "arm_left"}, 5]}, "y": {"mul": [{"signal": "arm_left"}, 6]}},
@@ -55,7 +57,9 @@
       "pelvis": {
         "pelvis":   {"y": {"signal": "bob"}},
         "rear_hip": {"y": {"signal": "bob"}},
-        "front_hip": {"y": {"signal": "bob"}}
+        "front_hip": {"y": {"signal": "bob"}},
+        "head":     {"x": {"mul": [{"cos": {"phase": true}}, 4]}, "y": {"mul": [{"signal": "bob"}, 0.5]}},
+        "neck":     {"x": {"mul": [{"cos": {"phase": true}}, 4]}, "y": {"mul": [{"signal": "bob"}, 0.5]}}
       },
       "arms": {
         "rear_elbow":  {"x": {"mul": [{"signal": "arm_cos"}, 7]}, "y": {"mul": [{"signal": "arm_cos"}, 3]}},
@@ -69,7 +73,9 @@
         "left_knee":  {"x": {"mul": [{"signal": "sin"}, 15]}, "y": {"mul": [{"signal": "sin_rect"}, -22]}},
         "right_knee": {"x": {"mul": [{"signal": "sin_r"}, 15]}, "y": {"mul": [{"signal": "sin_r_rect"}, -22]}},
         "left_foot":  {"x": {"mul": [{"signal": "sin"}, 24]}, "y": {"mul": [{"signal": "sin_rect"}, -26]}},
-        "right_foot": {"x": {"mul": [{"signal": "sin_r"}, 24]}, "y": {"mul": [{"signal": "sin_r_rect"}, -26]}}
+        "right_foot": {"x": {"mul": [{"signal": "sin_r"}, 24]}, "y": {"mul": [{"signal": "sin_r_rect"}, -26]}},
+        "head":      {"y": {"mul": [{"signal": "bob"}, 0.5]}},
+        "neck":      {"y": {"mul": [{"signal": "bob"}, 0.5]}}
       }
     }
   },
