@@ -1,4 +1,4 @@
-"""Execute and approve workflow actions, delegating to tools/assetslab.py.
+"""Execute and approve workflow actions, delegating to the assetslab executor.
 
 Each action runs as a subprocess of the cross-platform CLI, so the workflow
 engine never re-implements pipeline logic.  Action outputs are local files
@@ -24,7 +24,7 @@ class WorkflowRunner:
         self.definition = definition
         self.workflow_id = workflow_id
         self.store = store
-        self._cli = [sys.executable, str(self.root / "tools" / "assetslab.py")]
+        self._cli = [sys.executable, str(self.root / "workflow" / "tools" / "assetslab.py")]
 
     # ------------------------------------------------------------- state --
 

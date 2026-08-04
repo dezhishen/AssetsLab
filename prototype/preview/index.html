@@ -130,10 +130,10 @@
 
   <section class="panel">
     <h2>验证入口</h2>
-    <p><code>tools/build_recommended_horizontal_fix.py</code></p>
-    <p><code>tools/run_headless_tests.ps1 -RebuildHead -VerticalCandidate</code></p>
-    <p><code>tools/capture_walk_gif.ps1 -RebuildHead -VerticalCandidate -VerticalOnly</code></p>
-    <p><code>tools/publish_preview.py --snapshot-name current_test_base_clean</code></p>
+    <p><code>workflow/tools/build_recommended_horizontal_fix.py</code></p>
+    <p><code>python workflow/tools/assetslab.py test --rebuild-head --vertical-candidate</code></p>
+    <p><code>python workflow/tools/assetslab.py capture-walk --rebuild-head --vertical-candidate --vertical-only</code></p>
+    <p><code>python workflow/tools/publish_preview.py --name current_test_base_clean</code></p>
   </section>
 </main>
 </body>

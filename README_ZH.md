@@ -12,12 +12,11 @@
 | 模块 | 说明 |
 |---|---|
 | `prototype/` | Godot 4.6.2 工程：运行时脚本、分层资产、无头测试、浏览器预览页 |
-| `tools/` | 工具链：资产构建 / 处理 / 校验（Python），无头测试与捕获（PowerShell） |
 | `third_party/` | 开源参考素材（CC0 RGS 模块化角色、Female Adventurer 行走参考），仅作姿态时序参考，非最终美术风格 |
 | `PROJECT.md` | 项目总纲：开发状态、路线图、评审原则（英文） |
 | `references/` | 设计参考图：人体模型 sheet、正面角色锚点 |
 | `prototype/assets/characters/walk_base/` | 权威 4 向行走基底源图 |
-| `workflow/` | 工作流引擎 SDK：声明式定义 + CLI 调度 |
+| `workflow/` | 工作流引擎：SDK + 工具（assetslab、构建、校验）+ 定义 |
 | `run/` | 工作流实例状态（git 忽略）：state.json + 步骤图片产物 |
 
 ### 核心方法论：骨架优先行走流水线
@@ -47,8 +46,9 @@ assets-lab/
 │   ├── tests/                 # 无头验证测试（smoke_test 等）
 │   ├── preview/               # 浏览器预览页 + 交互校准页
 │   └── README.md              # 原型的详细运行说明
-├── tools/                     # 构建 / 校验 / 捕获 / 预览脚本
-├── workflow/                  # 工作流引擎 SDK + 声明式定义
+├── workflow/                  # 工作流引擎：SDK + 工具 + 定义
+│   ├── tools/                 # 可执行脚本（assetslab、捕获、构建、校验）
+│   └── definitions/           # 声明式工作流定义
 ├── run/                       # 工作流实例状态（git 忽略，生成物）
 └── third_party/               # 开源参考素材
 ```
@@ -57,75 +57,73 @@ assets-lab/
 
 ### 环境要求
 
-- **Godot 4.6.2**：自动化脚本要求 `_console.exe` 无头构建（`--headless`）。解析顺序：`-GodotPath` → `GODOT_BIN`/`GODOT_PATH` → `PATH` 上的 `godot`/`godot4` → 相邻 `Godot-4.6.2` 目录。
-- **Python 3 + Pillow**：资产处理与 GIF 合成需要。解析顺序：`-PythonPath` → `PYTHON_BIN` → `PATH` → 本地 `.venv`/相邻目录。
-- PowerShell 脚本面向 Windows；跨平台 Python 工具在 Linux/macOS 上可直接运行。
+- **Godot 4.6.2**：自动化脚本要求 `_console.exe` 无头构建（`--headless`）。解析顺序：`--godot` → `GODOT_BIN`/`GODOT_PATH` → `PATH` 上的 `godot`/`godot4` → 相邻 `Godot-4.6.2` 目录。
+- **Python 3 + Pillow**：资产处理与 GIF 合成需要。解析顺序：`--python` → `PYTHON_BIN` → `PATH` → 本地 `.venv`/相邻目录。
+- 全部为**纯 Python 跨平台**方案，不依赖任何 PowerShell / shell 脚本。
 
 所有命令默认在**仓库根目录**执行。
 
-> **跨平台 CLI（推荐）：** `tools/assetslab.py` 是上述全部 PowerShell 脚本的跨平台镜像，
-> 可在 Windows / Linux / macOS 上运行：`doctor`、`test`、`capture-walk`、
-> `stage <视图> <阶段>`、`preview`、`publish`、`run-script`。参数与 .ps1 一致
-> （`--female`、`--compact`、`--rebuild-head`、`--appearance-seed` 等），
-> Godot 解析顺序为 `--godot` → `GODOT_BIN`/`GODOT_PATH` → `PATH` → 相邻 `Godot-4.6.2` 安装。
-> 下方 PowerShell 脚本仍作为 Windows 的标准入口保留。
+> **CLI（统一入口）：** `workflow/tools/assetslab.py` 可在 Windows / Linux / macOS
+> 上运行：`doctor`、`test`、`capture-walk`、`stage <视图> <阶段>`、`preview`、
+> `publish`、`run-script`。参数：`--female`、`--compact`、`--rebuild-head`、
+> `--appearance-seed` 等；Godot 解析顺序为 `--godot` → `GODOT_BIN`/`GODOT_PATH` → `PATH` → 相邻 `Godot-4.6.2` 安装。
 
 ### 1. 运行无头冒烟测试
 
-```powershell
+```bash
 # 生成随机外观包 -> 校验资产 -> 启动 Godot 冒烟测试
-.\tools\run_headless_tests.ps1
+python workflow/tools/assetslab.py test
 
 # 常见参数
-.\tools\run_headless_tests.ps1 -Female                                  # 女性基底
-.\tools\run_headless_tests.ps1 -RebuildHead -VerticalCandidate          # 校准头 + 纵向候选
-.\tools\run_headless_tests.ps1 -AppearanceSeed 20260730                 # 固定种子
-.\tools\run_headless_tests.ps1 -GodotPath 'E:\Path\To\godot_console.exe' # 指定 Godot
+python workflow/tools/assetslab.py test --female                                  # 女性基底
+python workflow/tools/assetslab.py test --rebuild-head --vertical-candidate          # 校准头 + 纵向候选
+python workflow/tools/assetslab.py test --appearance-seed 20260730                 # 固定种子
+python workflow/tools/assetslab.py test --godot 'E:\Path\To\godot_console.exe' # 指定 Godot
 ```
 
 **跨平台等价命令：**
 
 ```bash
-python3 tools/assetslab.py test
-python3 tools/assetslab.py test --female --rebuild-head --vertical-candidate
-python3 tools/assetslab.py test --appearance-seed 20260730
-python3 tools/assetslab.py test --godot /path/to/godot
+python3 workflow/tools/assetslab.py test
+python3 workflow/tools/assetslab.py test --female --rebuild-head --vertical-candidate
+python3 workflow/tools/assetslab.py test --appearance-seed 20260730
+python3 workflow/tools/assetslab.py test --godot /path/to/godot
 ```
 
 ### 2. 捕获行走动画 GIF
 
-```powershell
-.\tools\capture_walk_gif.ps1                       # 四方向行走 GIF -> prototype/test_output/
-.\tools\capture_walk_gif.ps1 -RebuildHead -VerticalCandidate -VerticalOnly  # 仅纵向候选
-.\tools\capture_walk_gif.ps1 -MilestoneBodyRight -RightOnly                 # 仅右向里程碑
+```bash
+python workflow/tools/assetslab.py capture-walk                       # 四方向行走 GIF -> prototype/test_output/
+python workflow/tools/assetslab.py capture-walk --rebuild-head --vertical-candidate --vertical-only  # 仅纵向候选
+python workflow/tools/assetslab.py capture-walk --milestone-body-right --right-only                 # 仅右向里程碑
 ```
 
 **跨平台等价命令：**
 
 ```bash
-python3 tools/assetslab.py capture-walk
-python3 tools/assetslab.py capture-walk --rebuild-head --vertical-candidate --vertical-only
-python3 tools/assetslab.py capture-walk --milestone-body-right --right-only
+python3 workflow/tools/assetslab.py capture-walk
+python3 workflow/tools/assetslab.py capture-walk --rebuild-head --vertical-candidate --vertical-only
+python3 workflow/tools/assetslab.py capture-walk --milestone-body-right --right-only
 ```
 
 ### 3. 骨架流水线（阶段推进）
 
-```powershell
-.\tools\capture_front_skeleton_stage.ps1    # front 静态骨架
-.\tools\capture_front_leg_cycle_stage.ps1   # front 双腿循环
-.\tools\capture_front_pelvis_bob_stage.ps1  # front 骨盆浮动
-.\tools\capture_front_arm_swing_stage.ps1   # front 摆臂
+```bash
+python workflow/tools/assetslab.py stage front skeleton    # front 静态骨架
+python workflow/tools/assetslab.py stage front legs   # front 双腿循环
+python workflow/tools/assetslab.py stage front pelvis  # front 骨盆浮动
+python workflow/tools/assetslab.py stage front arms   # front 摆臂
 # side / back 对应脚本同理
 ```
 
 **跨平台等价命令：**
 
 ```bash
-python3 tools/assetslab.py stage front skeleton
-python3 tools/assetslab.py stage front legs
-python3 tools/assetslab.py stage front pelvis
-python3 tools/assetslab.py stage front arms
-python3 tools/assetslab.py stage back legs
+python3 workflow/tools/assetslab.py stage front skeleton
+python3 workflow/tools/assetslab.py stage front legs
+python3 workflow/tools/assetslab.py stage front pelvis
+python3 workflow/tools/assetslab.py stage front arms
+python3 workflow/tools/assetslab.py stage back legs
 ```
 
 每阶段输出到 `prototype/test_output/skeleton_pipeline/`（PNG + GIF），必须在可视化验收通过后才进入下一阶段。
@@ -134,17 +132,17 @@ python3 tools/assetslab.py stage back legs
 
 **Windows（一键发布 + 启动）：**
 
-```powershell
-.\tools\serve_preview.ps1 -SnapshotName my_review   # 发布快照并启动局域网服务器
-.\tools\stop_preview.ps1                             # 停止服务器
+```bash
+python workflow/tools/lan_preview_server.py --port 8765 --directory prototype/preview --name my_review   # 发布快照并启动局域网服务器
+# stop: kill the lan_preview_server process                             # 停止服务器
 ```
 
 **Linux / 跨平台（直接启动静态服务器）：**
 
 ```bash
-python3 tools/lan_preview_server.py --port 8765 --directory prototype/preview
+python3 workflow/tools/lan_preview_server.py --port 8765 --directory prototype/preview
 # 或等价：
-python3 tools/assetslab.py preview --port 8765
+python3 workflow/tools/assetslab.py preview --port 8765
 # 打开 http://127.0.0.1:8765/  （服务器绑定 0.0.0.0，局域网设备可用 http://<本机IP>:8765/）
 ```
 
@@ -153,25 +151,25 @@ python3 tools/assetslab.py preview --port 8765
 ### 5. 资产构建与处理
 
 ```bash
-python tools/build_body_vertical_update.py   # 重建前/后纵向行走候选帧
-# 或：python3 tools/assetslab.py run-script build_body_vertical_update.py
-python tools/recolor_body_palettes.py        # 生成 light/warm/deep 肤色变体（保持尺寸与 alpha 不变）
-python tools/build_preview_assets.py         # 重建预览资产集
-python tools/publish_preview.py --name tag   # 发布时间戳快照到 preview/snapshots/
+python workflow/tools/build_body_vertical_update.py   # 重建前/后纵向行走候选帧
+# 或：python3 workflow/tools/assetslab.py run-script build_body_vertical_update.py
+python workflow/tools/recolor_body_palettes.py        # 生成 light/warm/deep 肤色变体（保持尺寸与 alpha 不变）
+python workflow/tools/build_preview_assets.py         # 重建预览资产集
+python workflow/tools/publish_preview.py --name tag   # 发布时间戳快照到 preview/snapshots/
 ```
 
 ### 6. 工作流引擎（AI / 人工调度）
 
-`tools/workflow.py` 以**步进式**驱动流水线，状态按实例持久化到 `run/workflows/<workflow_id>/`：
+`-m workflow` 以**步进式**驱动流水线，状态按实例持久化到 `run/workflows/<workflow_id>/`：
 
 ```bash
-python tools/workflow.py list                                            # 列出实例
-python tools/workflow.py new --definition default --id review-a          # 新建实例
-python tools/workflow.py status --workflow review-a --json               # 查看状态
-python tools/workflow.py next --workflow review-a                        # 推荐下一步
-python tools/workflow.py run --workflow review-a --action skeleton.front.legs --json
-python tools/workflow.py approve --workflow review-a --action skeleton.front.legs --by ai --note "ok"
-python tools/workflow.py reject --workflow review-a --action skeleton.front.legs --by human --note "redraw"
+python -m workflow list                                            # 列出实例
+python -m workflow new --definition default --id review-a          # 新建实例
+python -m workflow status --workflow review-a --json               # 查看状态
+python -m workflow next --workflow review-a                        # 推荐下一步
+python -m workflow run --workflow review-a --action skeleton.front.legs --json
+python -m workflow approve --workflow review-a --action skeleton.front.legs --by ai --note "ok"
+python -m workflow reject --workflow review-a --action skeleton.front.legs --by human --note "redraw"
 ```
 
 - **CLI** 是面向 AI 的调度通道：`--json` 输出机器可读，`outputs` 返回本地图片**绝对路径**。

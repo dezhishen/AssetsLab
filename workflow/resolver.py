@@ -1,7 +1,7 @@
 """Executable resolution for the workflow engine (cross-platform).
 
-Reuses the verified resolution rules in ``tools/godot_runner.py`` so the
-workflow engine behaves identically to the existing automation.
+Reuses the verified resolution rules in ``workflow/tools/godot_runner.py`` so
+the workflow engine behaves identically to the existing automation.
 """
 
 from __future__ import annotations
@@ -10,7 +10,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-TOOLS = ROOT / "tools"
+TOOLS = ROOT / "workflow" / "tools"
 
 
 def python_executable(requested: str | None = None) -> str:
