@@ -1,148 +1,113 @@
 ---
-name: assetslab
+name: webflow-cli
 description: >-
-  AssetsLab — Godot 像素角色动画工作流。骨架优先行走流水线 + 参数化动作引擎
-  (motion pose library) + 工作流引擎 (CLI/Web 双通道 AI·人工调度) + 蒙皮/制品导出。
-  纯 Python (Pillow) 工具链。给 AI 代理的调用手册：工作流调度、动作参数调优、
-  风格模板、骨骼比例、Web/API、制品与 Godot demo。
+  AssetsLab 工作流 CLI（python -m workflow / webflow-cli）命令行手册。
+  调度骨架→测试→捕获→预览→导出流水线；参数化动作（stride/pelvis_bob/arm_swing）、
+  风格模板（realistic/cartoon/bouncy/heavy/light）、体型比例（实例级 body）、
+  制品导出（dist/<workflow_id>）与更新（GitHub Releases 三制品）。
+  给 AI 代理的命令行调度指南：创建实例、运行/评审动作、调参、导出制品。
 ---
 
-# AssetsLab — AI 调用手册 (SKILL)
+# webflow-cli — 命令行手册（SKILL）
 
-## 项目简介
+纯命令行的工作流引擎。源码入口 `python -m workflow`，或打包二进制 `webflow-cli`，二者命令完全一致。Web/API 是另一通道（见 README），本 skill 只讲命令行操作。
 
-Godot 4.7 像素风角色动画实验项目。核心是**骨架优先行走流水线** + **参数化动作引擎** + **工作流引擎**（AI/人工双通道调度）。工具链为纯 Python（Pillow），Godot 仅用于冒烟测试与最小可玩 demo。
+## 安装
 
-## 环境
-
-```bash
-# 虚拟环境（依赖锁定在 requirements.txt: Pillow==12.3.0）
-.venv/bin/python ...            # Linux/macOS
-.venv\\Scripts\\python.exe ...   # Windows
-
-# 启动预览服务器（含 REST API 与 Web 控制台）
-.venv/bin/python workflow/tools/lan_preview_server.py --port 8765 --directory prototype/preview
-# 或: .venv/bin/python workflow/tools/assetslab.py preview --port 8765
-```
-
-## 安装方式
-
-**前置要求**：Git、Python 3.10+；前端构建还需 Node 18+ 与 pnpm。
-
-**方式 A：源码安装（完整，含全部渲染工具链）**
+**方式 A：源码（推荐，含完整渲染工具链）**
 ```bash
 git clone git@github.com:dezhishen/AssetsLab.git && cd AssetsLab
-python3 -m venv .venv
-.venv/bin/python -m pip install -r requirements.txt
-# 可选：本地构建 Vue 前端（不构建则 server 启动时自动下载制品）
-cd workflow/web && pnpm install && pnpm build && cd ../..
-# 启动预览服务器（REST API + Web 控制台）
-.venv/bin/python workflow/tools/lan_preview_server.py --port 8765 --directory prototype/preview
+python3 -m venv .venv && .venv/bin/python -m pip install -r requirements.txt
+# CLI 入口：.venv/bin/python -m workflow <verb>
 ```
 
-**方式 B：二进制制品（免 Python 环境，来自 GitHub Releases）**
-
-CI（`.github/workflows/webflow-build.yml`）发布三个制品：
-
-| 制品 | 说明 |
-|---|---|
-| `webflow-dist.zip` | 前端 SPA（跨平台静态文件） |
-| `webflow-cli-<linux\|macos\|windows>.zip` | CLI 二进制：解压后 `./webflow-cli list` |
-| `webflow-server-<linux\|macos\|windows>.zip` | Server 二进制：解压后 `./webflow-server --port 8765 --directory <仓库>/prototype/preview --repo-root <仓库>` |
-
-> Linux/macOS 若 zip 解压后无执行权限：`chmod +x webflow-cli webflow-server`。
-> 二进制的**管理/调度命令独立可用**；渲染类命令（run/stage）在目标机无 Python 时需完整进程内化（当前建议用源码方式渲染，二进制用于调度与 API）。
-
-**更新制品**（CLI `update` 命令）：
+**方式 B：二进制（免 Python）**
 ```bash
-python -m workflow update --component frontend   # 更新前端 dist（缺失时后端启动也会自动下载）
+# 从 GitHub Releases 下载 webflow-cli-<linux|macos|windows>.zip 并解压
+./webflow-cli <verb> ...        # Linux/macOS 若缺执行权限：chmod +x webflow-cli
+```
+
+**更新 CLI 与制品**：
+```bash
 python -m workflow update --component cli        # 更新 CLI 二进制
-python -m workflow update --component server     # 更新 Server 二进制
-# 参数：--webflow-repo <owner/repo>（默认从 git remote 推断）、--webflow-version <tag>、--webflow-token <PAT>
+python -m workflow update --component frontend   # 更新前端 dist（供 server 用）
+python -m workflow update --component server     # 更新 server 二进制
+# 参数：--webflow-repo <owner/repo>（默认 git remote 推断）、--webflow-version <tag>、--webflow-token <PAT>
 ```
 
-后端（server）启动时若本地 `workflow/web/dist` 缺失，按构建参数自动从 GitHub Release 下载前端制品：`--webflow-repo` / `--webflow-version` / `--webflow-token` / `--no-webflow-download`（禁下载则回退旧页面）。
+## 命令一览
 
-## 工作流引擎（AI 调度主入口）— `python -m workflow`
+| 命令 | 作用 |
+|---|---|
+| `list` | 列出实例（进度） |
+| `new` | 新建实例（`--definition` / `--id` / `--template` / `--body-template` / `--body`） |
+| `status` | 实例状态 + template + body + 各动作 params + 推荐 next |
+| `next` | 推荐下一步动作 id |
+| `run` | 运行动作（`--param` 动作参数 / `--body` 体型覆盖） |
+| `approve` / `reject` | 评审（`--by` / `--note`） |
+| `history` | 运行时间线 |
+| `set-body` | 固化角色体型（实例级） |
+| `update` | 更新制品（frontend / cli / server） |
 
-状态按实例持久化 `run/workflows/<workflow_id>/state.json`（git 忽略）。
+所有命令支持 `--json`（机器可读输出）。
+
+## 核心流程
 
 ```bash
-python -m workflow list                                            # 列出实例（进度）
-python -m workflow new --definition default --id hero --template cartoon --body-template chibi  # 新建（风格模板 + 体型模板）
-python -m workflow status --workflow hero --json                   # 状态 + template + body + 各动作 params
-python -m workflow next --workflow hero                            # 推荐下一步
-python -m workflow run --workflow hero --action skeleton.front --json             # 用模板/默认参数运行
-python -m workflow run --workflow hero --action skeleton.front --param stride=1.2 --param pelvis_bob=1.5   # 动作参数
-python -m workflow run --workflow hero --action skeleton.front --body head_scale=1.4 --body height=1.1    # 本次体型覆盖
-python -m workflow set-body --workflow hero --body head_scale=1.4  # 固化角色体型（实例级，三视图共享）
+# 1. 建实例（风格模板 + 体型模板）
+python -m workflow new --definition default --id hero --template cartoon --body-template chibi --json
+
+# 2. 查看状态与推荐下一步
+python -m workflow status --workflow hero --json
+python -m workflow next --workflow hero
+
+# 3. 运行动作（可调动作参数 / 体型覆盖）
+python -m workflow run --workflow hero --action skeleton.front --param stride=1.2 --param pelvis_bob=1.5
+python -m workflow run --workflow hero --action skeleton.front --body head_scale=1.4
+
+# 4. 评审
 python -m workflow approve --workflow hero --action skeleton.front --by ai --note "ok"
 python -m workflow reject --workflow hero --action skeleton.front --by ai --note "改大步幅"
-python -m workflow history --workflow hero --json
+
+# 5. 走完 7 步 → 导出制品（atlas + runtime_manifest.json + gif → dist/<workflow_id>/）
+python -m workflow run --workflow hero --action export.artifacts
 ```
 
 **动作 id（7 步精简版）**：`skeleton.front` → `skeleton.side` → `skeleton.back` → `test.smoke` → `capture.walk` → `preview.publish` → `export.artifacts`。定义在 `workflow/definitions/default.json`。
 
-**动作/体型分离**：动作参数（stride/bob/arm_swing）=「怎么动」，每动作可调；体型比例（arm_length…height）=「长什么样」，属于角色（实例级 `state.body`），三视图共享。两者正交。
+## 动作 / 体型分离
+
+- **动作参数**（每动作，怎么动）：`stride` / `pelvis_bob` / `arm_swing`，用 `--param` 调。
+- **体型比例**（角色，长什么样，实例级 `state.body`，三视图共享）：`arm_length` / `leg_length` / `torso_length` / `shoulder_width` / `head_scale` / `height`（1.0=基准），用 `--body` / `set-body` 调。两者正交。
 
 **参数优先级**（动作参数）：运行时 `--param` > 实例模板 `template_params` > 定义默认值。
 **体型优先级**（角色比例）：运行时 `--body` > 实例 `body`（`new --body-template`/`--body` 设定，`set-body` 修改）> 默认 1.0。
 
-**风格参数模板**（`workflow/templates/*.json`）：`realistic`(写实 1.0/0.7/0.8)、`cartoon`(卡通 1.7/1.6/1.5)、`bouncy`(弹跳 1.3/2.0/1.2)、`heavy`(沉稳 1.6/1.8/0.9)、`light`(轻快 0.8/1.1/1.3) —— 顺序对应 stride/pelvis_bob/arm_swing。
+**风格参数模板**（`workflow/templates/*.json`）：`realistic`(1.0/0.7/0.8)、`cartoon`(1.7/1.6/1.5)、`bouncy`(1.3/2.0/1.2)、`heavy`(1.6/1.8/0.9)、`light`(0.8/1.1/1.3) —— 顺序对应 stride/pelvis_bob/arm_swing。
 
 **体型模板**（`workflow/body/*.json`）：`standard`(标准成人)、`chibi`(大头Q版)、`tall`(高挑模特)、`stocky`(矮壮力量型)。体型=角色属性，实例级共享。
 
-## 动作引擎 — `workflow/tools/assetslab.py`
+## 渲染执行（底层 assetslab CLI）
+
+工作流的 `run` 会调用 `assetslab.py` 渲染；也可直接调底层命令：
 
 ```bash
-python workflow/tools/assetslab.py motion list|info <id>|render|check
+# 动作预设（pose library：walk/run/idle/jump）
+python workflow/tools/assetslab.py motion list
 python workflow/tools/assetslab.py motion render run --view front --stage arms --ik --proportion-head-scale 1.4
+python workflow/tools/assetslab.py motion check        # walk == 内置姿态逐像素一致
+
+# 骨架阶段渲染（Pillow python 渲染器）
 python workflow/tools/assetslab.py stage front arms --renderer python --motion walk --stride 1.2
-python workflow/tools/assetslab.py stage front arms --renderer godot            # 一致性验证
+
+# 启动预览服务器（REST API + Web 控制台，供人工通道）
+python workflow/tools/lan_preview_server.py --port 8765 --directory prototype/preview
 ```
 
-- **动作预设**（pose library）：`workflow/motions/{walk,run,idle,jump}.json`，声明式（波形信号 + 相对 `base.json` 的关节偏移 + root + ik）。**新动作 = 新 JSON，无需改渲染器**。
-- **一致性**：`motion check` 验证数据驱动 walk 与内置姿态逐像素一致（默认参数/比例下）。
-- **渲染器**：`--renderer python`（默认，Pillow）vs `--renderer godot`（无头捕获，仅一致性/特殊候选）。
-
-## 骨骼能力（参数化）
-
-**运动参数**（每动作，怎么动）：`stride` 步幅、`pelvis_bob` 骨盆起伏、`arm_swing` 摆臂。
-**体型比例**（角色属性，长什么样，实例级 `state.body` 三视图共享）：`arm_length`/`leg_length`/`torso_length`/`shoulder_width`/`head_scale`/`height`（1.0=基准）。与动作参数正交：同一动作可驱动任意体型，同一体型可配任意动作。工作流里用 `--body`/`set-body` 调；底层渲染器仍支持 `--proportion-*`。
-**根驱动（root-driven）**：骨盆运动（bob/跳跃升降/前倾）通过 `base.json` 的 `torso` 继承系数传导到肩/臂/头——跳跃时肩/臂随骨盆整体升降（不再逐关节补丁）。
-**双骨骼 IK**：`--ik`（run/jump 预设声明 `ik` 组），腿长恒定 + 脚落地锁定。
-
-## Web 与 API
-
-前端是 **Vue 3 + Element Plus + Tailwind CSS + Vite（pnpm）** 工程化 SPA，位于 `workflow/web/`；`pnpm build` 产出 `workflow/web/dist`，由 Python 服务端静态 serve（`lan_preview_server.py` 优先 serve dist，回退旧 `prototype/preview` 页面）。开发：`cd workflow/web && pnpm dev`（/api 代理到 :8765）。
-
-- **`#/console`**：控制台（新建实例=定义+参数模板+体型模板、实例管理、动作预览台）
-- **`#/wizard?id=<workflow_id>`**：分步流程向导（上一步/下一步，每步调动作参数→运行→评审；「角色体型」折叠面板改角色三视图）
-- **API**（前缀 `http://127.0.0.1:8765`）：
-  - `GET /api/workflow/list|templates|body-templates|definitions`
-  - `GET /api/workflow/instances/<id>` / `.../next`
-  - `POST /api/workflow/instances` （body: definition/id/template/body_template/body）
-  - `POST /api/workflow/instances/<id>/body`（body: {body:{head_scale:1.4,…}}，固化角色体型）
-  - `POST /api/workflow/instances/<id>/actions/<action_id>/{run|approve|reject}`（run 可带 `params` 动作参数 + `body` 体型覆盖）
-  - `GET /api/motions`、`POST /api/motions/<id>/render`（body: view/stage/stride/pelvis_bob/arm_swing/ik/blend/blend_t/比例参数）
-- 图片产物经 `http://127.0.0.1:8765/run/...` 提供（带 `?t=` 缓存失效）。
-
-## 构建与 CI（GitHub Actions）
-
-- **本地构建前端**：`cd workflow/web && pnpm install && pnpm build` → `workflow/web/dist`（含 `version.json`，CI 写入 commit/branch/build_time）。
-- **CI（基于 tag 触发 Release 构建）**：`.github/workflows/webflow-build.yml` 在**推送 `v*` tag**（如 `git tag v1.0.0 && git push origin v1.0.0`）或手动 `workflow_dispatch` 时构建并发布三制品到对应 GitHub Release：`webflow-dist.zip`（前端）、`webflow-cli-<platform>.zip`、`webflow-server-<platform>.zip`（PyInstaller 二进制，按 linux/macos/windows）。构建含：前端 `pnpm build` → 写版本信息 → 校验 Python CLI/后端（`compileall` + `workflow --help`）→ PyInstaller 打包 → zip（Linux/macOS 保留可执行位）→ 上传 CI artifact + Release 资产。
-- **后端自动下载制品**：`lan_preview_server.py` 启动时若本地 `workflow/web/dist` 缺失，按构建参数从 GitHub Release 下载 `webflow-dist.zip` 并解压：
-  - `--webflow-repo <owner/repo>`（默认从 git remote 推断）
-  - `--webflow-version <tag>`（默认 latest release）
-  - `--webflow-token <PAT>`（私有仓库/限流；也读 `GITHUB_TOKEN` 环境变量）
-  - `--no-webflow-download`（禁用下载，缺失时回退旧页面）
-  - 下载失败时静默回退 `--directory`（旧 prototype/preview 页面）。
-
-## 制品与 Godot demo
-
-- 最后动作 `export.artifacts` 打包 `dist/<workflow_id>/`：`atlas/`（7 层 4 方向×8 帧）+ `runtime_manifest.json`（方向/层序/head_anchor_offsets/runtime_params）+ `character_walk_4way.gif`。
-- 运行 demo：`godot --path prototype -- --artifacts dist/<workflow_id>`（WASD 移动 + 空格放炸弹）。
-- 骨架/骨骼数据：`workflow/motions/base.json`（静态基座 + torso 层级）、`workflow/motions/*.json`（动作）。
+- **动作预设**：`workflow/motions/{walk,run,idle,jump}.json`，声明式（波形信号 + 关节偏移 + root + ik）。新动作 = 新 JSON，无需改渲染器。
+- **一致性**：`motion check` 验证数据驱动 walk 与内置姿态逐像素一致（默认参数/比例）。
+- **根驱动**：骨盆运动（bob/跳跃/前倾）经 `base.json` 的 `torso` 系数传导到肩/臂/头。
+- **IK**：`--ik`（run/jump 预设声明）腿长恒定 + 脚落地锁定。
 
 ## 给 AI 的推荐执行路径
 
@@ -150,13 +115,12 @@ python workflow/tools/assetslab.py stage front arms --renderer godot            
 2. `next` 取推荐动作 → `run`（`--param` 调动作、`--body` 调体型；也可先 `set-body` 固化角色）
 3. `status --json` 看该动作 `outputs`（本地图片绝对路径）+ `params`（实际所用动作+体型）
 4. 满意 `approve`（带 note）→ 不满意 `reject`（附调整建议）→ 重新 `run`
-5. 走完 7 步 → `export.artifacts` → 制品供 Godot
+5. 走完 7 步 → `export.artifacts` → 制品供 Godot demo
 
 ## 约定与注意事项
 
-- 渲染默认 `--renderer python`（Pillow）；`godot` 渲染器仅一致性验证（无头截图在本机不可用）。
-- `run/`、`dist/`、`prototype/test_output/`、`.venv/` 均被 git 忽略。
-- 新动作预设=新 JSON（`workflow/motions/`）；新风格模板=新 JSON（`workflow/templates/`）；新体型模板=新 JSON（`workflow/body/`）。
-- 调整动作参数优先考虑风格模板；微调 `--param`；改角色体型用 `set-body`/`--body`（底层渲染器 `--proportion-*`）。动作参数与体型正交，勿混入动作定义。
+- 所有命令默认在**仓库根**执行；`--json` 输出机器可读，`outputs` 返回本地图片绝对路径。
+- 状态按实例持久化 `run/workflows/<id>/state.json`（git 忽略）。
+- 二进制（`webflow-cli`）的**管理/调度命令独立可用**；渲染类命令（run/stage）在目标机无 Python 时需用源码方式（二进制完整进程内化见 README）。
 - 修改骨架基座/动作后跑 `motion check` 确认与内置姿态一致。
-- 预览服务器需用 `.venv` 解释器启动（依赖 Pillow）。
+- 渲染默认 `--renderer python`（Pillow）；`godot` 渲染器仅一致性验证。
