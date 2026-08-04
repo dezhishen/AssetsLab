@@ -58,8 +58,29 @@ assets-lab/
 ### Prerequisites
 
 - **Godot 4.7**: automation scripts require a `_console.exe` headless build (`--headless`). Resolution order: `--godot` → `GODOT_BIN`/`GODOT_PATH` → `godot`/`godot4` on `PATH` → adjacent `Godot-4.7` directory.
-- **Python 3 + Pillow**: required for asset processing and GIF compositing. Resolution order: `--python` → `PYTHON_BIN` → `PATH` → local `.venv`/adjacent directory.
+- **Python 3 + Pillow** (via a virtual environment): required for asset processing and GIF compositing. Resolution order: `--python` → `PYTHON_BIN` → local `.venv` → `PATH`.
 - Everything is pure Python and cross-platform — no PowerShell or shell scripts are used.
+
+### Virtual environment (recommended)
+
+All Python tooling runs from `.venv/` so dependencies stay isolated; the
+resolvers prefer it automatically.
+
+```bash
+# create once
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements.txt
+
+# optional: activate so `python` points at the venv
+source .venv/bin/activate        # Windows: .venv\Scripts\activate
+
+# recommended: run with the venv interpreter (no activation needed)
+.venv/bin/python workflow/tools/assetslab.py doctor
+.venv/bin/python -m workflow list
+```
+
+Windows uses `.venv\Scripts\python.exe`. `requirements.txt` pins the Python
+dependencies (Pillow).
 
 All commands below are executed from the **repository root**.
 

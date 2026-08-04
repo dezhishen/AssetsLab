@@ -58,8 +58,27 @@ assets-lab/
 ### 环境要求
 
 - **Godot 4.7**：自动化脚本要求 `_console.exe` 无头构建（`--headless`）。解析顺序：`--godot` → `GODOT_BIN`/`GODOT_PATH` → `PATH` 上的 `godot`/`godot4` → 相邻 `Godot-4.7` 目录。
-- **Python 3 + Pillow**：资产处理与 GIF 合成需要。解析顺序：`--python` → `PYTHON_BIN` → `PATH` → 本地 `.venv`/相邻目录。
+- **Python 3 + Pillow**（通过虚拟环境）：资产处理与 GIF 合成需要。解析顺序：`--python` → `PYTHON_BIN` → 本地 `.venv` → `PATH`。
 - 全部为**纯 Python 跨平台**方案，不依赖任何 PowerShell / shell 脚本。
+
+### 虚拟环境（推荐）
+
+所有 Python 工具运行在 `.venv/` 中，依赖相互隔离；解析器会自动优先使用它。
+
+```bash
+# 首次创建
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements.txt
+
+# 可选：激活后 `python` 指向 venv
+source .venv/bin/activate        # Windows: .venv\Scripts\activate
+
+# 推荐：直接用 venv 解释器（无需激活）
+.venv/bin/python workflow/tools/assetslab.py doctor
+.venv/bin/python -m workflow list
+```
+
+Windows 使用 `.venv\Scripts\python.exe`。`requirements.txt` 固定 Python 依赖（Pillow）。
 
 所有命令默认在**仓库根目录**执行。
 
