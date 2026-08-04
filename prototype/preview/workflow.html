@@ -55,9 +55,11 @@
     <button id="refresh">⟳ 刷新</button>
     <select id="newDef"></select>
     <select id="newTpl" title="参数模板：给骨架动作预设一组业内风格默认参数"><option value="">默认参数</option></select>
+    <select id="newBodyTpl" title="体型模板：创建时套用的角色体型预设"><option value="">标准体型</option></select>
     <input id="newId" placeholder="实例 id（留空用默认）">
     <button id="newBtn">＋ 新建实例</button>
   </div>
+  <div id="newBodyTplDesc" class="muted" style="font-size:12px;margin:0 0 6px"></div>
 
   <section class="panel">
     <h2>动作预览台 <span class="muted" style="font-size:12px;font-weight:400">数据驱动动作预设 · pose library</span></h2>
@@ -282,6 +284,21 @@ async function loadTemplates() {
     tpls.map(t => `<option value="${t.id}" title="${(t.description || '').replace(/"/g, '&quot;')}">${t.title}（${t.id}）</option>`).join('');
 }
 
+async function loadBodyTemplates() {
+  const res = await fetch('/api/workflow/body-templates');
+  const data = await res.json().catch(() => ({}));
+  BODY_TEMPLATES = Array.isArray(data.body_templates) ? data.body_templates : [];
+  $('newBodyTpl').innerHTML = '<option value="">标准体型</option>' +
+    BODY_TEMPLATES.map(t => `<option value="${t.id}" title="${(t.description || '').replace(/"/g, '&quot;')}">${t.title}（${t.id}）</option>`).join('');
+  updateBodyTplDesc();
+}
+
+function updateBodyTplDesc() {
+  const id = $('newBodyTpl').value;
+  const t = BODY_TEMPLATES.find(x => x.id === id);
+  $('newBodyTplDesc').textContent = t ? `体型：${t.description}` : '体型：创建时套用的角色体型预设；留空 = 标准体型。';
+}
+
 async function loadList() {
   const r = await api('/api/workflow/list');
   if (!r.ok) { $('instanceList').textContent = '无实例或错误：' + r.data; return; }
@@ -411,8 +428,9 @@ $('pmRun').onclick = async () => {
 };
 
 $('refresh').onclick = async () => { await loadDefs(); await loadList(); };
+$('newBodyTpl').onchange = updateBodyTplDesc;
 $('newBtn').onclick = async () => {
-  const body = JSON.stringify({ definition: $('newDef').value, id: $('newId').value || undefined, template: $('newTpl').value || undefined });
+  const body = JSON.stringify({ definition: $('newDef').value, id: $('newId').value || undefined, template: $('newTpl').value || undefined, body_template: $('newBodyTpl').value || undefined });
   const r = await api('/api/workflow/instances', { method:'POST', headers:{'Content-Type':'application/json'}, body });
   log('新建实例 → ' + JSON.stringify(r.data));
   $('newId').value = '';
@@ -421,6 +439,6 @@ $('newBtn').onclick = async () => {
 };
 $('back').onclick = () => { $('detail').hidden = true; };
 
-(async () => { await loadMotions(); await loadDefs(); await loadTemplates(); await loadList(); })();</script>
+(async () => { await loadMotions(); await loadDefs(); await loadTemplates(); await loadBodyTemplates(); await loadList(); })();</script>
 </body>
 </html>
