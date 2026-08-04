@@ -17,6 +17,8 @@ A pixel-art character animation experiment built on **Godot 4.6.2**. The core wo
 | `PROJECT.md` | Project charter: development status, roadmap, review principles |
 | `references/` | Design reference images: mannequin sheets, front character anchors |
 | `prototype/assets/characters/walk_base/` | Authoritative 4-direction walk base source sheets |
+| `workflow/` | Workflow engine SDK: declarative definitions + CLI scheduling |
+| `run/` | Per-instance workflow state (git ignored): state.json + step image outputs |
 
 ### Core methodology: skeleton-first walk pipeline
 
@@ -46,6 +48,8 @@ assets-lab/
 │   ├── preview/               # Browser preview pages + interactive calibration pages
 │   └── README.md              # Detailed prototype run instructions
 ├── tools/                     # Build / validate / capture / preview scripts
+├── workflow/                  # Workflow engine SDK + declarative definitions
+├── run/                       # Per-instance workflow state (git ignored, generated)
 └── third_party/               # Open-source reference assets
 ```
 
@@ -157,6 +161,28 @@ python tools/recolor_body_palettes.py        # generate light/warm/deep skin var
 python tools/build_preview_assets.py         # rebuild preview asset set
 python tools/publish_preview.py --name tag   # publish timestamped snapshot to preview/snapshots/
 ```
+
+### 6. Workflow engine (AI / human scheduling)
+
+`tools/workflow.py` drives the pipeline step-by-step with a persistent,
+per-instance state under `run/workflows/<workflow_id>/`:
+
+```bash
+python tools/workflow.py list                                            # list instances
+python tools/workflow.py new --definition default --id review-a          # create instance
+python tools/workflow.py status --workflow review-a --json               # view state
+python tools/workflow.py next --workflow review-a                        # recommended next action
+python tools/workflow.py run --workflow review-a --action skeleton.front.legs --json
+python tools/workflow.py approve --workflow review-a --action skeleton.front.legs --by ai --note "ok"
+python tools/workflow.py reject --workflow review-a --action skeleton.front.legs --by human --note "redraw"
+```
+
+- CLI is the AI-facing scheduling channel: `--json` output is machine-readable
+  and `outputs` returns absolute paths to local images.
+- Web is the human-facing full channel: `http://<host>:8765/workflow.html`;
+  images are served under `http://<host>:8765/run/workflows/<id>/steps/<action_id>/`.
+- `workflow_id` / `action_id` run through CLI, Web and persistence; multiple
+  instances can run in parallel, each persisted to its own JSON.
 
 ## Output locations
 

@@ -4,8 +4,17 @@ import argparse
 import base64
 import json
 import os
+import subprocess
+import sys
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+
+# Repository root, set by main(). The workflow console API shells out to the
+# cross-platform tools/workflow.py CLI, so scheduling behaves identically to
+# the AI-facing command line.
+REPO_ROOT: Path | None = None
+RUN_ROOT: Path | None = None
+DEFINITIONS_ROOT: Path | None = None
 
 
 class PreviewHandler(SimpleHTTPRequestHandler):
@@ -16,9 +25,21 @@ class PreviewHandler(SimpleHTTPRequestHandler):
         # preview helper. HTTP errors are still returned to the client.
         return
 
+    def do_GET(self) -> None:
+        if self.path.startswith("/api/workflow/"):
+            self._workflow_api_get()
+            return
+        if self.path.startswith("/run/"):
+            self._serve_run_file()
+            return
+        super().do_GET()
+
     def do_POST(self) -> None:
         if self.path == "/api/save-pixel-art":
             self._save_pixel_art()
+            return
+        if self.path.startswith("/api/workflow/"):
+            self._workflow_api_post()
             return
         if self.path != "/api/save-calibration":
             self.send_error(404)
@@ -86,15 +107,132 @@ class PreviewHandler(SimpleHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(body)
 
+    # ------------------------------------------------------------ workflow --
+
+    def _send_json(self, payload: object, status: int = 200) -> None:
+        body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+        self.send_response(status)
+        self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def _read_json_body(self) -> dict:
+        length = int(self.headers.get("Content-Length", "0"))
+        if not length:
+            return {}
+        return json.loads(self.rfile.read(length).decode("utf-8"))
+
+    def _workflow_cli(self, args: list[str]) -> dict:
+        if REPO_ROOT is None:
+            return {"ok": False, "error": "workflow server not configured"}
+        try:
+            process = subprocess.run(
+                [sys.executable, str(REPO_ROOT / "tools" / "workflow.py"), *args],
+                cwd=REPO_ROOT,
+                capture_output=True,
+                text=True,
+                timeout=900,
+            )
+        except subprocess.TimeoutExpired:
+            return {"ok": False, "error": "workflow command timed out"}
+        return {
+            "ok": process.returncode == 0,
+            "exit_code": process.returncode,
+            "stdout": (process.stdout or "")[-8000:],
+            "stderr": (process.stderr or "")[-4000:],
+        }
+
+    def _workflow_api_get(self) -> None:
+        path = self.path[len("/api/workflow/"):].rstrip("/")
+        parts = path.split("/")
+        if parts == ["list"]:
+            self._send_json(self._workflow_cli(["list", "--json"]))
+            return
+        if parts and parts[0] == "definitions":
+            if len(parts) == 1 and DEFINITIONS_ROOT is not None:
+                self._send_json({"definitions": sorted(p.stem for p in DEFINITIONS_ROOT.glob("*.json"))})
+                return
+            self.send_error(404)
+            return
+        if len(parts) == 2 and parts[0] == "instances":
+            self._send_json(self._workflow_cli(["status", "--workflow", parts[1], "--json"]))
+            return
+        if len(parts) == 3 and parts[0] == "instances" and parts[2] == "next":
+            self._send_json(self._workflow_cli(["next", "--workflow", parts[1], "--json"]))
+            return
+        self.send_error(404)
+
+    def _workflow_api_post(self) -> None:
+        path = self.path[len("/api/workflow/"):].rstrip("/")
+        parts = path.split("/")
+        try:
+            body = self._read_json_body()
+        except Exception as error:
+            self._send_json({"ok": False, "error": str(error)}, 400)
+            return
+        if parts == ["instances"]:
+            definition = body.get("definition", "default")
+            args = ["new", "--definition", definition, "--json"]
+            if body.get("id"):
+                args += ["--id", body["id"]]
+            self._send_json(self._workflow_cli(args))
+            return
+        if len(parts) == 5 and parts[0] == "instances" and parts[2] == "actions":
+            workflow_id, action_id, verb = parts[1], parts[3], parts[4]
+            args = [verb, "--workflow", workflow_id, "--action", action_id, "--json"]
+            if verb in ("approve", "reject"):
+                args += ["--by", body.get("by", "web")]
+                if body.get("note"):
+                    args += ["--note", body["note"]]
+            self._send_json(self._workflow_cli(args))
+            return
+        self.send_error(404)
+
+    def _serve_run_file(self) -> None:
+        if RUN_ROOT is None:
+            self.send_error(404)
+            return
+        target = (RUN_ROOT / self.path[len("/run/"):].lstrip("/")).resolve()
+        try:
+            target.relative_to(RUN_ROOT.resolve())
+        except ValueError:
+            self.send_error(403)
+            return
+        if not target.is_file():
+            self.send_error(404)
+            return
+        suffix = target.suffix.lower()
+        content_type = {
+            ".png": "image/png",
+            ".gif": "image/gif",
+            ".jpg": "image/jpeg",
+            ".json": "application/json; charset=utf-8",
+            ".log": "text/plain; charset=utf-8",
+            ".txt": "text/plain; charset=utf-8",
+        }.get(suffix, "application/octet-stream")
+        data = target.read_bytes()
+        self.send_response(200)
+        self.send_header("Content-Type", content_type)
+        self.send_header("Content-Length", str(len(data)))
+        self.end_headers()
+        self.wfile.write(data)
+
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="AssetsLab LAN preview server with local preview saves")
+    parser = argparse.ArgumentParser(description="AssetsLab LAN preview server with workflow console API")
     parser.add_argument("--port", type=int, required=True)
     parser.add_argument("--directory", type=Path, required=True)
+    parser.add_argument("--repo-root", type=Path, help="Repository root (defaults to the parent of --directory).")
     args = parser.parse_args()
+    global REPO_ROOT, RUN_ROOT, DEFINITIONS_ROOT
+    REPO_ROOT = (args.repo_root or args.directory.parents[1]).resolve()
+    RUN_ROOT = REPO_ROOT / "run"
+    DEFINITIONS_ROOT = REPO_ROOT / "workflow" / "definitions"
     root = args.directory.resolve()
     os.chdir(root)
     server = ThreadingHTTPServer(("0.0.0.0", args.port), PreviewHandler)
+    server.daemon_threads = True
     server.serve_forever()
     return 0
 

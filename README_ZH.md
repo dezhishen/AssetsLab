@@ -17,6 +17,8 @@
 | `PROJECT.md` | 项目总纲：开发状态、路线图、评审原则（英文） |
 | `references/` | 设计参考图：人体模型 sheet、正面角色锚点 |
 | `prototype/assets/characters/walk_base/` | 权威 4 向行走基底源图 |
+| `workflow/` | 工作流引擎 SDK：声明式定义 + CLI 调度 |
+| `run/` | 工作流实例状态（git 忽略）：state.json + 步骤图片产物 |
 
 ### 核心方法论：骨架优先行走流水线
 
@@ -46,6 +48,8 @@ assets-lab/
 │   ├── preview/               # 浏览器预览页 + 交互校准页
 │   └── README.md              # 原型的详细运行说明
 ├── tools/                     # 构建 / 校验 / 捕获 / 预览脚本
+├── workflow/                  # 工作流引擎 SDK + 声明式定义
+├── run/                       # 工作流实例状态（git 忽略，生成物）
 └── third_party/               # 开源参考素材
 ```
 
@@ -155,6 +159,24 @@ python tools/recolor_body_palettes.py        # 生成 light/warm/deep 肤色变�
 python tools/build_preview_assets.py         # 重建预览资产集
 python tools/publish_preview.py --name tag   # 发布时间戳快照到 preview/snapshots/
 ```
+
+### 6. 工作流引擎（AI / 人工调度）
+
+`tools/workflow.py` 以**步进式**驱动流水线，状态按实例持久化到 `run/workflows/<workflow_id>/`：
+
+```bash
+python tools/workflow.py list                                            # 列出实例
+python tools/workflow.py new --definition default --id review-a          # 新建实例
+python tools/workflow.py status --workflow review-a --json               # 查看状态
+python tools/workflow.py next --workflow review-a                        # 推荐下一步
+python tools/workflow.py run --workflow review-a --action skeleton.front.legs --json
+python tools/workflow.py approve --workflow review-a --action skeleton.front.legs --by ai --note "ok"
+python tools/workflow.py reject --workflow review-a --action skeleton.front.legs --by human --note "redraw"
+```
+
+- **CLI** 是面向 AI 的调度通道：`--json` 输出机器可读，`outputs` 返回本地图片**绝对路径**。
+- **Web** 是面向人工的完整通道：`http://<host>:8765/workflow.html`；图片经 `http://<host>:8765/run/workflows/<id>/steps/<action_id>/` 预览。
+- `workflow_id` / `action_id` 贯穿 CLI、Web、持久化三层；多实例可**并行**，各自分文件存储。
 
 ## 输出位置与说明
 

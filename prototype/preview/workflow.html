@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AssetsLab 工作流控制台</title>
+<style>
+  :root { color-scheme: dark; --bg:#111522; --panel:#1b2233; --line:#35415d; --text:#f4f5f7; --muted:#aeb9cc; --accent:#8fd3ff; --ok:#a5e8bb; --warn:#ffd18a; --bad:#ff9d9d; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:linear-gradient(150deg,#101522,#1d2639); color:var(--text); font:15px/1.5 system-ui,"Segoe UI",sans-serif; }
+  main { width:min(1200px,100%); margin:auto; padding:20px 14px 60px; }
+  h1 { margin:0 0 6px; font-size:clamp(24px,4vw,34px); }
+  h2 { margin:0 0 12px; font-size:19px; }
+  h3 { margin:6px 0 10px; color:var(--accent); font-size:15px; }
+  p { color:var(--muted); margin:6px 0 12px; }
+  code { color:#d9f2ff; }
+  button,select,input { font:inherit; color:var(--text); background:#262e47; border:1px solid var(--line); border-radius:8px; padding:7px 11px; cursor:pointer; }
+  button:hover { background:#314066; }
+  button:disabled { opacity:.5; cursor:default; }
+  .toolbar { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:14px 0; }
+  .panel { margin:14px 0; padding:16px; border:1px solid var(--line); border-radius:16px; background:rgba(27,34,51,.92); }
+  .badge { display:inline-block; padding:2px 8px; border-radius:999px; font-size:12px; border:1px solid var(--line); }
+  .badge.passed { color:var(--ok); border-color:var(--ok); }
+  .badge.running { color:var(--accent); border-color:var(--accent); }
+  .badge.failed { color:var(--bad); border-color:var(--bad); }
+  .badge.pending { color:var(--muted); }
+  .instance { display:flex; align-items:center; gap:12px; padding:10px 12px; border:1px solid var(--line); border-radius:12px; margin:8px 0; cursor:pointer; background:#141a2b; }
+  .instance:hover { border-color:var(--accent); }
+  .progress { flex:1; }
+  .bar { height:6px; background:#2a3350; border-radius:4px; overflow:hidden; margin-top:6px; }
+  .bar > div { height:100%; background:var(--ok); }
+  .group { margin:14px 0; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:12px; }
+  .card { padding:12px; border:1px solid var(--line); border-radius:12px; background:#0f1526; display:flex; flex-direction:column; gap:8px; }
+  .card .title { font-weight:600; }
+  .card .id { color:var(--muted); font-size:12px; font-family:ui-monospace,Consolas,monospace; }
+  .card img { max-width:100%; max-height:200px; image-rendering:pixelated; background:#080b13; border-radius:8px; }
+  .card .ops { display:flex; gap:6px; flex-wrap:wrap; }
+  .card .ops button { padding:5px 9px; font-size:13px; }
+  .note { color:var(--warn); font-size:13px; }
+  pre { white-space:pre-wrap; background:#0c101b; border:1px solid var(--line); border-radius:12px; padding:12px; font-size:12px; max-height:300px; overflow:auto; }
+  .muted { color:var(--muted); }
+</style>
+</head>
+<body>
+<main>
+  <h1>AssetsLab 工作流控制台</h1>
+  <p>CLI 与 Web 共享同一 <code>run/workflows/&lt;workflow_id&gt;/state.json</code>。这里是完整调度通道：新建实例、运行 / 通过 / 打回动作，并直接预览本地图片产物。AI 侧等价命令：<code>python tools/workflow.py &lt;verb&gt; --workflow &lt;id&gt; --action &lt;action_id&gt;</code></p>
+
+  <div class="toolbar">
+    <button id="refresh">⟳ 刷新</button>
+    <select id="newDef"></select>
+    <input id="newId" placeholder="实例 id（留空用默认）">
+    <button id="newBtn">＋ 新建实例</button>
+  </div>
+
+  <section class="panel">
+    <h2>工作流实例</h2>
+    <div id="instanceList">加载中…</div>
+  </section>
+
+  <section id="detail" class="panel" hidden>
+    <button id="back">← 返回列表</button>
+    <h2 id="detailTitle"></h2>
+    <p id="detailMeta" class="muted"></p>
+    <div id="nextLine" class="muted"></div>
+    <div id="actions"></div>
+  </section>
+
+  <section class="panel">
+    <h2>最近操作日志</h2>
+    <pre id="log">—</pre>
+  </section>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+const PHASE_LABEL = {skeleton:'骨架流水线', test:'测试', capture:'捕获', preview:'预览', calibration:'校准', publish:'发布'};
+const BADGE = {passed:'passed 已通过', running:'running 运行中', failed:'failed 失败', pending:'pending 待办', skipped:'skipped 跳过'};
+
+async function api(path, opts) {
+  const res = await fetch(path, opts);
+  const wrap = await res.json().catch(() => ({}));
+  if (wrap.stdout) {
+    try { return { ok: true, data: JSON.parse(wrap.stdout) }; }
+    catch (e) { return { ok: false, data: wrap.stdout }; }
+  }
+  return { ok: !!wrap.ok, data: wrap.stderr || JSON.stringify(wrap) };
+}
+function log(text) { $('log').textContent = text + '\n' + $('log').textContent.slice(0, 6000); }
+function urlFromPath(p) {
+  const idx = p.indexOf('/run/');
+  return idx >= 0 ? p.slice(idx) : null;
+}
+
+async function loadDefs() {
+  const r = await api('/api/workflow/definitions');
+  if (r.ok && Array.isArray(r.data.definitions)) {
+    $('newDef').innerHTML = r.data.definitions.map(d => `<option value="${d}">${d}</option>`).join('');
+  }
+}
+
+async function loadList() {
+  const r = await api('/api/workflow/list');
+  if (!r.ok) { $('instanceList').textContent = '无实例或错误：' + r.data; return; }
+  const items = r.data;
+  if (!items.length) { $('instanceList').textContent = '暂无实例，点击上方「新建实例」开始。'; return; }
+  $('instanceList').innerHTML = items.map(it => {
+    const [passed, total] = String(it.progress || '0/0').split('/');
+    const pct = total > 0 ? Math.round(passed / total * 100) : 0;
+    return `<div class="instance" data-id="${it.workflow_id}">
+      <div><strong>${it.workflow_id}</strong><br><span class="muted">${it.definition_id} · v${it.version}</span></div>
+      <div class="progress">${it.updated_at || ''}<div class="bar"><div style="width:${pct}%"></div></div></div>
+      <span class="badge">${it.progress}</span>
+    </div>`;
+  }).join('');
+  document.querySelectorAll('.instance').forEach(el => {
+    el.onclick = () => openDetail(el.dataset.id);
+  });
+}
+
+async function openDetail(id) {
+  const r = await api(`/api/workflow/instances/${encodeURIComponent(id)}`);
+  if (!r.ok) { log('加载实例失败：' + r.data); return; }
+  const state = r.data;
+  $('detail').hidden = false;
+  $('detailTitle').textContent = `${state.workflow_id} · ${state.title || ''}`;
+  const nr = await api(`/api/workflow/instances/${encodeURIComponent(id)}/next`);
+  const nextId = nr.ok ? nr.data.next : null;
+  $('detailMeta').textContent = `definition=${state.definition_id} · updated=${state.updated_at} · version=${state.version}`;
+  $('nextLine').textContent = nextId ? `→ 推荐下一步：${nextId}` : '→ 无待办（已完成或依赖未满足）';
+  renderActions(id, state.actions || {});
+}
+
+function renderActions(id, actions) {
+  const groups = {};
+  for (const [aid, st] of Object.entries(actions)) {
+    const phase = st.phase || 'misc';
+    (groups[phase] = groups[phase] || []).push({ aid, st });
+  }
+  let html = '';
+  for (const [phase, items] of Object.entries(groups)) {
+    html += `<div class="group"><h3>${PHASE_LABEL[phase] || phase}</h3><div class="grid">`;
+    for (const { aid, st } of items) {
+      const imgs = (st.outputs || []).map(urlFromPath).filter(Boolean)
+        .map(u => `<img src="${u}" alt="${aid}" loading="lazy">`).join('');
+      const note = st.note ? `<div class="note">备注：${st.note}${st.approved_by ? '（' + st.approved_by + '）' : ''}</div>` : '';
+      html += `<div class="card">
+        <div class="title">${aid} <span class="badge ${st.status}">${BADGE[st.status] || st.status}</span></div>
+        <div class="id">${aid}</div>
+        ${imgs}
+        ${note}
+        <div class="ops">
+          <button data-v="run" data-aid="${aid}">运行</button>
+          ${st.status === 'passed' ? `<button data-v="approve" data-aid="${aid}">通过 ✓</button>` : ''}
+          ${(st.status === 'passed' || st.status === 'failed') ? `<button data-v="reject" data-aid="${aid}">打回 ↺</button>` : ''}
+        </div>
+      </div>`;
+    }
+    html += `</div></div>`;
+  }
+  $('actions').innerHTML = html;
+  document.querySelectorAll('#actions button[data-v]').forEach(btn => {
+    btn.onclick = async () => {
+      const verb = btn.dataset.v, aid = btn.dataset.aid;
+      btn.disabled = true; btn.textContent = '处理中…';
+      const note = verb !== 'run' ? (prompt('评审备注（可选）') || '') : '';
+      const body = note ? JSON.stringify({ note, by: 'web' }) : '{}';
+      const r = await api(`/api/workflow/instances/${encodeURIComponent(id)}/actions/${encodeURIComponent(aid)}/${verb}`, { method:'POST', headers:{'Content-Type':'application/json'}, body });
+      log(`[${verb}] ${id}/${aid} → ${JSON.stringify(r.data)}`);
+      await openDetail(id);
+      await loadList();
+    };
+  });
+}
+
+$('refresh').onclick = async () => { await loadDefs(); await loadList(); };
+$('newBtn').onclick = async () => {
+  const body = JSON.stringify({ definition: $('newDef').value, id: $('newId').value || undefined });
+  const r = await api('/api/workflow/instances', { method:'POST', headers:{'Content-Type':'application/json'}, body });
+  log('新建实例 → ' + JSON.stringify(r.data));
+  $('newId').value = '';
+  await loadList();
+  if (r.ok && r.data && r.data.workflow_id) openDetail(r.data.workflow_id);
+};
+$('back').onclick = () => { $('detail').hidden = true; };
+
+(async () => { await loadDefs(); await loadList(); })();
+</script>
+</body>
+</html>
