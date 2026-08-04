@@ -446,6 +446,12 @@ def cmd_stage(args: argparse.Namespace) -> int:
             extra += ["--pelvis-bob", str(args.pelvis_bob)]
         if args.arm_swing is not None:
             extra += ["--arm-swing", str(args.arm_swing)]
+        if args.motion:
+            extra += ["--motion", args.motion]
+        if args.ik:
+            extra += ["--ik"]
+        if args.fps:
+            extra += ["--fps", str(args.fps)]
         process = _run_python_tool(python, "render_skeleton_preview.py", extra)
         if process.stdout:
             print(process.stdout, end="")
@@ -453,7 +459,14 @@ def cmd_stage(args: argparse.Namespace) -> int:
             print(process.stderr, end="")
         if process.returncode != 0:
             raise SystemExit(f"Python render failed for {args.view} {args.stage} (exit {process.returncode}).")
-        output = SKELETON_PIPELINE / expected_name
+        if args.motion:
+            # Motion engine writes <prefix>_<motion>.gif / <view>_base_<motion>.png.
+            if args.stage == "skeleton":
+                output = SKELETON_PIPELINE / f"{args.view}_base_{args.motion}.png"
+            else:
+                output = SKELETON_PIPELINE / f"{frame_dir_name}_{args.motion}.gif"
+        else:
+            output = SKELETON_PIPELINE / expected_name
         if not output.exists():
             raise SystemExit(f"Python render did not produce expected output: {output}")
         print(f"{args.view}_{args.stage}_RENDER_PASS={output}")
@@ -535,6 +548,38 @@ def cmd_run_script(args: argparse.Namespace) -> int:
     return subprocess.call([python, str(script), *args.script_args])
 
 
+def cmd_motion(args: argparse.Namespace) -> int:
+    """Data-driven motion presets (pose-library pattern): list / info / render / check."""
+    python = resolve_python(args.python)
+    base = [python, str(TOOLS / "motion.py")]
+    sub = args.motion_sub
+    if sub == "list":
+        cmd = [*base, "list"]
+    elif sub == "check":
+        cmd = [*base, "check"]
+    elif sub == "info":
+        cmd = [*base, "info", args.id]
+    elif sub == "render":
+        cmd = [*base, "render", args.id, "--view", args.view, "--stage", args.stage]
+        if args.stride is not None:
+            cmd += ["--stride", str(args.stride)]
+        if args.pelvis_bob is not None:
+            cmd += ["--pelvis-bob", str(args.pelvis_bob)]
+        if args.arm_swing is not None:
+            cmd += ["--arm-swing", str(args.arm_swing)]
+        if args.ik:
+            cmd += ["--ik"]
+        if args.fps:
+            cmd += ["--fps", str(args.fps)]
+        if args.blend:
+            cmd += ["--blend", args.blend, "--blend-t", str(args.blend_t)]
+        if args.output:
+            cmd += ["--output", str(args.output)]
+    else:
+        raise SystemExit(f"unknown motion subcommand: {sub}")
+    return subprocess.call(cmd)
+
+
 # -------------------------------------------------------------------- main --
 
 
@@ -584,6 +629,9 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--stride", type=float, help="Leg swing amplitude multiplier (python renderer).")
     p.add_argument("--pelvis-bob", type=float, help="Pelvis bob multiplier (python renderer).")
     p.add_argument("--arm-swing", type=float, help="Arm swing multiplier (python renderer).")
+    p.add_argument("--motion", help="Data-driven motion preset id (python renderer): walk/run/idle/jump.")
+    p.add_argument("--ik", action="store_true", help="Apply two-bone IK leg solve (python renderer).")
+    p.add_argument("--fps", type=int, help="GIF frame rate (python renderer).")
     add_tool_args(p)
 
     p = sub.add_parser("preview", help="Start the LAN preview server (lan_preview_server.py).")
@@ -600,6 +648,28 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("script_args", nargs=argparse.REMAINDER, help="Extra arguments forwarded to the script.")
     p.add_argument("--python", help="Python executable.")
 
+    motions = sorted((ROOT / "workflow" / "motions").glob("*.json")) if (ROOT / "workflow" / "motions").is_dir() else []
+    motion_ids = [m.stem for m in motions if m.name != "base.json"]
+    p = sub.add_parser("motion", help="Data-driven motion presets (pose library).")
+    m = p.add_subparsers(dest="motion_sub", required=True)
+    m.add_parser("list", help="List motion presets.")
+    m.add_parser("check", help="Verify the walk preset matches the built-in poses.")
+    pi = m.add_parser("info", help="Show a motion preset's parameters.")
+    pi.add_argument("id", choices=motion_ids or ["walk"])
+    pr = m.add_parser("render", help="Render a motion stage to PNG/GIF.")
+    pr.add_argument("id", choices=motion_ids or ["walk"])
+    pr.add_argument("--view", choices=["front", "side", "back"], required=True)
+    pr.add_argument("--stage", choices=["skeleton", "legs", "pelvis", "arms"], required=True)
+    pr.add_argument("--stride", type=float)
+    pr.add_argument("--pelvis-bob", type=float)
+    pr.add_argument("--arm-swing", type=float)
+    pr.add_argument("--fps", type=int, default=8)
+    pr.add_argument("--ik", action="store_true", help="Apply two-bone IK leg solve.")
+    pr.add_argument("--blend", metavar="MOTION", help="Blend toward another motion by joint interpolation.")
+    pr.add_argument("--blend-t", type=float, default=0.0)
+    pr.add_argument("--output", type=Path, default=ROOT / "prototype" / "test_output" / "skeleton_pipeline")
+    p.add_argument("--python", help="Python executable.")
+
     return parser
 
 
@@ -613,6 +683,7 @@ def main(argv: list[str] | None = None) -> int:
         "preview": cmd_preview,
         "publish": cmd_publish,
         "run-script": cmd_run_script,
+        "motion": cmd_motion,
     }
     try:
         return handlers[args.command](args)

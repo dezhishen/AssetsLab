@@ -1,0 +1,88 @@
+{
+  "schema": "assetslab_motion_v1",
+  "motion_id": "jump",
+  "title": "Jump — 蹲/起跳/滞空/落地循环",
+  "description": "Two-leg synchronous jump cycle driven by phase tables (squat -> launch -> airborne -> land). Both legs move together; two-bone IK keeps the legs at rest length during the airborne tuck.",
+  "frame_count": 8,
+  "params": {
+    "stride":     {"default": 1.0, "min": 0.0, "max": 2.0, "label": "跳跃高度"},
+    "pelvis_bob": {"default": 1.0, "min": 0.0, "max": 2.0, "label": "滞空幅度"},
+    "arm_swing":  {"default": 1.0, "min": 0.0, "max": 2.0, "label": "手臂上举"}
+  },
+  "signals": {
+    "phase":     {"phase": true},
+    "pelvis_dy": {"mul": [{"table": [10, 16, 2, -10, -22, -4, 8, 14]}, {"param": "pelvis_bob"}]},
+    "foot_lift": {"mul": [{"table": [2, 6, 16, 30, 40, 26, 8, 4]}, {"param": "stride"}]},
+    "knee_bend": {"mul": [{"table": [14, 20, 8, 2, 4, 12, 18, 16]}, {"param": "stride"}]},
+    "arm_raise": {"mul": [{"table": [0, 4, 12, 20, 24, 16, 6, 0]}, {"param": "arm_swing"}]}
+  },
+  "offsets": {
+    "front": {
+      "legs": {
+        "left_knee":  {"y": {"neg": {"signal": "knee_bend"}}},
+        "right_knee": {"y": {"neg": {"signal": "knee_bend"}}},
+        "left_foot":  {"y": {"neg": {"signal": "foot_lift"}}},
+        "right_foot": {"y": {"neg": {"signal": "foot_lift"}}}
+      },
+      "pelvis": {
+        "pelvis":    {"y": {"signal": "pelvis_dy"}},
+        "left_hip":  {"y": {"signal": "pelvis_dy"}},
+        "right_hip": {"y": {"signal": "pelvis_dy"}},
+        "left_knee":  {"y": {"mul": [{"signal": "pelvis_dy"}, 0.6]}},
+        "right_knee": {"y": {"mul": [{"signal": "pelvis_dy"}, 0.6]}}
+      },
+      "arms": {
+        "left_elbow":  {"y": {"neg": {"signal": "arm_raise"}}},
+        "left_hand":   {"y": {"mul": [{"signal": "arm_raise"}, -1.6]}},
+        "right_elbow": {"y": {"neg": {"signal": "arm_raise"}}},
+        "right_hand":  {"y": {"mul": [{"signal": "arm_raise"}, -1.6]}}
+      }
+    },
+    "side": {
+      "legs": {
+        "rear_knee":  {"y": {"neg": {"signal": "knee_bend"}}},
+        "front_knee": {"y": {"neg": {"signal": "knee_bend"}}},
+        "rear_foot":  {"y": {"neg": {"signal": "foot_lift"}}},
+        "front_foot": {"y": {"neg": {"signal": "foot_lift"}}}
+      },
+      "pelvis": {
+        "pelvis":   {"y": {"signal": "pelvis_dy"}},
+        "rear_hip": {"y": {"signal": "pelvis_dy"}},
+        "front_hip": {"y": {"signal": "pelvis_dy"}}
+      },
+      "arms": {
+        "rear_elbow":  {"y": {"neg": {"signal": "arm_raise"}}},
+        "rear_hand":   {"y": {"mul": [{"signal": "arm_raise"}, -1.6]}},
+        "front_elbow": {"y": {"neg": {"signal": "arm_raise"}}},
+        "front_hand":  {"y": {"mul": [{"signal": "arm_raise"}, -1.6]}}
+      }
+    },
+    "back": {
+      "legs": {
+        "left_knee":  {"y": {"neg": {"signal": "knee_bend"}}},
+        "right_knee": {"y": {"neg": {"signal": "knee_bend"}}},
+        "left_foot":  {"y": {"neg": {"signal": "foot_lift"}}},
+        "right_foot": {"y": {"neg": {"signal": "foot_lift"}}}
+      }
+    }
+  },
+  "selectors": {
+    "front_leg":     {"const": "left"},
+    "foreground_leg": {"const": "front"},
+    "foreground":     {"const": "left"}
+  },
+  "ik": {
+    "front": {"legs": {
+      "left": {"hip": "left_hip", "knee": "left_knee", "foot": "left_foot"},
+      "right": {"hip": "right_hip", "knee": "right_knee", "foot": "right_foot"}
+    }},
+    "side": {"legs": {
+      "rear": {"hip": "rear_hip", "knee": "rear_knee", "foot": "rear_foot"},
+      "front": {"hip": "front_hip", "knee": "front_knee", "foot": "front_foot"}
+    }},
+    "back": {"legs": {
+      "left": {"hip": "left_hip", "knee": "left_knee", "foot": "left_foot"},
+      "right": {"hip": "right_hip", "knee": "right_knee", "foot": "right_foot"}
+    }}
+  }
+}

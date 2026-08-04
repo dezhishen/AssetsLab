@@ -55,6 +55,29 @@
   </div>
 
   <section class="panel">
+    <h2>动作预览台 <span class="muted" style="font-size:12px;font-weight:400">数据驱动动作预设 · pose library</span></h2>
+    <div class="toolbar">
+      <label>动作 <select id="mvMotion"></select></label>
+      <label>视角 <select id="mvView">
+        <option value="front">front</option><option value="side">side</option><option value="back">back</option>
+      </select></label>
+      <label>阶段 <select id="mvStage">
+        <option value="skeleton">skeleton</option><option value="legs">legs</option>
+        <option value="pelvis">pelvis</option><option value="arms">arms</option>
+      </select></label>
+      <label><input type="checkbox" id="mvIk"> IK 落地锁定</label>
+    </div>
+    <div class="toolbar" id="mvParams"></div>
+    <div class="toolbar">
+      <label>混合 → <select id="mvBlend"><option value="">无</option></select></label>
+      <label>比例 <input type="range" id="mvBlendT" min="0" max="1" step="0.05" value="0.5" style="width:110px"></label>
+      <button id="mvRender">⟳ 渲染循环</button>
+      <span id="mvStatus" class="muted"></span>
+    </div>
+    <div id="mvResult" style="min-height:70px;margin-top:8px"></div>
+  </section>
+
+  <section class="panel">
     <h2>工作流实例</h2>
     <div id="instanceList">加载中…</div>
   </section>
@@ -81,17 +104,93 @@ const BADGE = {passed:'passed 已通过', running:'running 运行中', failed:'f
 async function api(path, opts) {
   const res = await fetch(path, opts);
   const wrap = await res.json().catch(() => ({}));
+  if (wrap.ok === false) {
+    return { ok: false, data: wrap.stderr || JSON.stringify(wrap) };
+  }
   if (wrap.stdout) {
     try { return { ok: true, data: JSON.parse(wrap.stdout) }; }
     catch (e) { return { ok: false, data: wrap.stdout }; }
   }
-  return { ok: !!wrap.ok, data: wrap.stderr || JSON.stringify(wrap) };
+  return { ok: res.ok, data: wrap };
 }
 function log(text) { $('log').textContent = text + '\n' + $('log').textContent.slice(0, 6000); }
 function urlFromPath(p) {
   const idx = p.indexOf('/run/');
   return idx >= 0 ? p.slice(idx) : null;
 }
+
+// ------------------------------------------------------------ motion studio --
+
+let MOTIONS = [];
+const MV_PARAM_KEYS = ['stride', 'pelvis_bob', 'arm_swing'];
+
+async function loadMotions() {
+  const res = await fetch('/api/motions');
+  const data = await res.json().catch(() => ({}));
+  MOTIONS = Array.isArray(data.motions) ? data.motions : [];
+  if (!MOTIONS.length) { $('mvMotion').innerHTML = '<option value="">无动作</option>'; return; }
+  const opts = MOTIONS.map(m => `<option value="${m.id}">${m.id} — ${m.title}</option>`).join('');
+  $('mvMotion').innerHTML = opts;
+  $('mvBlend').innerHTML = '<option value="">无</option>' + MOTIONS.map(m => `<option value="${m.id}">${m.id}</option>`).join('');
+  buildMotionParams();
+  renderMotion();
+}
+
+function currentMotion() {
+  return MOTIONS.find(m => m.id === $('mvMotion').value) || MOTIONS[0];
+}
+
+function buildMotionParams() {
+  const m = currentMotion();
+  if (!m) return;
+  const params = m.params || {};
+  const html = MV_PARAM_KEYS.map(key => {
+    const spec = params[key] || { default: 1.0, min: 0, max: 2, label: key };
+    const d = spec.default ?? 1.0;
+    return `<label>${spec.label || key} <input type="range" id="mvP_${key}" data-key="${key}" min="${spec.min ?? 0}" max="${spec.max ?? 3}" step="0.05" value="${d}"> <span class="muted" id="mvPv_${key}">${d}</span></label>`;
+  }).join('');
+  $('mvParams').innerHTML = html + `<span class="muted">${m.has_ik ? '· 该动作声明 IK 组' : ''}</span>`;
+  document.querySelectorAll('#mvParams input[type=range]').forEach(r => {
+    r.oninput = () => { $('mvPv_' + r.dataset.key).textContent = r.value; renderMotion(); };
+  });
+}
+
+async function renderMotion() {
+  const id = $('mvMotion').value;
+  if (!id) return;
+  const body = {
+    view: $('mvView').value,
+    stage: $('mvStage').value,
+    ik: $('mvIk').checked,
+    stride: parseFloat(($('mvP_stride') || {}).value ?? currentMotion().params?.stride?.default ?? 1),
+    pelvis_bob: parseFloat(($('mvP_pelvis_bob') || {}).value ?? currentMotion().params?.pelvis_bob?.default ?? 1),
+    arm_swing: parseFloat(($('mvP_arm_swing') || {}).value ?? currentMotion().params?.arm_swing?.default ?? 1),
+    blend: $('mvBlend').value || undefined,
+    blend_t: parseFloat($('mvBlendT').value),
+  };
+  $('mvStatus').textContent = '渲染中…';
+  try {
+    const res = await fetch(`/api/motions/${encodeURIComponent(id)}/render`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+    });
+    const wrap = await res.json();
+    if (wrap.ok && wrap.gif) {
+      $('mvResult').innerHTML = `<img src="${wrap.gif}" alt="${id} ${body.view}/${body.stage}" style="max-width:480px;image-rendering:pixelated;border:1px solid var(--line);border-radius:8px">`;
+      $('mvStatus').textContent = `${body.view}/${body.stage}` + (body.blend ? ` · 混合 ${body.blend} ${body.blend_t}` : '') + (body.ik ? ' · IK' : '');
+    } else {
+      $('mvResult').textContent = '渲染错误：' + (wrap.error || JSON.stringify(wrap));
+      $('mvStatus').textContent = '';
+    }
+  } catch (e) {
+    $('mvResult').textContent = '请求失败：' + e;
+    $('mvStatus').textContent = '';
+  }
+}
+
+$('mvMotion').onchange = () => { buildMotionParams(); renderMotion(); };
+['mvView', 'mvStage', 'mvIk', 'mvBlend', 'mvBlendT'].forEach(idEl => { $(idEl).onchange = renderMotion; });
+$('mvBlendT').oninput = renderMotion;
+$('mvRender').onclick = renderMotion;
 
 async function loadDefs() {
   const r = await api('/api/workflow/definitions');
@@ -185,7 +284,7 @@ $('newBtn').onclick = async () => {
 };
 $('back').onclick = () => { $('detail').hidden = true; };
 
-(async () => { await loadDefs(); await loadList(); })();
+(async () => { await loadMotions(); await loadDefs(); await loadList(); })();
 </script>
 </body>
 </html>

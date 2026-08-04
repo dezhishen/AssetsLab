@@ -207,6 +207,23 @@ python workflow/tools/render_skeleton_preview.py --view side --stage arms --arm-
 - `--stride` 步幅 · `--pelvis-bob` 骨盆浮动 · `--arm-swing` 摆臂幅度。
 - 工作流的骨架动作已默认 `--renderer python`；Godot 无头捕获仍以 `--renderer godot` 保留用于一致性验证。
 
+### 数据驱动动作预设（姿态库）
+
+不再把姿态写成散落的函数，而是把动画循环做成**声明式 JSON 预设**，放在 `workflow/motions/`（`walk`、`run`、`idle`、`jump`）。每个预设描述「波形信号 + 相对静态基座的关节偏移」，由引擎（`workflow/tools/motion.py`）采样成帧。**新增一个动作 = 新增一个 JSON 文件，无需改渲染器**。
+
+```bash
+python workflow/tools/assetslab.py motion list                          # 列出预设
+python workflow/tools/assetslab.py motion info run                      # 查看参数与 IK 组
+python workflow/tools/assetslab.py motion render run --view front --stage legs --ik
+python workflow/tools/assetslab.py motion check                         # walk == 内置姿态
+python workflow/tools/assetslab.py stage side arms --renderer python --motion run --ik
+```
+
+- `walk` 为参照预设：`motion check` 与像素级对比证明它与 Godot 一致的旧内置姿态**逐像素完全相同**（全部视图/阶段）。
+- **双骨骼 IK**（`--ik`；预设内声明 `ik` 组）在大步幅下保持腿长恒定，并做「落地锁定」——脚目标超出可达半径时锁定回可达边界，用于 `run` / `jump`。
+- **跨动作混合**：`--blend run --blend-t 0.5` 对关节做插值，实现 walk↔run 参数化过渡。
+- **Web**：工作流控制台 `/workflow.html` 新增 **动作预览台（Motion Studio）**——选动作/视角/阶段、拖动 stride/pelvis-bob/arm-swing 滑块、勾选 IK、跨动作混合，浏览器内通过 `POST /api/motions/<id>/render` 实时渲染循环。
+
 ## 制品与 Godot demo
 
 工作流的最后一个动作 `export.artifacts` 会用纯 Python（无需 Godot）在 `dist/<workflow_id>/` 下打包一份**Godot 可直接使用**的制品：

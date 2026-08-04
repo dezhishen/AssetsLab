@@ -410,9 +410,9 @@ def render_frame(view, stage, index, stride, bob, swing, base=None):
     return image
 
 
-def make_gif(frames, path):
+def make_gif(frames, path, duration: int = 125):
     enlarged = [f.resize((480, 300), Image.Resampling.NEAREST) for f in frames]
-    enlarged[0].save(path, save_all=True, append_images=enlarged[1:], duration=125, loop=0)
+    enlarged[0].save(path, save_all=True, append_images=enlarged[1:], duration=duration, loop=0)
 
 
 def contact_sheet(frames, path):
@@ -432,6 +432,10 @@ def main() -> int:
     parser.add_argument("--pelvis-bob", type=float, default=1.0, help="Pelvis bob multiplier (stage 3).")
     parser.add_argument("--arm-swing", type=float, default=1.0, help="Arm swing multiplier (stage 4).")
     parser.add_argument("--style", choices=["consistent", "simple"], default="consistent", help="consistent = same look as Godot (default).")
+    parser.add_argument("--motion", type=str, default=None,
+                        help="Data-driven motion preset id (walk/run/idle/jump/...). When set, the pose math is driven by workflow/motions/<id>.json instead of the built-in functions.")
+    parser.add_argument("--ik", action="store_true", help="Apply two-bone IK leg solve (motion engine only).")
+    parser.add_argument("--fps", type=int, default=8, help="GIF frame rate (motion engine only).")
     args = parser.parse_args()
 
     if args.view == "back" and args.stage in ("pelvis", "arms"):
@@ -439,6 +443,25 @@ def main() -> int:
 
     output = args.output
     output.mkdir(parents=True, exist_ok=True)
+
+    if args.motion:
+        # Data-driven pose library: same canvas + draw routines, joint motion
+        # defined in workflow/motions/<id>.json (industry pose-library pattern).
+        from motion import MotionError, load_motion, render_to_output
+        motion = load_motion(args.motion)
+        overrides = {}
+        if args.stride != 1.0:
+            overrides["stride"] = args.stride
+        if args.pelvis_bob != 1.0:
+            overrides["pelvis_bob"] = args.pelvis_bob
+        if args.arm_swing != 1.0:
+            overrides["arm_swing"] = args.arm_swing
+        try:
+            render_to_output(motion, args.view, args.stage, output,
+                             params=overrides or None, use_ik=args.ik, fps=args.fps)
+        except MotionError as error:
+            raise SystemExit(f"motion render failed: {error}")
+        return 0
 
     if args.stage == "skeleton":
         image = render_frame(args.view, args.stage, 0, args.stride, args.pelvis_bob, args.arm_swing)

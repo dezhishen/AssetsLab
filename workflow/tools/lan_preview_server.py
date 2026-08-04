@@ -29,6 +29,9 @@ class PreviewHandler(SimpleHTTPRequestHandler):
         if self.path.startswith("/api/workflow/"):
             self._workflow_api_get()
             return
+        if self.path == "/api/motions" or self.path.startswith("/api/motions/"):
+            self._motions_api_get()
+            return
         if self.path.startswith("/run/"):
             self._serve_run_file()
             return
@@ -40,6 +43,9 @@ class PreviewHandler(SimpleHTTPRequestHandler):
             return
         if self.path.startswith("/api/workflow/"):
             self._workflow_api_post()
+            return
+        if self.path.startswith("/api/motions/"):
+            self._motions_api_post()
             return
         if self.path != "/api/save-calibration":
             self.send_error(404)
@@ -172,7 +178,7 @@ class PreviewHandler(SimpleHTTPRequestHandler):
             self._send_json({"ok": False, "error": str(error)}, 400)
             return
         if parts == ["instances"]:
-            definition = body.get("definition", "default")
+            definition = body.get("definition") or "default"
             args = ["new", "--definition", definition, "--json"]
             if body.get("id"):
                 args += ["--id", body["id"]]
@@ -188,6 +194,94 @@ class PreviewHandler(SimpleHTTPRequestHandler):
             self._send_json(self._workflow_cli(args))
             return
         self.send_error(404)
+
+    # ------------------------------------------------------------ motions --
+
+    def _motions_api_get(self) -> None:
+        """GET /api/motions - list available motion presets (pose library)."""
+        if REPO_ROOT is None:
+            self._send_json({"ok": False, "error": "motion server not configured"})
+            return
+        motions_dir = REPO_ROOT / "workflow" / "motions"
+        items = []
+        if motions_dir.is_dir():
+            for path in sorted(motions_dir.glob("*.json")):
+                if path.name == "base.json":
+                    continue
+                try:
+                    data = json.loads(path.read_text(encoding="utf-8"))
+                except Exception:
+                    continue
+                items.append({
+                    "id": data.get("motion_id"),
+                    "title": data.get("title", data.get("motion_id")),
+                    "description": data.get("description", ""),
+                    "params": data.get("params", {}),
+                    "has_ik": bool(data.get("ik")),
+                })
+        self._send_json({"motions": items})
+
+    def _motions_api_post(self) -> None:
+        """POST /api/motions/{id}/render - render a frame or a full cycle.
+
+        Body: {view, stage, frame_index?, stride?, pelvis_bob?, arm_swing?,
+               ik?, blend?, blend_t?} -> returns base64 data URLs.
+        """
+        parts = self.path[len("/api/motions/"):].rstrip("/").split("/")
+        if len(parts) != 2 or parts[1] != "render":
+            self.send_error(404)
+            return
+        motion_id = parts[0]
+        try:
+            body = self._read_json_body()
+        except Exception as error:
+            self._send_json({"ok": False, "error": str(error)}, 400)
+            return
+        try:
+            result = self._render_motion(motion_id, body)
+            self._send_json({"ok": True, **result})
+        except Exception as error:
+            self._send_json({"ok": False, "error": str(error)}, 500)
+
+    def _render_motion(self, motion_id: str, body: dict) -> dict:
+        import base64
+        import io
+
+        from PIL import Image
+
+        tools_dir = REPO_ROOT / "workflow" / "tools"
+        if str(tools_dir) not in sys.path:
+            sys.path.insert(0, str(tools_dir))
+        import motion as motion_mod
+
+        motion = motion_mod.load_motion(motion_id)
+        view = str(body.get("view", "front"))
+        stage = str(body.get("stage", "legs"))
+        overrides = {}
+        for key in ("stride", "pelvis_bob", "arm_swing"):
+            if body.get(key) is not None:
+                overrides[key] = float(body[key])
+        use_ik = bool(body.get("ik", False))
+        blend_id = body.get("blend")
+        blend_t = float(body.get("blend_t", 0.0) or 0.0)
+        blend = motion_mod.load_motion(blend_id) if blend_id else None
+
+        frame_index = body.get("frame_index")
+        if frame_index is not None:
+            img = motion_mod.render_frame(motion, view, stage, int(frame_index), overrides or None, use_ik)
+            if blend is not None and blend_t > 0.0:
+                other = motion_mod.render_frame(blend, view, stage, int(frame_index), overrides or None, use_ik)
+                img = Image.blend(img, other, blend_t)
+            buf = io.BytesIO()
+            img.save(buf, format="PNG")
+            return {"frame": "data:image/png;base64," + base64.b64encode(buf.getvalue()).decode()}
+
+        frames = motion_mod.render_motion(motion, view, stage, overrides or None, use_ik, blend, blend_t)
+        enlarged = [f.resize((480, 300), Image.Resampling.NEAREST) for f in frames]
+        buf = io.BytesIO()
+        enlarged[0].save(buf, format="GIF", save_all=True, append_images=enlarged[1:],
+                         duration=125, loop=0)
+        return {"gif": "data:image/gif;base64," + base64.b64encode(buf.getvalue()).decode()}
 
     def _serve_run_file(self) -> None:
         if RUN_ROOT is None:

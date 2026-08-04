@@ -218,6 +218,34 @@ python workflow/tools/render_skeleton_preview.py --view side --stage arms --arm-
 - The workflow's skeleton actions already run `--renderer python`; Godot's
   headless capture stays available as `--renderer godot` for consistency checks.
 
+### Data-driven motion presets (pose library)
+
+Instead of hard-coded pose functions, animation cycles are declarative JSON
+presets under `workflow/motions/` (`walk`, `run`, `idle`, `jump`). A preset
+describes waveform **signals** + per-joint **offsets** relative to a shared
+static base; the engine (`workflow/tools/motion.py`) samples them into frames.
+Adding an animation is a new JSON file — no renderer changes.
+
+```bash
+python workflow/tools/assetslab.py motion list                          # list presets
+python workflow/tools/assetslab.py motion info run                      # params & IK groups
+python workflow/tools/assetslab.py motion render run --view front --stage legs --ik
+python workflow/tools/assetslab.py motion check                         # walk == built-in poses
+python workflow/tools/assetslab.py stage side arms --renderer python --motion run --ik
+```
+
+- `walk` is the reference preset: `motion check` and a pixel comparison prove
+  it matches the Godot-consistent built-in poses exactly (all views/stages).
+- **Two-bone IK** (`--ik`; presets declare `ik` groups) keeps leg lengths
+  constant at large strides, and "foot-plant" locks an unreachable foot back
+  onto the reachable radius — used by `run` / `jump`.
+- **Cross-motion blending**: `--blend run --blend-t 0.5` interpolates joints
+  for a parameterized walk↔run transition.
+- **Web**: the workflow console `/workflow.html` gained a *Motion Studio*
+  panel — pick a preset/view/stage, drag stride/pelvis-bob/arm-swing, toggle
+  IK, blend between motions, and render the loop in the browser via
+  `POST /api/motions/<id>/render`.
+
 ## Artifacts & Godot demo
 
 The final workflow action `export.artifacts` builds a Godot-ready package under
