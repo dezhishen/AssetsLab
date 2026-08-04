@@ -272,6 +272,12 @@ func _read_appearance_seed() -> int:
 
 
 func _load_body_anchor_offsets() -> void:
+	if not artifacts_dir.is_empty():
+		# 制品模式：head 层帧已在 cell 内与 body 对齐（烘焙时统一 bbox 变换），
+		# 偏移应为 0——制品 manifest 的 head_anchor_offsets 已由 _load_artifacts_frames
+		# 读入 body_anchor_offsets。内置素材的校准偏移只适用于内置素材，强行套用
+		# 会让脑袋相对身体偏移（歪）。
+		return
 	body_anchor_offsets.clear()
 	if not rebuild_head:
 		return
