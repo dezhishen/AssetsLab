@@ -1,0 +1,76 @@
+{
+  "schema": "assetslab_skeleton_base_v1",
+  "description": "Static rest pose per view, shared by all motion presets. Coordinates are pixel positions on the 960x600 canvas (FLOOR_Y=470). Motions describe offsets relative to these joints.",
+  "views": {
+    "front": {
+      "head": [480, 150], "neck": [480, 238],
+      "shoulder_left": [422, 260], "shoulder_right": [538, 260],
+      "elbow_left": [400, 325], "elbow_right": [560, 325],
+      "hand_left": [392, 382], "hand_right": [568, 382],
+      "left_elbow": [400, 325], "right_elbow": [560, 325],
+      "left_hand": [392, 382], "right_hand": [568, 382],
+      "pelvis": [480, 350],
+      "hip_left": [448, 356], "hip_right": [512, 356],
+      "left_hip": [448, 356], "right_hip": [512, 356],
+      "knee_left": [448, 415], "knee_right": [512, 415],
+      "left_knee": [448, 415], "right_knee": [512, 415],
+      "foot_left": [448, 470], "foot_right": [512, 470],
+      "left_foot": [448, 470], "right_foot": [512, 470]
+    },
+    "side": {
+      "head": [480, 150], "face_forward": [548, 150], "neck": [480, 238],
+      "pelvis": [480, 350],
+      "rear_shoulder": [462, 264], "front_shoulder": [498, 258],
+      "rear_elbow": [448, 326], "front_elbow": [510, 320],
+      "rear_hand": [444, 382], "front_hand": [518, 376],
+      "rear_hip": [466, 356], "front_hip": [494, 350],
+      "rear_knee": [462, 414], "front_knee": [498, 410],
+      "rear_foot": [452, 470], "front_foot": [512, 470]
+    },
+    "back": {
+      "head": [480, 150], "neck": [480, 238], "pelvis": [480, 350],
+      "rear_shoulder_left": [422, 264], "rear_shoulder_right": [538, 264],
+      "front_shoulder_left": [432, 258], "front_shoulder_right": [528, 258],
+      "rear_elbow_left": [400, 326], "rear_elbow_right": [560, 326],
+      "front_elbow_left": [410, 320], "front_elbow_right": [550, 320],
+      "rear_hand_left": [392, 382], "rear_hand_right": [568, 382],
+      "front_hand_left": [402, 376], "front_hand_right": [558, 376],
+      "rear_hip_left": [448, 356], "rear_hip_right": [512, 356],
+      "front_hip_left": [456, 350], "front_hip_right": [504, 350],
+      "rear_knee_left": [448, 414], "rear_knee_right": [512, 414],
+      "front_knee_left": [456, 410], "front_knee_right": [504, 410],
+      "rear_foot_left": [448, 470], "rear_foot_right": [512, 470],
+      "front_foot_left": [456, 470], "front_foot_right": [504, 470],
+      "left_hip": [456, 350], "right_hip": [504, 350],
+      "left_knee": [456, 410], "right_knee": [504, 410],
+      "left_foot": [456, 470], "right_foot": [504, 470]
+    }
+  },
+  "torso": {
+    "front": {
+      "pelvis": 1.0,
+      "left_hip": 1.0, "right_hip": 1.0, "hip_left": 1.0, "hip_right": 1.0,
+      "left_knee": 0.5, "right_knee": 0.5, "knee_left": 0.5, "knee_right": 0.5,
+      "neck": 1.0, "head": 0.5,
+      "shoulder_left": 1.0, "shoulder_right": 1.0,
+      "elbow_left": 1.0, "elbow_right": 1.0, "left_elbow": 1.0, "right_elbow": 1.0,
+      "hand_left": 1.0, "hand_right": 1.0, "left_hand": 1.0, "right_hand": 1.0
+    },
+    "side": {
+      "pelvis": 1.0, "rear_hip": 1.0, "front_hip": 1.0,
+      "neck": 1.0, "head": 0.5,
+      "rear_shoulder": 1.0, "front_shoulder": 1.0,
+      "rear_elbow": 1.0, "front_elbow": 1.0,
+      "rear_hand": 1.0, "front_hand": 1.0
+    },
+    "back": {
+      "neck": 1.0, "head": 0.5,
+      "rear_shoulder_left": 1.0, "rear_shoulder_right": 1.0,
+      "front_shoulder_left": 1.0, "front_shoulder_right": 1.0,
+      "rear_elbow_left": 1.0, "rear_elbow_right": 1.0,
+      "front_elbow_left": 1.0, "front_elbow_right": 1.0,
+      "rear_hand_left": 1.0, "rear_hand_right": 1.0,
+      "front_hand_left": 1.0, "front_hand_right": 1.0
+    }
+  }
+}

@@ -1,6 +1,6 @@
 {
   "variant": "male",
-  "source": "walk-base-4way-male-4frame-sheet.png",
+  "source": "prototype/assets/characters/walk_base/walk-base-4way-male-4frame-sheet.png",
   "atlas": "prototype/assets/characters/male/body_walk_4way.png",
   "idle_atlas": "prototype/assets/characters/male/body_idle_4way.png",
   "frame_directory": "prototype/assets/characters/male/frames",

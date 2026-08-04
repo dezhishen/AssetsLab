@@ -1,0 +1,13 @@
+{
+  "body_id": "tall",
+  "title": "高挑模特",
+  "description": "长腿长臂、窄肩小头、身高偏高的时尚模特比例。",
+  "body": {
+    "arm_length": 1.2,
+    "leg_length": 1.3,
+    "torso_length": 1.0,
+    "shoulder_width": 0.9,
+    "head_scale": 0.95,
+    "height": 1.15
+  }
+}

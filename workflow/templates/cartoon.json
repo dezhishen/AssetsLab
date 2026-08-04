@@ -1,0 +1,6 @@
+{
+  "template_id": "cartoon",
+  "title": "卡通夸张",
+  "description": "大步幅 + 强摆臂 + 明显弹跳，参考卡通动画的 squash & stretch 夸张风格。",
+  "params": {"stride": 1.7, "pelvis_bob": 1.6, "arm_swing": 1.5}
+}

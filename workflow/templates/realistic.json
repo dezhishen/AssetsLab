@@ -1,0 +1,6 @@
+{
+  "template_id": "realistic",
+  "title": "写实自然",
+  "description": "自然小幅步态：中等步幅、轻微骨盆起伏、自然摆臂。参考真实行走（stride≈1.0、bob 衰减、手臂小幅摆动）。",
+  "params": {"stride": 1.0, "pelvis_bob": 0.7, "arm_swing": 0.8}
+}
