@@ -8,7 +8,7 @@ import sys
 from datetime import datetime, timezone
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import unquote, urlparse
 
 # Repository root, set by main(). The workflow console API drives the SAME
 # Python SDK (workflow.runner / workflow.store) as the CLI — the Web channel
@@ -133,7 +133,7 @@ class PreviewHandler(SimpleHTTPRequestHandler):
     def _workflow_api_delete(self) -> None:
         """DELETE /api/workflow/instances/<id> - remove instance + artifacts."""
         path = self.path[len("/api/workflow/"):].rstrip("/")
-        parts = path.split("/")
+        parts = [unquote(p) for p in path.split("/")]
         if len(parts) != 2 or parts[0] != "instances":
             self.send_error(404)
             return
@@ -187,7 +187,7 @@ class PreviewHandler(SimpleHTTPRequestHandler):
 
     def _workflow_api_get(self) -> None:
         path = self.path[len("/api/workflow/"):].rstrip("/")
-        parts = path.split("/")
+        parts = [unquote(p) for p in path.split("/")]
         if parts == ["list"]:
             if REPO_ROOT is None:
                 self._send_json({"ok": False, "error": "workflow server not configured"})
@@ -275,7 +275,7 @@ class PreviewHandler(SimpleHTTPRequestHandler):
 
     def _workflow_api_post(self) -> None:
         path = self.path[len("/api/workflow/"):].rstrip("/")
-        parts = path.split("/")
+        parts = [unquote(p) for p in path.split("/")]
         try:
             body = self._read_json_body()
         except Exception as error:
@@ -363,7 +363,7 @@ class PreviewHandler(SimpleHTTPRequestHandler):
         Body: {view, stage, frame_index?, stride?, pelvis_bob?, arm_swing?,
                ik?, blend?, blend_t?} -> returns base64 data URLs.
         """
-        parts = self.path[len("/api/motions/"):].rstrip("/").split("/")
+        parts = [unquote(p) for p in self.path[len("/api/motions/"):].rstrip("/").split("/")]
         if len(parts) != 2 or parts[1] != "render":
             self.send_error(404)
             return
@@ -430,7 +430,7 @@ class PreviewHandler(SimpleHTTPRequestHandler):
             return
         # Strip any cache-busting query (?t=...) added by the web UI so the
         # same output file can be re-served without hitting the browser cache.
-        path = urlparse(self.path).path
+        path = unquote(urlparse(self.path).path)
         target = (RUN_ROOT / path[len("/run/"):].lstrip("/")).resolve()
         try:
             target.relative_to(RUN_ROOT.resolve())
@@ -500,7 +500,7 @@ class PreviewHandler(SimpleHTTPRequestHandler):
             return
         parsed = urlparse(self.path)
         dist_root = (REPO_ROOT / "dist").resolve()
-        target = (dist_root / parsed.path[len("/dist/"):].lstrip("/")).resolve()
+        target = (dist_root / unquote(parsed.path)[len("/dist/"):].lstrip("/")).resolve()
         try:
             target.relative_to(dist_root)
         except ValueError:
