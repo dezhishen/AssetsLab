@@ -62,6 +62,16 @@ func _ready() -> void:
 	for argument in user_args:
 		if argument.begins_with("--artifacts="):
 			artifacts_dir = argument.trim_prefix("--artifacts=")
+			# Image.load_from_file needs an OS path; resolve relative values
+			# against the launch directory (repository root) so dist/ works
+			# regardless of --path.
+			if not artifacts_dir.is_absolute_path():
+				# Resolve relative paths against the repository root (parent of
+				# the Godot project dir) so dist/ works regardless of the launch
+				# directory or --path.
+				var project_root := ProjectSettings.globalize_path("res://")
+				var repo_root := project_root.trim_suffix("/").get_base_dir()
+				artifacts_dir = repo_root.path_join(artifacts_dir)
 	appearance_seed = _read_appearance_seed()
 	appearance_variant = appearance_variant_for_seed(appearance_seed, variant == "female")
 	_load_frame_textures()
