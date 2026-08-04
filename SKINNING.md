@@ -76,7 +76,7 @@
 - 锚点：启发式（center/top_center/bottom_center）为基线；`skin anchors` 提取后可手动校准进 `skin.anchors` 提升贴合
 
 ### 5. 皮肤可替换（已实现）
-- 皮肤 = 独立**皮肤包** `skins/<name>/`（`skin.json` + 标准命名部件 `<NN>_<layer>_<view>.png` + `preview/` 预览动画），**不在制品里**；序号按**身体区域分段**：`00`头颈 / `10`左臂 / `20`右臂 / `30`躯干 / `40`左腿 / `50`右腿 / `60`脚（每区预留 10 槽）
+- 皮肤 = 独立**皮肤包** `skins/<name>/`（`skin.json` + 标准命名部件 `<NNN>_<layer>_<view>.png` + `preview/` 预览动画），**不在制品里**；序号按**身体区域分段**（3 位）：`000`头颈 / `100`左臂 / `200`右臂 / `300`躯干 / `400`左腿 / `500`右腿 / `600`脚（每区预留 100 槽）
 - 换皮肤 = 新建一个皮肤包目录；`--skin` 驱动，CLI / 工作流 / Godot 均支持
 - 默认 `mannequin` 皮肤（人体模特）在 `skins/mannequin/`；预烘焙 `skeleton` 皮肤在 `workflow/skins/skeleton.json`（绑定实例 atlas）
 

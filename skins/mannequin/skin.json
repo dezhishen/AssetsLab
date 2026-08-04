@@ -2,7 +2,7 @@
   "skin_id": "mannequin",
   "schema": "assetslab_skin_v1",
   "layout": "pack",
-  "description": "通用人体模特皮肤：按 base.json 骨架 1:1 绘制的中性人体几何部件。锚点=部件图中心（精确=关节），肢体段按骨骼段方向旋转（rotate_child），rest 天然贴合。皮肤包独立于制品：skins/mannequin/（skin.json + <NN>_<layer>_<view>.png），序号按区域分段：00头颈/10左臂/20右臂/30躯干/40左腿/50右腿/60脚（每区预留 10 槽）。",
+  "description": "通用人体模特皮肤：按 base.json 骨架 1:1 绘制的中性人体几何部件。锚点=部件图中心（精确=关节），肢体段按骨骼段方向旋转（rotate_child），rest 天然贴合。皮肤包独立于制品：skins/mannequin/（skin.json + <NNN>_<layer>_<view>.png），序号按区域分段（3 位）：000头颈/100左臂/200右臂/300躯干/400左腿/500右腿/600脚（每区预留 100 槽）。",
   "views": [
     "front",
     "side",

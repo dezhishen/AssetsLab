@@ -39,8 +39,8 @@ COLOR_FOOT = (148, 161, 173, 255)
 
 # (zone, layer, 逻辑关节, rotate_child)——逻辑关节用 front 视图的 left_ 系别名，
 # 因为 walk 预设的 front 偏移驱动 left_hand/left_foot/…（skin.py VIEW_JOINT 同款）。
-# 区域分段：十位 = 身体区域（0头颈 1左臂 2右臂 3躯干 4左腿 5右腿 6脚），
-# 个位 = 区域内序号（0 起），每区预留 10 个槽位，方便后续拓展。
+# 区域分段：百位 = 身体区域（0头颈 1左臂 2右臂 3躯干 4左腿 5右腿 6脚），
+# 十位/个位 = 区域内序号（0 起），每区预留 100 个槽位，方便后续拓展。
 ZONES = [
     (0, "head", "head", None),
     (0, "neck", "neck", None),
@@ -150,11 +150,11 @@ def main() -> int:
     skin_root = ROOT / "skins" / "mannequin"
     skin_root.mkdir(parents=True, exist_ok=True)
 
-    # 分配区域序号：十位=区域，个位=区域内顺序（每区预留 10 槽）
+    # 分配区域序号：百位=区域，十位/个位=区域内顺序（每区预留 100 槽）
     seq_of: dict[str, int] = {}
     counters: dict[int, int] = {}
     for zone, layer, _, _ in ZONES:
-        seq_of[layer] = zone * 10 + counters.get(zone, 0)
+        seq_of[layer] = zone * 100 + counters.get(zone, 0)
         counters[zone] = counters.get(zone, 0) + 1
 
     for layer, joint, child in [(l, j, c) for _, l, j, c in ZONES]:
@@ -173,8 +173,8 @@ def main() -> int:
                 b = joints[joint_view(child, view)]
                 seg = layer.rsplit("_", 1)[0]
                 img, _ = draw_segment(max(_d(a, b), 8.0), seg, COLOR_SEG)
-            # 标准命名：<NN>_<layer>_<view>.png（NN = 区域分段序号：00头颈/10左臂/20右臂/30躯干/40左腿/50右腿/60脚）
-            img.save(skin_root / f"{seq_of[layer]:02d}_{layer}_{view}.png")
+            # 标准命名：<NNN>_<layer>_<view>.png（NNN = 区域分段序号：000头颈/100左臂/200右臂/300躯干/400左腿/500右腿/600脚）
+            img.save(skin_root / f"{seq_of[layer]:03d}_{layer}_{view}.png")
             print(f"  {view}/{layer}: {img.size}")
 
     bindings = {}
@@ -188,12 +188,12 @@ def main() -> int:
         "layout": "pack",
         "description": "通用人体模特皮肤：按 base.json 骨架 1:1 绘制的中性人体几何部件。"
                        "锚点=部件图中心（精确=关节），肢体段按骨骼段方向旋转（rotate_child），rest 天然贴合。"
-                       "皮肤包独立于制品：skins/mannequin/（skin.json + <NN>_<layer>_<view>.png），"
-                       "序号按区域分段：00头颈/10左臂/20右臂/30躯干/40左腿/50右腿/60脚（每区预留 10 槽）。",
+                       "皮肤包独立于制品：skins/mannequin/（skin.json + <NNN>_<layer>_<view>.png），"
+                       "序号按区域分段（3 位）：000头颈/100左臂/200右臂/300躯干/400左腿/500右腿/600脚（每区预留 100 槽）。",
         "views": list(VIEWS),
         "coordinates": "skeleton",
         "atlas_dir": "skins/mannequin",
-        "layers": [{"name": l, "zone": z, "order": seq_of[l] % 10} for z, l, _, _ in ZONES],
+        "layers": [{"name": l, "zone": z, "order": seq_of[l] % 100} for z, l, _, _ in ZONES],
         "bindings": bindings,
         "anchors": {},
     }

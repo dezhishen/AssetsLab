@@ -330,10 +330,11 @@ python workflow/tools/assetslab.py stage side arms --renderer python --motion ru
 Skinning reuses the same skeleton + motion engine: `workflow/tools/skin.py`
 maps **skin parts** onto `base.json` joints. A **skin** is an independent
 **skin pack** under `skins/<name>/` — `skin.json` (definition: `bindings`,
-anchor policy, coordinates) + standard part files `00_head_front.png` …
-(`<NN>_<layer>_<view>.png`; `NN` is **zone-prefixed**: `00` head/neck, `10`
-left arm, `20` right arm, `30` torso, `40` left leg, `50` right leg, `60`
-feet — each zone reserves 10 slots) + `preview/` (rendered animations). New skin = new folder (or a legacy `workflow/skins/<name>.json`
+anchor policy, coordinates) + standard part files `000_head_front.png` …
+(`<NNN>_<layer>_<view>.png`; `NNN` is **zone-prefixed** (3 digits): `000`
+head/neck, `100` left arm, `200` right arm, `300` torso, `400` left leg,
+`500` right leg, `600` feet — each zone reserves 100 slots) + `preview/`
+(rendered animations). New skin = new folder (or a legacy `workflow/skins/<name>.json`
 for pre-baked skins tied to an instance atlas).
 
 ```bash
