@@ -1,14 +1,18 @@
 #!/usr/bin/env python3
-"""生成「人体模特」蒙皮 demo 皮肤。
+"""生成「人体模特」蒙皮皮肤包（可按体型实例化 + 配色）。
 
-按 base.json 骨架 rest 姿势 1:1 绘制中性人体几何部件（头/躯干/左右上臂·前臂·
-大腿·小腿·脚），输出 dist/mannequin/atlas/<layer>/walk_row{row}_frame0.png，
-并生成独立皮肤包 skins/mannequin/（skin.json + <NN>_<layer>_<view>.png + preview/）。
+按 base.json 骨架 rest 姿势 1:1 绘制中性人体几何部件（头/颈/躯干/左右上臂·前臂·
+大腿·小腿·脚），输出独立皮肤包 skins/<out>/（skin.json + <NNN>_<layer>_<view>.png
++ 体型固化进 skin.json 的 body 字段）。
 
 约定：锚点=部件图中心；肢体段从中心沿 +x 水平延伸，由 skin.py 的 rotate_to_joint
 绕锚点旋转到 关节->子关节 方向 → rest 时锚点=关节、段两端=起点/终点关节，天然贴合。
 
-用法: python workflow/tools/build_mannequin_skin.py
+用法: python workflow/tools/build_mannequin_skin.py \
+          --body head_scale=1.15 --body shoulder_width=1.4 \
+          --palette orc --out orc
+    --body 8 项段参数（可重复）；--palette default/orc/human/undead/dwarf 配色；
+    --out 皮肤包名（默认 mannequin）。生成 skins/<out>/。
 """
 
 from __future__ import annotations
@@ -200,8 +204,8 @@ def main(argv: list[str] | None = None) -> int:
     for layer, joint, child in [(l, j, c) for _, l, j, c in ZONES]:
         for view in VIEWS:
             joints = scaled_views[view]
-            # 头随身高/头大小缩放，保持头身比例（身高拉长时头也变大，脖子协调）
-            head_radius = max(int(HEAD_R * (body.get("height", 1.0) or 1.0) * (body.get("head_scale", 1.0) or 1.0)), 20)
+            # 头随头大小缩放（height 已拆成段参数，不再有整体身高）
+            head_radius = max(int(HEAD_R * (body.get("head_scale", 1.0) or 1.0)), 20)
             if layer == "head":
                 img, _ = draw_head(head_radius)
             elif layer == "neck":

@@ -1,27 +1,25 @@
 #!/usr/bin/env python3
-"""程序化蒙皮引擎：把 atlas 静态分层部件「蒙」到 base.json 骨架上。
+"""程序化蒙皮引擎：把皮肤部件「蒙」到 base.json 骨架上。
 
-皮肤（skin）是一个可替换的绑定定义（workflow/skins/<skin_id>.json）：
-部件 -> 关节 + 锚点策略 + 支链。换皮肤只需新建一个 skin 定义并指向对应
-部件（atlas），引擎与骨架复用不变。
-
-关键事实：atlas 各层帧是「静态部件」（frame0~frame7 bbox 基本不变），
-每层一个固定形状部件（头/躯干/下身/手臂/脚…）。因此蒙皮 = 把静态部件
-程序化贴到骨架关节（平移），骨架缩放适配部件尺寸。
+皮肤（skin）是独立**皮肤包** `skins/<id>/`：`skin.json`（坐标 skeleton、
+层、bindings、固化体型 body）+ 部件图 `<NNN>_<layer>_<view>.png`。skeleton
+坐标下锚点 = 部件图中心 = 关节，肢体段按骨骼段方向旋转（rotate_child），
+rest 天然贴合。皮肤可替换：换皮肤 = 换皮肤包目录（`--skin <id>`）。
 
 每帧流程：
   1) 复用 motion.pose() 采样关节坐标（含体型比例 / root 传导）+ apply_ik
-  2) 骨架坐标缩放（scale）到部件尺寸，offset 校准（rest 对齐）
-  3) 单侧层：部件锚点对齐其关节；成对层（含左右）：整体贴到各支链关节中点
+  2) 逐层把部件贴到关节：锚点对齐关节，rotate_child 绕锚点旋转到段方向
+  3) 成对层（左右）分别绑 front_/rear_（side 视图前/后肢分开）
+  4) side 视图按深度排序（rear 肢体在躯干后，避免穿透闪烁）
 
-验证（无需看图）：rest 姿势下「程序化蒙皮」vs「frame 对齐叠加」的 IoU，
-越大说明贴合越好。
+分层渲染：`only_layers` 参数只渲染指定层（供 export_skin_demo.py 烘焙
+成 demo 的预烘焙分层帧制品）。
 
 命令：
   skin list
-  skin anchors <atlas_dir> [--skin skeleton] [--view front]
-  skin render <motion> --view front --stage arms --skin skeleton --atlas <dir> [--gif out]
-  skin verify <atlas_dir> --skin skeleton        # 绑定校验 + rest 贴合 IoU
+  skin anchors [atlas_dir] [--skin <id>] [--view front]
+  skin render <motion> --view front --stage arms --skin <id> [--gif out]
+  skin verify [atlas_dir] --skin <id>     # 注意：第一个位置参数是 atlas，skin 用 --skin
 """
 
 from __future__ import annotations

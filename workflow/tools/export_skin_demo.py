@@ -15,7 +15,8 @@
       head_base  → {head}
       ear / face → 空层（皮肤无耳/脸）
   - 每方向用该方向整帧 bbox 求统一变换（裁剪 + 缩放 + 底部对齐），
-    所有层共享同一变换，叠加后 = 完整角色 → head_anchor_offsets 全 0、layer_y=0
+    所有层共享同一变换，叠加后 = 完整角色 → head_anchor_offsets 全 0、layer_y=-26
+    （layer_y 匹配 main.tscn 的 body sprite 位置 (0,-26)，否则脑袋脱离躯干）。
 
 用法:
   python workflow/tools/export_skin_demo.py --skin orc [--out orc]

@@ -202,18 +202,23 @@ male/female `Head` + `Face` layers. The first appearance pass has no nose or
 mouth; hair and clothing remain future layers.
 
 This `prototype/` is a pure Godot preview demo — there is no HTML preview
-pipeline. The demo runs against the exported artifact package under
+pipeline. The demo runs against an exported artifact package under
 `dist/<workflow_id>/` (layered `atlas/` + `runtime_manifest.json` +
-`character_walk_4way.gif`) produced by the workflow's final
-「导出 Godot 制品」step (`workflow/tools/export_artifacts.py`):
+`character_walk_4way.gif`), produced either by the workflow's final
+「导出 Godot 制品」step (`workflow/tools/export_artifacts.py`) or by baking a
+skin with `workflow/tools/export_skin_demo.py --skin <name>` (procedural
+skin → demo artifact, e.g. `dist/orc/`):
 
 ```bash
 # from the repository root, point the demo at an artifact package:
-godot --path prototype -- --artifacts dist/no-review
+godot --path prototype -- --artifacts dist/orc          # space or `=` both work
+godot --path prototype -- --artifacts=dist/orc
 ```
 
 `prototype/scripts/player.gd` reads `runtime_manifest.json` and
-`atlas/<layer>/walk_row<row>_frame<frame>.png` at startup; without
+`atlas/<layer>/walk_row<row>_frame<frame>.png` at startup (prints
+`ARTIFACTS_LOADED dir=… layers=7 frames=224` on success); without
 `--artifacts` it falls back to the bundled
 `assets/characters/rebuild_atlas_v1_runtime/male/` runtime. The demo keeps
-interactive movement (WASD/arrows) and bomb placement (Space).
+interactive movement (WASD/arrows) and bomb placement (Space). A skin's own
+preview animation can be played with `--skin-mode --skin-pack=<name>`.

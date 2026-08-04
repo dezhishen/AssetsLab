@@ -693,8 +693,10 @@ def build_parser() -> argparse.ArgumentParser:
     pr.add_argument("--output", type=Path, default=ROOT / "prototype" / "test_output" / "skeleton_pipeline")
     p.add_argument("--python", help="Python executable.")
 
-    skin_files = sorted((ROOT / "workflow" / "skins").glob("*.json")) if (ROOT / "workflow" / "skins").is_dir() else []
-    skin_ids = [s.stem for s in skin_files]
+    # 皮肤来源：优先皮肤包目录 skins/<name>/（pack），兼容旧 workflow/skins/*.json（legacy）
+    skin_ids = sorted(p.parent.name for p in (ROOT / "skins").glob("*/skin.json"))
+    legacy_skins = sorted(s.stem for s in (ROOT / "workflow" / "skins").glob("*.json")) if (ROOT / "workflow" / "skins").is_dir() else []
+    skin_ids = sorted(set(skin_ids) | set(legacy_skins))
     p = sub.add_parser("skin", help="Procedural skinning (skin a layered atlas onto the skeleton).")
     s = p.add_subparsers(dest="skin_sub", required=True)
     s.add_parser("list", help="List available skins.")
