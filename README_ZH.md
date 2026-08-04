@@ -199,6 +199,7 @@ python -m workflow run --workflow review-a --action skeleton.front.legs --param 
 
 - **CLI** 是面向 AI 的调度通道：`--json` 输出机器可读，`outputs` 返回本地图片**绝对路径**。
 - **Web** 是面向人工的完整通道：`http://<host>:8765/workflow.html`；图片经 `http://<host>:8765/run/workflows/<id>/steps/<action_id>/` 预览。带可调参数的动作在运行前会弹出**参数调优窗**（拖动 stride/pelvis-bob/arm-swing 再运行），人真正参与调姿态，而不只是点「通过」。
+- **分步流程向导**：`http://<host>:8765/flow.html?id=<workflow_id>` 一次只渲染一个步骤（步进器 + 上一步/下一步，类似安装向导）。每步展示参数、输出与评审按钮；`workflow.html` 中点击实例即进入向导。首次打开优先定位「已通过但未审核」的步骤（先补审核），否则定位推荐的下一步。
 - `workflow_id` / `action_id` 贯穿 CLI、Web、持久化三层；多实例可**并行**，各自分文件存储。
 
 ## 预览渲染（纯 Python）

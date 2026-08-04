@@ -211,6 +211,11 @@ python -m workflow run --workflow review-a --action skeleton.front.legs --param 
   Actions with tunable params open a parameter dialog before running (drag
   stride/pelvis-bob/arm-swing, then run), so a human actually tunes the pose
   instead of only clicking approve.
+- **Step wizard**: `http://<host>:8765/flow.html?id=<workflow_id>` renders one
+  step at a time (stepper + prev/next navigation, like an installer). Each step
+  shows its params, output and review buttons; clicking an instance in
+  `workflow.html` opens the wizard. First-open lands on a passed-but-unreviewed
+  step (approve backlog first), otherwise the recommended next action.
 - `workflow_id` / `action_id` run through CLI, Web and persistence; multiple
   instances can run in parallel, each persisted to its own JSON.
 

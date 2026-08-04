@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AssetsLab 流程向导</title>
+<style>
+  :root { color-scheme: dark; --bg:#111522; --panel:#1b2233; --line:#35415d; --text:#f4f5f7; --muted:#aeb9cc; --accent:#8fd3ff; --ok:#a5e8bb; --warn:#ffd18a; --bad:#ff9d9d; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:linear-gradient(150deg,#101522,#1d2639); color:var(--text); font:15px/1.5 system-ui,"Segoe UI",sans-serif; }
+  main { width:min(1000px,100%); margin:auto; padding:20px 14px 60px; }
+  h1 { margin:0 0 6px; font-size:clamp(22px,3.4vw,30px); }
+  h1 a { font-size:14px; font-weight:400; text-decoration:none; }
+  h2 { margin:0; font-size:20px; }
+  h3 { margin:0 0 8px; color:var(--accent); font-size:14px; }
+  p { color:var(--muted); margin:6px 0; }
+  code { color:#d9f2ff; }
+  button,select,input { font:inherit; color:var(--text); background:#262e47; border:1px solid var(--line); border-radius:8px; padding:7px 11px; cursor:pointer; }
+  button:hover { background:#314066; }
+  button:disabled { opacity:.5; cursor:default; }
+  .toolbar { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:12px 0; }
+  .panel { margin:12px 0; padding:18px; border:1px solid var(--line); border-radius:16px; background:rgba(27,34,51,.92); }
+  .muted { color:var(--muted); }
+  .badge { display:inline-block; padding:2px 9px; border-radius:999px; font-size:12px; border:1px solid var(--line); }
+  .badge.passed { color:var(--ok); border-color:var(--ok); }
+  .badge.running { color:var(--accent); border-color:var(--accent); }
+  .badge.failed { color:var(--bad); border-color:var(--bad); }
+  .badge.pending { color:var(--muted); }
+  .stepHead { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  #stepOutput img { max-width:100%; max-height:260px; image-rendering:pixelated; background:#080b13; border-radius:8px; border:1px solid var(--line); margin-top:10px; }
+  .sliders label { display:flex; align-items:center; gap:10px; margin:8px 0; }
+  .sliders input[type=range] { flex:1; }
+  .sliders span { min-width:40px; text-align:right; }
+  .nav { display:flex; gap:10px; justify-content:space-between; }
+  .nav button { flex:1; padding:12px; font-size:16px; }
+  .note { color:var(--warn); font-size:13px; margin-top:8px; }
+  pre { white-space:pre-wrap; background:#0c101b; border:1px solid var(--line); border-radius:12px; padding:12px; font-size:12px; max-height:260px; overflow:auto; margin:0; }
+  .stepper { display:flex; gap:6px; flex-wrap:wrap; margin:12px 0 4px; }
+  .sdot { width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; border:1px solid var(--line); background:#141a2b; cursor:pointer; position:relative; }
+  .sdot:hover { border-color:var(--accent); }
+  .sdot.on { background:var(--accent); color:#0b1220; border-color:var(--accent); font-weight:700; }
+  .sdot.ok { background:#173a2b; color:var(--ok); border-color:var(--ok); }
+  .sdot.bad { background:#3a1d1d; color:var(--bad); border-color:var(--bad); }
+  .ops { display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; }
+  .ops button { padding:9px 16px; }
+  .empty { color:var(--muted); padding:24px 0; text-align:center; }
+</style>
+</head>
+<body>
+<main>
+  <h1>AssetsLab 流程向导 <a href="workflow.html" class="muted">← 返回控制台</a></h1>
+  <p>一次只渲染一个步骤，按依赖顺序推进，类似「上一步 / 下一步」向导。每步可调整参数、运行、预览输出并评审。</p>
+
+  <div class="toolbar">
+    <label>流程实例 <select id="wfSelect"></select></label>
+    <button id="newBtn">＋ 新建</button>
+    <button id="refresh">⟳ 刷新</button>
+    <span id="wfMeta" class="muted"></span>
+  </div>
+
+  <div id="stepper" class="stepper"></div>
+
+  <section class="panel" id="stepPanel">
+    <div class="stepHead">
+      <span id="stepNo" class="badge"></span>
+      <h2 id="stepTitle"></h2>
+      <span id="stepPhase" class="badge"></span>
+      <span id="stepBadge" class="badge"></span>
+    </div>
+    <p id="stepDesc" class="muted"></p>
+    <h3 id="stepParamsTitle" hidden>参数</h3>
+    <div id="stepParams" class="sliders"></div>
+    <div id="stepOutput"></div>
+    <div id="stepOps" class="ops"></div>
+    <input id="stepNoteInput" placeholder="评审备注（可选）" style="width:100%;margin-top:10px">
+    <div id="stepNote"></div>
+  </section>
+
+  <div class="nav">
+    <button id="prevBtn">← 上一步</button>
+    <button id="nextBtn">下一步 →</button>
+  </div>
+
+  <section class="panel"><h3>操作日志</h3><pre id="log">—</pre></section>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+const PHASE_LABEL = {skeleton:'骨架流水线', test:'测试', capture:'捕获', preview:'预览', calibration:'校准', publish:'发布', export:'导出制品'};
+const BADGE = {passed:'passed 已通过', running:'running 运行中', failed:'failed 失败', pending:'pending 待办', skipped:'skipped 跳过'};
+
+let WF_ID = null, STATE = null, DEF = null, CURRENT = 0;
+
+async function api(path, opts) {
+  const res = await fetch(path, opts);
+  const wrap = await res.json().catch(() => ({}));
+  if (wrap.ok === false) return { ok: false, data: wrap.stderr || JSON.stringify(wrap) };
+  if (wrap.stdout) {
+    try { return { ok: true, data: JSON.parse(wrap.stdout) }; }
+    catch (e) { return { ok: false, data: wrap.stdout }; }
+  }
+  return { ok: res.ok, data: wrap };
+}
+function log(text) { $('log').textContent = text + '\n' + $('log').textContent.slice(0, 6000); }
+function urlFromPath(p) { const i = p.indexOf('/run/'); return i >= 0 ? p.slice(i) : null; }
+function currentAction() { return DEF.actions[CURRENT]; }
+function currentState() { return (STATE.actions || {})[currentAction().action_id] || {}; }
+function indexOfAction(aid) { return DEF.actions.findIndex(a => a.action_id === aid); }
+
+async function loadInstances() {
+  const r = await api('/api/workflow/list');
+  if (!r.ok) { $('wfSelect').innerHTML = '<option value="">无实例</option>'; return; }
+  const items = r.data;
+  $('wfSelect').innerHTML = items.map(it => `<option value="${it.workflow_id}">${it.workflow_id} · ${it.progress}</option>`).join('');
+  const urlId = new URLSearchParams(location.search).get('id');
+  if (urlId && items.some(it => it.workflow_id === urlId)) $('wfSelect').value = urlId;
+}
+
+async function openInstance(id, keepStep = false) {
+  WF_ID = id;
+  $('stepPanel').hidden = false;
+  const r = await api(`/api/workflow/instances/${encodeURIComponent(id)}`);
+  if (!r.ok) { log('加载实例失败：' + r.data); return; }
+  STATE = r.data;
+  const defRes = await fetch(`/api/workflow/definitions/${encodeURIComponent(STATE.definition_id)}`).catch(() => null);
+  DEF = defRes ? await defRes.json().catch(() => null) : null;
+  if (!DEF) { log('加载定义失败'); return; }
+  $('wfMeta').textContent = `${STATE.definition_id} · v${STATE.version} · updated ${STATE.updated_at || ''}`;
+  if (!keepStep) {
+    // First open / instance switch: honour ?step=, otherwise land on the first
+    // step needing attention — a passed-but-unreviewed step first (so a human
+    // approves backlog before advancing), then the recommended next action.
+    const urlStep = parseInt(new URLSearchParams(location.search).get('step') || '', 10);
+    if (Number.isFinite(urlStep) && urlStep >= 0 && urlStep < DEF.actions.length) {
+      CURRENT = urlStep;
+    } else {
+      const needsReview = DEF.actions.findIndex(a => {
+        const s = (STATE.actions[a.action_id] || {});
+        return s.status === 'passed' && !s.approved;
+      });
+      const nr = await api(`/api/workflow/instances/${encodeURIComponent(id)}/next`);
+      const nextId = nr.ok ? nr.data.next : null;
+      CURRENT = needsReview >= 0 ? needsReview : (nextId ? indexOfAction(nextId) : 0);
+    }
+  }
+  if (CURRENT < 0) CURRENT = 0;
+  if (CURRENT >= DEF.actions.length) CURRENT = DEF.actions.length - 1;
+  renderAll();
+}
+
+function renderAll() { renderStepper(); renderStep(); }
+
+function renderStepper() {
+  $('stepper').innerHTML = DEF.actions.map((a, i) => {
+    const st = (STATE.actions || {})[a.action_id] || {};
+    const cls = i === CURRENT ? 'on' : (st.status === 'passed' ? 'ok' : (st.status === 'failed' ? 'bad' : ''));
+    return `<button class="sdot ${cls}" data-i="${i}" title="#${i + 1} ${a.action_id} · ${st.status || 'pending'}">${i + 1}</button>`;
+  }).join('');
+  document.querySelectorAll('#stepper .sdot').forEach(b => { b.onclick = () => { CURRENT = +b.dataset.i; renderAll(); }; });
+}
+
+async function renderStep() {
+  const a = currentAction(), st = currentState();
+  $('stepNo').textContent = `步骤 ${CURRENT + 1} / ${DEF.actions.length}`;
+  $('stepTitle').textContent = a.title || a.action_id;
+  $('stepPhase').textContent = PHASE_LABEL[a.phase] || a.phase;
+  $('stepBadge').textContent = BADGE[st.status] || st.status;
+  $('stepBadge').className = `badge ${st.status}`;
+  $('stepDesc').textContent = a.description || a.action_id;
+
+  // params
+  const hasParams = a.params && Object.keys(a.params).length;
+  $('stepParamsTitle').hidden = !hasParams;
+  $('stepParams').innerHTML = hasParams ? Object.entries(a.params).map(([k, s]) => {
+    const spec = s || {}; const d = spec.default ?? 1.0;
+    return `<label>${spec.label || k} <input type="range" data-key="${k}" min="${spec.min ?? 0}" max="${spec.max ?? 3}" step="0.05" value="${d}"> <span data-v>${d}</span></label>`;
+  }).join('') : '';
+  document.querySelectorAll('#stepParams input[type=range]').forEach(r => {
+    r.oninput = () => { r.closest('label').querySelector('[data-v]').textContent = r.value; };
+  });
+
+  // outputs
+  const imgs = (st.outputs || []).map(urlFromPath).filter(Boolean).map(u => `<img src="${u}" alt="${a.action_id}" loading="lazy">`).join('');
+  $('stepOutput').innerHTML = imgs || '<span class="muted">（尚无输出）</span>';
+
+  // note + params used
+  const note = st.note ? `<div class="note">备注：${st.note}${st.approved_by ? '（' + st.approved_by + '）' : ''}</div>` : '';
+  const pused = (st.params && Object.keys(st.params).length)
+    ? `<div class="muted" style="font-size:12px;margin-top:6px">上次参数：${Object.entries(st.params).map(([k,v]) => `${k}=${v}`).join(' · ')}</div>` : '';
+  $('stepNote').innerHTML = note + pused;
+
+  // ops
+  const busy = st.status === 'running';
+  $('stepOps').innerHTML = `
+    <button id="opRun" ${busy ? 'disabled' : ''}>▶ 运行${hasParams ? '（带参数）' : ''}</button>
+    ${st.status === 'passed' && !st.approved ? '<button id="opApprove">通过 ✓</button>' : ''}
+    ${(st.status === 'passed' || st.status === 'failed') ? '<button id="opReject">打回 ↺</button>' : ''}`;
+  $('opRun').onclick = () => runStep();
+  const app = $('opApprove'); if (app) app.onclick = () => actStep('approve');
+  const rej = $('opReject'); if (rej) rej.onclick = () => actStep('reject');
+}
+
+async function runStep() {
+  const a = currentAction();
+  const params = {};
+  document.querySelectorAll('#stepParams input[type=range]').forEach(r => { params[r.dataset.key] = parseFloat(r.value); });
+  $('opRun').disabled = true; $('opRun').textContent = '运行中…';
+  const r = await api(`/api/workflow/instances/${encodeURIComponent(WF_ID)}/actions/${encodeURIComponent(a.action_id)}/run`,
+    { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ params }) });
+  log(`[run] ${a.action_id} params=${JSON.stringify(params)} → ${JSON.stringify(r.data)}`);
+  await refresh();
+}
+
+async function actStep(verb) {
+  const a = currentAction();
+  const body = { by: 'web' };
+  if (verb !== 'run') {
+    body.note = $('stepNoteInput').value || '';
+  }
+  const r = await api(`/api/workflow/instances/${encodeURIComponent(WF_ID)}/actions/${encodeURIComponent(a.action_id)}/${verb}`,
+    { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  log(`[${verb}] ${a.action_id} → ${JSON.stringify(r.data)}`);
+  if (verb !== 'run') $('stepNoteInput').value = '';
+  await refresh();
+}
+
+async function refresh() {
+  await openInstance(WF_ID, true);
+}
+
+// ---- navigation ---------------------------------------------------------
+
+$('prevBtn').onclick = () => { if (CURRENT > 0) { CURRENT--; renderAll(); } };
+$('nextBtn').onclick = async () => {
+  const a = currentAction(), st = currentState();
+  if (st.status !== 'passed') { log('当前步骤尚未运行通过，请先「▶ 运行」并「通过 ✓」。'); return; }
+  if (!st.approved) { log('当前步骤已通过但未审核，请先点「通过 ✓」完成评审，再进入下一步。'); return; }
+  const nr = await api(`/api/workflow/instances/${encodeURIComponent(WF_ID)}/next`);
+  const nextId = nr.ok ? nr.data.next : null;
+  if (nextId) { CURRENT = indexOfAction(nextId); renderAll(); }
+  else { log('✅ 全部步骤已完成。'); renderAll(); }
+};
+
+$('wfSelect').onchange = () => { history.replaceState(null, '', 'flow.html?id=' + encodeURIComponent($('wfSelect').value)); openInstance($('wfSelect').value); };$('refresh').onclick = async () => { await loadInstances(); if (WF_ID) await refresh(); };
+$('newBtn').onclick = async () => {
+  const body = JSON.stringify({ definition: 'default', id: prompt('实例 id（留空用 default）') || undefined });
+  const r = await api('/api/workflow/instances', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body });
+  log('新建实例 → ' + JSON.stringify(r.data));
+  await loadInstances();
+  if (r.ok && r.data && r.data.workflow_id) {
+    history.replaceState(null, '', 'flow.html?id=' + encodeURIComponent(r.data.workflow_id));
+    await openInstance(r.data.workflow_id);
+  }
+};
+
+(async () => {
+  await loadInstances();
+  const urlId = new URLSearchParams(location.search).get('id');
+  if (urlId) await openInstance(urlId);
+  else if ($('wfSelect').value) await openInstance($('wfSelect').value);
+})();
+</script>
+</body>
+</html>
