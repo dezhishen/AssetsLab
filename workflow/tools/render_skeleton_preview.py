@@ -455,7 +455,8 @@ def render_frame(view, stage, index, stride, bob, swing, base=None):
 
 def make_gif(frames, path, duration: int = 125):
     enlarged = [f.resize((480, 300), Image.Resampling.NEAREST) for f in frames]
-    enlarged[0].save(path, save_all=True, append_images=enlarged[1:], duration=duration, loop=0)
+    # disposal=2 (restore to background): 每帧先清空再绘制，避免后帧叠在前帧上（残影/重叠）
+    enlarged[0].save(path, save_all=True, append_images=enlarged[1:], duration=duration, loop=0, disposal=2)
 
 
 def contact_sheet(frames, path):

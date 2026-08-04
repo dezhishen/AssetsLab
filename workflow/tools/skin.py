@@ -300,8 +300,10 @@ def render_gif(motion_id: str, view: str, stage: str, skin_id: str, atlas_dir: P
     w, h = layout["canvas_w"], layout["canvas_h"]
     enlarged = [f.resize((w * 4, h * 4), Image.Resampling.NEAREST) for f in frames]
     out.parent.mkdir(parents=True, exist_ok=True)
+    # disposal=2 (restore to background): 每帧先清空再绘制，避免透明背景的
+    # 后一帧叠在之前帧上（残影/重叠）。
     enlarged[0].save(out, format="GIF", save_all=True, append_images=enlarged[1:],
-                     duration=125, loop=0)
+                     duration=125, loop=0, disposal=2)
     # 同时输出 PNG 帧序列（供 Godot 运行时蒙皮预览 / 外部查看）
     frame_dir = out.with_suffix("")
     frame_dir.mkdir(parents=True, exist_ok=True)

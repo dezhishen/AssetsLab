@@ -95,7 +95,8 @@ def recolor_frame(image: Image.Image, palette: dict[str, tuple[int, int, int]]) 
 
 def make_gif(frames: list[Image.Image], path: Path) -> None:
     enlarged = [f.resize((256, 256), Image.Resampling.NEAREST) for f in frames]
-    enlarged[0].save(path, save_all=True, append_images=enlarged[1:], duration=100, loop=0)
+    # disposal=2 (restore to background): 每帧先清空再绘制，避免后帧叠在前帧上（残影/重叠）
+    enlarged[0].save(path, save_all=True, append_images=enlarged[1:], duration=100, loop=0, disposal=2)
 
 
 def write_manifest(dist: Path, workflow_id: str, offsets: dict, files: list[str], runtime_params: dict | None = None) -> None:
