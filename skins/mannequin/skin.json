@@ -2,7 +2,7 @@
   "skin_id": "mannequin",
   "schema": "assetslab_skin_v1",
   "layout": "pack",
-  "description": "通用人体模特皮肤：按 base.json 骨架 1:1 绘制的中性人体几何部件。锚点=部件图中心（精确=关节），肢体段按骨骼段方向旋转（rotate_child），rest 天然贴合。皮肤包独立于制品：skins/mannequin/（skin.json + <NN>_<layer>_<view>.png）。",
+  "description": "通用人体模特皮肤：按 base.json 骨架 1:1 绘制的中性人体几何部件。锚点=部件图中心（精确=关节），肢体段按骨骼段方向旋转（rotate_child），rest 天然贴合。皮肤包独立于制品：skins/mannequin/（skin.json + <NN>_<layer>_<view>.png），序号按区域分段：00头颈/10左臂/20右臂/30躯干/40左腿/50右腿/60脚（每区预留 10 槽）。",
   "views": [
     "front",
     "side",
@@ -13,55 +13,68 @@
   "layers": [
     {
       "name": "head",
-      "order": 1
+      "zone": 0,
+      "order": 0
     },
     {
       "name": "neck",
-      "order": 2
-    },
-    {
-      "name": "torso",
-      "order": 3
+      "zone": 0,
+      "order": 1
     },
     {
       "name": "upper_arm_left",
-      "order": 4
-    },
-    {
-      "name": "upper_arm_right",
-      "order": 5
+      "zone": 1,
+      "order": 0
     },
     {
       "name": "forearm_left",
-      "order": 6
+      "zone": 1,
+      "order": 1
+    },
+    {
+      "name": "upper_arm_right",
+      "zone": 2,
+      "order": 0
     },
     {
       "name": "forearm_right",
-      "order": 7
+      "zone": 2,
+      "order": 1
+    },
+    {
+      "name": "torso",
+      "zone": 3,
+      "order": 0
     },
     {
       "name": "thigh_left",
-      "order": 8
-    },
-    {
-      "name": "thigh_right",
-      "order": 9
+      "zone": 4,
+      "order": 0
     },
     {
       "name": "shin_left",
-      "order": 10
+      "zone": 4,
+      "order": 1
+    },
+    {
+      "name": "thigh_right",
+      "zone": 5,
+      "order": 0
     },
     {
       "name": "shin_right",
-      "order": 11
+      "zone": 5,
+      "order": 1
     },
     {
       "name": "foot_left",
-      "order": 12
+      "zone": 6,
+      "order": 0
     },
     {
       "name": "foot_right",
-      "order": 13
+      "zone": 6,
+      "order": 1
     }
   ],
   "bindings": {
@@ -73,44 +86,44 @@
       "joint": "neck",
       "rotate": false
     },
-    "torso": {
-      "joint": "pelvis",
-      "rotate": false
-    },
     "upper_arm_left": {
       "joint": "shoulder_left",
       "rotate": false,
       "rotate_child": "left_elbow"
-    },
-    "upper_arm_right": {
-      "joint": "shoulder_right",
-      "rotate": false,
-      "rotate_child": "right_elbow"
     },
     "forearm_left": {
       "joint": "left_elbow",
       "rotate": false,
       "rotate_child": "left_hand"
     },
+    "upper_arm_right": {
+      "joint": "shoulder_right",
+      "rotate": false,
+      "rotate_child": "right_elbow"
+    },
     "forearm_right": {
       "joint": "right_elbow",
       "rotate": false,
       "rotate_child": "right_hand"
+    },
+    "torso": {
+      "joint": "pelvis",
+      "rotate": false
     },
     "thigh_left": {
       "joint": "left_hip",
       "rotate": false,
       "rotate_child": "left_knee"
     },
-    "thigh_right": {
-      "joint": "right_hip",
-      "rotate": false,
-      "rotate_child": "right_knee"
-    },
     "shin_left": {
       "joint": "left_knee",
       "rotate": false,
       "rotate_child": "left_foot"
+    },
+    "thigh_right": {
+      "joint": "right_hip",
+      "rotate": false,
+      "rotate_child": "right_knee"
     },
     "shin_right": {
       "joint": "right_knee",
