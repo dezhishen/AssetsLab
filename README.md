@@ -222,9 +222,10 @@ python -m workflow run --workflow hero --action skeleton.front --param stride=1.
 
 **Motion / body separation** — motion knobs (`stride`/`pelvis_bob`/`arm_swing`)
 describe *how* the character moves and belong to a single action; **body
-proportions** (arm_length/leg_length/torso_length/shoulder_width/head_scale/
-height) describe *what the character looks like* and belong to the whole
-instance (`state.body`), shared by front/side/back so all views stay
+proportions** (8 per-segment knobs: `head_scale`/`neck_length`/`torso_length`/
+`shoulder_width`/`upper_arm_length`/`forearm_length`/`thigh_length`/`shin_length`
+— no whole-body `height`) describe *what the character looks like* and belong to
+the whole instance (`state.body`), shared by front/side/back so all views stay
 consistent for the same character. Pick a body template at creation with
 `--body-template standard|chibi|tall|stocky`; `set-body` persists the
 character, `run --body` overrides for one run:
@@ -232,7 +233,7 @@ character, `run --body` overrides for one run:
 ```bash
 python -m workflow new --definition default --id hero --template bouncy --body-template chibi
 python -m workflow set-body --workflow hero --body head_scale=1.4
-python -m workflow run --workflow hero --action skeleton.front --body height=1.1
+python -m workflow run --workflow hero --action skeleton.front --body upper_arm_length=1.2
 ```
 
 - CLI is the AI-facing scheduling channel: `--json` output is machine-readable
@@ -303,20 +304,21 @@ python workflow/tools/assetslab.py stage side arms --renderer python --motion ru
 - **Two-bone IK** (`--ik`; presets declare `ik` groups) keeps leg lengths
   constant at large strides, and "foot-plant" locks an unreachable foot back
   onto the reachable radius — used by `run` / `jump`.
-- **Body proportions** — the static base is tunable too: `arm_length`,
-  `leg_length`, `torso_length`, `shoulder_width`, `head_scale`, `height`
-  (each 1.0 = reference). They scale each bone segment around its anchor
-  (e.g. `head_scale` grows the head from the neck, `leg_length` lengthens the
-  thighs with feet planted), so the same motion presets drive any body shape.
-  In the workflow these are a **character-level** property (instance `body`,
-  shared by front/side/back so all views stay consistent): each step tunes
-  only motion knobs, while the body is adjusted in the wizard's 「角色体型」
-  panel or via `set-body`/`--body`. The low-level renderer still exposes
-  `--proportion-*`:
+- **Body proportions** — the static base is tunable too, as **8 per-segment
+  knobs**: `head_scale`, `neck_length`, `torso_length`, `shoulder_width`,
+  `upper_arm_length`, `forearm_length`, `thigh_length`, `shin_length` (each
+  1.0 = reference; no whole-body `height`). Each scales its own bone segment
+  around its anchor (e.g. `head_scale` grows the head from the neck,
+  `thigh_length`/`shin_length` lengthen the legs with feet planted), so the
+  same motion presets drive any body shape. In the workflow these are a
+  **character-level** property (instance `body`, shared by front/side/back so
+  all views stay consistent): each step tunes only motion knobs, while the
+  body is adjusted in the wizard's 「角色体型」 panel or via `set-body`/`--body`.
+  The low-level renderer still exposes `--proportion-*`:
 
   ```bash
   python workflow/tools/assetslab.py motion render walk --view front --stage arms \
-      --proportion-head-scale 1.4 --proportion-arm-length 1.3
+      --proportion-head-scale 1.4 --proportion-upper-arm-length 1.3
   ```
 - **Cross-motion blending**: `--blend run --blend-t 0.5` interpolates joints
   for a parameterized walk↔run transition.
@@ -324,6 +326,46 @@ python workflow/tools/assetslab.py stage side arms --renderer python --motion ru
   a motion/view/stage, drag stride/pelvis-bob/arm-swing, toggle IK, blend
   across motions, all rendered live in the browser via
   `POST /api/motions/<id>/render`.
+
+## Procedural skinning (skin parts + skeleton → baked demo artifact)
+
+Skinning reuses the same skeleton + motion engine: `workflow/tools/skin.py`
+maps **skin parts** onto `base.json` joints in real time. A **skin** is an
+independent **skin pack** under `skins/<name>/` — `skin.json` (definition:
+`coordinates="skeleton"`, `body` (baked proportions), `layers`, `bindings`)
++ standard part files `000_head_front.png` … (`<NNN>_<layer>_<view>.png`;
+`NNN` is **zone-prefixed** (3 digits): `000` head/neck, `100` left arm,
+`200` right arm, `300` torso, `400` left leg, `500` right leg, `600` feet —
+each zone reserves 100 slots) + `preview/` (rendered animations). New skin =
+new folder.
+
+```bash
+python workflow/tools/build_mannequin_skin.py --body head_scale=1.15 --body shoulder_width=1.4 \
+    --palette orc --out orc                # generate a mannequin skin (proportions + palette)
+python workflow/tools/assetslab.py skin list                                  # list skins (packs + legacy)
+python workflow/tools/assetslab.py skin verify --skin orc                     # bindings + rest-fit check
+python workflow/tools/assetslab.py skin render walk --view front --skin orc --gif out.gif
+python workflow/tools/assetslab.py skin anchors --skin orc --view front        # per-layer anchors
+```
+
+- **Generate skins** (`build_mannequin_skin.py`): procedural mannequin parts
+  instantiated by `--body` (8 per-segment knobs, baked into `skin.json`) and
+  `--palette` (`default`/`orc`/`human`/`undead`/`dwarf` colors); `--out` names
+  the pack. Ships: `mannequin`, `mannequin_swordswoman`, `orc`,
+  `human_warrior`, `undead`, `dwarf` (+ legacy `skeleton`).
+- **Bake to a demo artifact** (`export_skin_demo.py`): render the skin into
+  the pre-baked layered frames the Godot demo consumes —
+  `python workflow/tools/export_skin_demo.py --skin orc` → `dist/orc/`
+  (7-layer 4×8 atlas + `runtime_manifest.json` + 4-way GIF + README; maps
+  skin layers→demo layers and directions front/right/back/left).
+- **Side view**: left limb binds `front_`, right limb binds `rear_` (two legs
+  / two arms visible); depth order keeps rear limbs behind the torso.
+- The workflow appends `skin.verify` + `skin.render` after `export.artifacts`
+  (`--param skin/motion/view` switches skin & view); rendering defaults to the
+  skin pack's `skins/<name>/preview/` (GIF + PNG frame sequence).
+- Godot demo: `godot --path prototype -- --artifacts dist/<id>` (space or `=`
+  both work; prints `ARTIFACTS_LOADED` on success); skin animation preview via
+  `--skin-mode --skin-pack=<name>`.
 
 ## Artifacts & Godot demo
 
@@ -335,6 +377,7 @@ dist/<workflow_id>/
 ├── atlas/                      # layered 4×8 frames (feet/lower_body/arms/torso/head_base/ear/face)
 ├── runtime_manifest.json       # directions, layer order, head_anchor_offsets
 ├── character_walk_4way.gif     # Pillow-composited preview
+├── skins/                      # procedural skinning previews (walk_front/side/back: GIF + frame PNGs)
 └── README.md
 ```
 

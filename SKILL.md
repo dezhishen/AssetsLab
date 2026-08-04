@@ -83,12 +83,12 @@ webflow-cli delete --workflow hero --remove-artifacts    # 删实例 + 制品
 webflow-cli delete-artifacts --workflow hero             # 仅删制品，实例保留
 ```
 
-**动作 id（6 步精简版）**：`skeleton.front` → `skeleton.side` → `skeleton.back` → `test.smoke` → `capture.walk` → `export.artifacts`。定义在 `workflow/definitions/default.json`。
+**动作 id（8 步）**：`skeleton.front` → `skeleton.side` → `skeleton.back` → `test.smoke` → `capture.walk` → `export.artifacts` → `skin.verify` → `skin.render`。定义在 `workflow/definitions/default.json`。
 
 ## 动作 / 体型分离
 
 - **动作参数**（每动作，怎么动）：`stride` / `pelvis_bob` / `arm_swing`，用 `--param` 调。
-- **体型比例**（角色，长什么样，实例级 `state.body`，三视图共享）：`arm_length` / `leg_length` / `torso_length` / `shoulder_width` / `head_scale` / `height`（1.0=基准），用 `--body` / `set-body` 调。两者正交。
+- **体型比例**（角色，长什么样，实例级 `state.body`，三视图共享）：8 项**段参数** `head_scale` / `neck_length` / `torso_length` / `shoulder_width` / `upper_arm_length` / `forearm_length` / `thigh_length` / `shin_length`（各 1.0=基准，按骨骼段独立缩放，**无整体 height**），用 `--body` / `set-body` 调。两者正交。
 
 **参数优先级**（动作参数）：运行时 `--param` > 实例模板 `template_params` > 定义默认值。
 **体型优先级**（角色比例）：运行时 `--body` > 实例 `body`（`new --body-template`/`--body` 设定，`set-body` 修改）> 默认 1.0。
@@ -103,6 +103,27 @@ webflow-cli delete-artifacts --workflow hero             # 仅删制品，实例
 - **动作预设**：`workflow/motions/{walk,run,idle,jump}.json`，声明式（波形信号 + 关节偏移 + root + ik）。新动作 = 新 JSON。`motion check` 验证与内置姿态逐像素一致。
 - **根驱动**：骨盆运动（bob/跳跃/前倾）经 `base.json` 的 `torso` 系数传导到肩/臂/头。
 - **IK**：`--ik`（run/jump 预设声明）腿长恒定 + 脚落地锁定。
+- **程序化蒙皮**（皮肤=部件+骨骼 → 蒙皮 → 烘焙成 demo 制品）：
+  - **皮肤**：独立皮肤包 `skins/<name>/`（`skin.json` + `<NNN>_<layer>_<view>.png` 部件 + `preview/` 动画），`coordinates="skeleton"` 锚点=图中心=关节；序号按区域分段（3 位）：`000`头颈/`100`左臂/`200`右臂/`300`躯干/`400`左腿/`500`右腿/`600`脚。
+  - **生成皮肤**（人体模特，可按体型+配色实例化，体型固化进 `skin.json`）：
+    ```bash
+    python workflow/tools/build_mannequin_skin.py \
+        --body head_scale=1.15 --body shoulder_width=1.4 --body thigh_length=1.1 \
+        --palette orc --out orc      # 配色 default/orc/human/undead/dwarf；--body 8 项段参数
+    ```
+  - **烘焙成制品**（皮肤 → Godot demo 可跑的 `dist/<name>/`：atlas 7 层 + manifest + GIF）：
+    ```bash
+    python workflow/tools/export_skin_demo.py --skin orc      # → dist/orc/
+    ```
+  - **蒙皮命令**（CLI）：
+    ```bash
+    assetslab skin list                  # 列出皮肤（pack + legacy）
+    assetslab skin verify --skin orc     # 绑定校验 + rest 合成（注意：verify 第一个位置参数是 atlas，须用 --skin 指定）
+    assetslab skin render walk --view front --skin orc --gif out.gif
+    assetslab skin anchors --skin orc --view front
+    ```
+  - 现有皮肤：`mannequin`(基础)/`mannequin_swordswoman`(剑士体型)/`orc`(兽人·绿·宽肩)/`human_warrior`(人类战士·蓝)/`undead`(亡灵·暗灰·瘦长)/`dwarf`(矮人·棕·矮壮)/`skeleton`(legacy 预烘焙)。
+  - Godot 演示：`godot --path prototype -- --artifacts dist/<id>`（空格/等号均可，加载确认打印 `ARTIFACTS_LOADED`）；皮肤动画预览 `--skin-mode --skin-pack=<name> --skin-view=front`。
 - **启动预览服务器**（REST API + Web 控制台，供人工通道）：
 ```bash
 # 二进制（curl 安装 webflow-server-<linux|macos|windows>.zip）
@@ -114,7 +135,7 @@ webflow-server --port 8765 --directory <仓库>/dist --repo-root <仓库>
 1. `new --template <风格> --body-template <体型>` 建实例 → `status` 确认 template_params + body
 2. `next` 取推荐动作 → `run`（`--param` 调动作、`--body` 调体型；也可先 `set-body` 固化角色）
 3. `status --json` 看该动作 `outputs`（本地图片绝对路径）+ `params`（实际所用动作+体型）；不满意可重新 `run` 调参
-4. 走完 6 步 → `export.artifacts` → 制品供 Godot demo
+4. 走完 8 步 → `export.artifacts` → 制品供 Godot demo；`skin.render` 生成程序化蒙皮预览（`skins/<name>/preview/`）；皮肤包可用 `export_skin_demo.py --skin <name>` 烘焙成 `dist/<name>/` 制品再跑 demo
 
 ## 约定与注意事项
 

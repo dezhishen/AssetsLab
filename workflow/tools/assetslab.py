@@ -437,7 +437,8 @@ def cmd_stage(args: argparse.Namespace) -> int:
             extra += ["--ik"]
         if args.fps:
             extra += ["--fps", str(args.fps)]
-        for name in ("arm_length", "leg_length", "torso_length", "shoulder_width", "head_scale", "height"):
+        for name in ("head_scale", "neck_length", "torso_length", "shoulder_width",
+                     "upper_arm_length", "forearm_length", "thigh_length", "shin_length"):
             value = getattr(args, f"proportion_{name}", None)
             if value is not None:
                 extra += [f"--proportion-{name.replace('_', '-')}", str(value)]
@@ -551,10 +552,50 @@ def cmd_motion(args: argparse.Namespace) -> int:
             cmd += ["--fps", str(args.fps)]
         if args.blend:
             cmd += ["--blend", args.blend, "--blend-t", str(args.blend_t)]
+        for name in ("head_scale", "neck_length", "torso_length", "shoulder_width",
+                     "upper_arm_length", "forearm_length", "thigh_length", "shin_length"):
+            value = getattr(args, f"proportion_{name}", None)
+            if value is not None:
+                cmd += [f"--proportion-{name.replace('_', '-')}", str(value)]
         if args.output:
             cmd += ["--output", str(args.output)]
     else:
         raise SystemExit(f"unknown motion subcommand: {sub}")
+    return subprocess.call(cmd)
+
+
+def cmd_skin(args: argparse.Namespace) -> int:
+    """Procedural skinning: list / anchors / render / verify."""
+    python = resolve_python(args.python)
+    base = [python, str(TOOLS / "skin.py")]
+    sub = args.skin_sub
+    if sub == "list":
+        cmd = [*base, "list"]
+    elif sub == "anchors":
+        cmd = [*base, "anchors"]
+        if args.atlas:
+            cmd.append(args.atlas)
+        cmd += ["--skin", args.skin]
+        if args.view:
+            cmd += ["--view", args.view]
+    elif sub == "render":
+        cmd = [*base, "render", args.motion, "--view", args.view, "--stage", args.stage,
+               "--skin", args.skin]
+        if args.atlas:
+            cmd += ["--atlas", args.atlas]
+        if args.gif:
+            cmd += ["--gif", str(args.gif)]
+        for kv in args.param or []:
+            cmd += ["--param", kv]
+        for kv in args.body or []:
+            cmd += ["--body", kv]
+    elif sub == "verify":
+        cmd = [*base, "verify"]
+        if args.atlas:
+            cmd.append(args.atlas)
+        cmd += ["--skin", args.skin]
+    else:
+        raise SystemExit(f"unknown skin subcommand: {sub}")
     return subprocess.call(cmd)
 
 
@@ -610,7 +651,8 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--motion", help="Data-driven motion preset id (python renderer): walk/run/idle/jump.")
     p.add_argument("--ik", action="store_true", help="Apply two-bone IK leg solve (python renderer).")
     p.add_argument("--fps", type=int, help="GIF frame rate (python renderer).")
-    for name in ("arm_length", "leg_length", "torso_length", "shoulder_width", "head_scale", "height"):
+    for name in ("head_scale", "neck_length", "torso_length", "shoulder_width",
+                 "upper_arm_length", "forearm_length", "thigh_length", "shin_length"):
         p.add_argument(f"--proportion-{name.replace('_', '-')}", type=float,
                        help=f"Body proportion {name} (1.0 = reference base).")
     add_tool_args(p)
@@ -644,7 +686,36 @@ def build_parser() -> argparse.ArgumentParser:
     pr.add_argument("--ik", action="store_true", help="Apply two-bone IK leg solve.")
     pr.add_argument("--blend", metavar="MOTION", help="Blend toward another motion by joint interpolation.")
     pr.add_argument("--blend-t", type=float, default=0.0)
+    for name in ("head_scale", "neck_length", "torso_length", "shoulder_width",
+                 "upper_arm_length", "forearm_length", "thigh_length", "shin_length"):
+        pr.add_argument(f"--proportion-{name.replace('_', '-')}", type=float,
+                        help=f"Body proportion {name} (1.0 = reference base).")
     pr.add_argument("--output", type=Path, default=ROOT / "prototype" / "test_output" / "skeleton_pipeline")
+    p.add_argument("--python", help="Python executable.")
+
+    # 皮肤来源：优先皮肤包目录 skins/<name>/（pack），兼容旧 workflow/skins/*.json（legacy）
+    skin_ids = sorted(p.parent.name for p in (ROOT / "skins").glob("*/skin.json"))
+    legacy_skins = sorted(s.stem for s in (ROOT / "workflow" / "skins").glob("*.json")) if (ROOT / "workflow" / "skins").is_dir() else []
+    skin_ids = sorted(set(skin_ids) | set(legacy_skins))
+    p = sub.add_parser("skin", help="Procedural skinning (skin a layered atlas onto the skeleton).")
+    s = p.add_subparsers(dest="skin_sub", required=True)
+    s.add_parser("list", help="List available skins.")
+    sa = s.add_parser("anchors", help="Extract per-layer anchors from an atlas.")
+    sa.add_argument("atlas", nargs="?", default=None, help="Atlas directory (default: skin.atlas_dir).")
+    sa.add_argument("--skin", choices=skin_ids or ["skeleton"], default="skeleton")
+    sa.add_argument("--view", choices=["front", "side", "back"], default="front")
+    sr = s.add_parser("render", help="Render a skinned motion GIF.")
+    sr.add_argument("motion", choices=motion_ids or ["walk"])
+    sr.add_argument("--view", choices=["front", "side", "back"], required=True)
+    sr.add_argument("--stage", choices=["skeleton", "legs", "pelvis", "arms"], default="arms")
+    sr.add_argument("--skin", choices=skin_ids or ["skeleton"], default="skeleton")
+    sr.add_argument("--atlas", default=None, help="Atlas directory (default: skin.atlas_dir).")
+    sr.add_argument("--gif", type=Path, help="Output GIF path.")
+    sr.add_argument("--param", action="append", metavar="NAME=VALUE")
+    sr.add_argument("--body", action="append", metavar="NAME=VALUE")
+    sv = s.add_parser("verify", help="Verify a skin's bindings/anchors against an atlas (incl. rest-skin IoU).")
+    sv.add_argument("atlas", nargs="?", default=None, help="Atlas directory (default: skin.atlas_dir).")
+    sv.add_argument("--skin", choices=skin_ids or ["skeleton"], default="skeleton")
     p.add_argument("--python", help="Python executable.")
 
     return parser
@@ -660,6 +731,7 @@ def main(argv: list[str] | None = None) -> int:
         "preview": cmd_preview,
         "run-script": cmd_run_script,
         "motion": cmd_motion,
+        "skin": cmd_skin,
     }
     try:
         return handlers[args.command](args)

@@ -20,18 +20,22 @@
         "{pelvis_bob}",
         "--arm-swing",
         "{arm_swing}",
-        "--proportion-arm-length",
-        "{arm_length}",
-        "--proportion-leg-length",
-        "{leg_length}",
+        "--proportion-head-scale",
+        "{head_scale}",
+        "--proportion-neck-length",
+        "{neck_length}",
         "--proportion-torso-length",
         "{torso_length}",
         "--proportion-shoulder-width",
         "{shoulder_width}",
-        "--proportion-head-scale",
-        "{head_scale}",
-        "--proportion-height",
-        "{height}"
+        "--proportion-upper-arm-length",
+        "{upper_arm_length}",
+        "--proportion-forearm-length",
+        "{forearm_length}",
+        "--proportion-thigh-length",
+        "{thigh_length}",
+        "--proportion-shin-length",
+        "{shin_length}"
       ],
       "params": {
         "stride": {"default": 1.0, "min": 0.0, "max": 2.5, "label": "步幅"},
@@ -62,18 +66,22 @@
         "{pelvis_bob}",
         "--arm-swing",
         "{arm_swing}",
-        "--proportion-arm-length",
-        "{arm_length}",
-        "--proportion-leg-length",
-        "{leg_length}",
+        "--proportion-head-scale",
+        "{head_scale}",
+        "--proportion-neck-length",
+        "{neck_length}",
         "--proportion-torso-length",
         "{torso_length}",
         "--proportion-shoulder-width",
         "{shoulder_width}",
-        "--proportion-head-scale",
-        "{head_scale}",
-        "--proportion-height",
-        "{height}"
+        "--proportion-upper-arm-length",
+        "{upper_arm_length}",
+        "--proportion-forearm-length",
+        "{forearm_length}",
+        "--proportion-thigh-length",
+        "{thigh_length}",
+        "--proportion-shin-length",
+        "{shin_length}"
       ],
       "params": {
         "stride": {"default": 1.0, "min": 0.0, "max": 2.5, "label": "步幅"},
@@ -104,18 +112,22 @@
         "{stride}",
         "--pelvis-bob",
         "{pelvis_bob}",
-        "--proportion-arm-length",
-        "{arm_length}",
-        "--proportion-leg-length",
-        "{leg_length}",
+        "--proportion-head-scale",
+        "{head_scale}",
+        "--proportion-neck-length",
+        "{neck_length}",
         "--proportion-torso-length",
         "{torso_length}",
         "--proportion-shoulder-width",
         "{shoulder_width}",
-        "--proportion-head-scale",
-        "{head_scale}",
-        "--proportion-height",
-        "{height}"
+        "--proportion-upper-arm-length",
+        "{upper_arm_length}",
+        "--proportion-forearm-length",
+        "{forearm_length}",
+        "--proportion-thigh-length",
+        "{thigh_length}",
+        "--proportion-shin-length",
+        "{shin_length}"
       ],
       "params": {
         "stride": {"default": 1.0, "min": 0.0, "max": 2.5, "label": "步幅"},
@@ -172,6 +184,58 @@
       ],
       "collect": [],
       "description": "打包 dist/<workflow_id>/ 制品包（atlas + manifest + GIF）供 Godot demo 使用"
+    },
+    {
+      "action_id": "skin.verify",
+      "title": "蒙皮绑定校验",
+      "phase": "skin",
+      "exec": [
+        "skin",
+        "verify",
+        "dist/{workflow_id}/atlas",
+        "--skin",
+        "{skin}"
+      ],
+      "params": {
+        "skin": {"default": "skeleton", "label": "皮肤", "choices": ["skeleton", "mannequin"]}
+      },
+      "depends": [
+        "export.artifacts"
+      ],
+      "collect": [],
+      "description": "校验皮肤绑定与锚点，输出 rest 贴合 IoU（皮肤可替换：换 skins/<name>.json + atlas 即可）"
+    },
+    {
+      "action_id": "skin.render",
+      "title": "蒙皮合成预览",
+      "phase": "skin",
+      "exec": [
+        "skin",
+        "render",
+        "{motion}",
+        "--view",
+        "{view}",
+        "--stage",
+        "arms",
+        "--skin",
+        "{skin}",
+        "--atlas",
+        "dist/{workflow_id}/atlas",
+        "--gif",
+        "dist/{workflow_id}/skins/{skin}_{motion}_{view}.gif"
+      ],
+      "params": {
+        "skin": {"default": "skeleton", "label": "皮肤", "choices": ["skeleton", "mannequin"]},
+        "motion": {"default": "walk", "label": "动作", "choices": ["walk", "run", "idle", "jump"]},
+        "view": {"default": "front", "label": "视角", "choices": ["front", "side", "back"]}
+      },
+      "depends": [
+        "skin.verify"
+      ],
+      "collect": [
+        "dist/{workflow_id}/skins/{skin}_{motion}_{view}.gif"
+      ],
+      "description": "程序化蒙皮：把皮肤部件贴到骨架关节合成动画（侧/背可用 assetslab skin render --view side/back 单独生成）"
     }
   ]
 }

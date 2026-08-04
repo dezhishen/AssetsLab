@@ -201,12 +201,12 @@ python -m workflow run --workflow hero --action skeleton.front              # �
 python -m workflow run --workflow hero --action skeleton.front --param stride=1.5   # 覆盖单个旋钮
 ```
 
-**动作 / 体型分离** — 动作参数（`stride`/`pelvis_bob`/`arm_swing`）描述「怎么动」，是每动作的属性；**体型比例**（臂长/腿长/躯干长/肩宽/头大小/身高）描述「长什么样」，是**角色**的属性，属于整个实例（`state.body`），三视图（front/side/back）共享——改一次全步骤生效，避免同一角色三视图比例不一致。创建实例可套体型模板 `--body-template standard|chibi|tall|stocky`；`set-body` 固化角色，`run --body` 仅本次覆盖：
+**动作 / 体型分离** — 动作参数（`stride`/`pelvis_bob`/`arm_swing`）描述「怎么动」，是每动作的属性；**体型比例**（8 项**段参数**：头大小/颈长/躯干长/肩宽/上臂长/前臂长/大腿长/小腿长）描述「长什么样」，是**角色**的属性，属于整个实例（`state.body`），三视图（front/side/back）共享——改一次全步骤生效，避免同一角色三视图比例不一致。创建实例可套体型模板 `--body-template standard|chibi|tall|stocky`；`set-body` 固化角色，`run --body` 仅本次覆盖：
 
 ```bash
 python -m workflow new --definition default --id hero --template bouncy --body-template chibi
 python -m workflow set-body --workflow hero --body head_scale=1.4
-python -m workflow run --workflow hero --action skeleton.front --body height=1.1
+python -m workflow run --workflow hero --action skeleton.front --body upper_arm_length=1.2
 ```
 
 - **CLI** 是面向 AI 的调度通道：`--json` 输出机器可读，`outputs` 返回本地图片**绝对路径**。CLI 直接驱动工作流 SDK（`workflow.runner`），**不依赖 Web 服务**，无需启动服务器即可独立完成全部调度。
@@ -242,14 +242,33 @@ python workflow/tools/assetslab.py stage side arms --renderer python --motion ru
 - **头部运动**：`head`/`neck` 以骨盆起伏的一半幅度跟随浮动，侧视图还有前后摆动——经典的「反向补偿」动画，头不再锁死（walk/run 上下浮动、idle 呼吸点头、jump 随身体升降）。
 - **骨骼层级（根驱动）**：关节构成刚性躯干链（pelvis → neck/head + shoulders/arms）。每个动作声明 `root`（骨盆平移：bob / 跳跃升降 / 前倾），躯干上的每个关节按各自系数继承它（`base.json` 的 `torso`）：肩/臂 1.0（刚性）、膝 0.5（衰减）、头 0.5（视线稳定）。跳跃时肩/臂随骨盆整体升降，无需逐关节补丁。
 - **双骨骼 IK**（`--ik`；预设内声明 `ik` 组）在大步幅下保持腿长恒定，并做「落地锁定」——脚目标超出可达半径时锁定回可达边界，用于 `run` / `jump`。
-- **体型比例参数**：静态基座本身也可调——`arm_length` / `leg_length` / `torso_length` / `shoulder_width` / `head_scale` / `height`（各 1.0 = 基准）。每个比例围绕锚点缩放骨骼段（如 `head_scale` 从颈部放大头、`leg_length` 在脚贴地下加长腿），因此**同一套动作预设可驱动任意体型**。在工作流里体型是**角色级**属性（实例 `body`，三视图一致）：每步只调动作参数，体型在流程向导顶部「角色体型」面板或 `set-body`/`--body` 统一调整；底层渲染器仍以 `--proportion-*` 暴露：
+- **体型比例参数**：静态基座本身也可调——8 项**段参数** `head_scale` / `neck_length` / `torso_length` / `shoulder_width` / `upper_arm_length` / `forearm_length` / `thigh_length` / `shin_length`（各 1.0 = 基准，**无整体 height**）。每项按骨骼段独立缩放（如 `head_scale` 从颈部放大头、`thigh_length`/`shin_length` 在脚贴地下加长腿），因此**同一套动作预设可驱动任意体型**。在工作流里体型是**角色级**属性（实例 `body`，三视图一致）：每步只调动作参数，体型在流程向导顶部「角色体型」面板或 `set-body`/`--body` 统一调整；底层渲染器仍以 `--proportion-*` 暴露：
 
   ```bash
   python workflow/tools/assetslab.py motion render walk --view front --stage arms \
-      --proportion-head-scale 1.4 --proportion-arm-length 1.3
+      --proportion-head-scale 1.4 --proportion-upper-arm-length 1.3
   ```
 - **跨动作混合**：`--blend run --blend-t 0.5` 对关节做插值，实现 walk↔run 参数化过渡。
 - **Web**：工作流控制台（`#/console`）含 **动作预览台（Motion Studio）**——选动作/视角/阶段、拖动 stride/pelvis-bob/arm-swing 滑块、勾选 IK、跨动作混合，浏览器内通过 `POST /api/motions/<id>/render` 实时渲染循环。
+
+## 程序化蒙皮与皮肤（皮肤 = 部件 + 骨骼）
+
+蒙皮复用同一套骨架+动作引擎，把**皮肤部件**实时贴到 `base.json` 关节上（`workflow/tools/skin.py`）。**皮肤**是独立**皮肤包** `skins/<name>/`——`skin.json`（`coordinates="skeleton"`、固化体型 `body`、`layers`、`bindings`）+ 标准命名部件 `000_head_front.png`…（`<NNN>_<layer>_<view>.png`；`NNN` 按区域分段：`000`头颈/`100`左臂/`200`右臂/`300`躯干/`400`左腿/`500`右腿/`600`脚，每区 100 槽）+ `preview/` 动画。新皮肤 = 新目录。
+
+```bash
+python workflow/tools/build_mannequin_skin.py --body head_scale=1.15 --body shoulder_width=1.4 \
+    --palette orc --out orc                # 生成人体模特皮肤（体型 + 配色，体型固化进 skin.json）
+python workflow/tools/assetslab.py skin list                                  # 列出皮肤（pack + legacy）
+python workflow/tools/assetslab.py skin verify --skin orc                     # 绑定校验 + rest 合成（verify 第一个位置参数是 atlas，须用 --skin）
+python workflow/tools/assetslab.py skin render walk --view front --skin orc --gif out.gif
+python workflow/tools/assetslab.py skin anchors --skin orc --view front        # 提取各层锚点
+```
+
+- **生成皮肤**（`build_mannequin_skin.py`）：程序化人体模特部件，`--body`（8 项段参数，固化进 `skin.json`）+ `--palette`（`default`/`orc`/`human`/`undead`/`dwarf` 配色）+ `--out` 皮肤包名。现有皮肤：`mannequin`、`mannequin_swordswoman`、`orc`(兽人·绿·宽肩)、`human_warrior`(人类战士·蓝)、`undead`(亡灵·暗灰·瘦长)、`dwarf`(矮人·棕·矮壮) + legacy `skeleton`。
+- **烘焙成制品**（`export_skin_demo.py`）：把皮肤渲染成 demo 消费的预烘焙分层帧——`python workflow/tools/export_skin_demo.py --skin orc` → `dist/orc/`（7 层 4×8 atlas + `runtime_manifest.json` + 四向 GIF + README；皮肤层→demo 层、方向 front/right/back/left 映射）。
+- **side 视图**：左肢绑 `front_`、右肢绑 `rear_`（两条腿/两条手臂可见）；深度排序让后侧肢体在躯干后，避免穿透闪烁。
+- 工作流在 `export.artifacts` 后追加 `skin.verify` + `skin.render`（`--param skin/motion/view` 切换皮肤/视图），输出皮肤包 `skins/<name>/preview/`。
+- Godot demo：`godot --path prototype -- --artifacts dist/<id>`（空格/等号均可，加载成功打印 `ARTIFACTS_LOADED`）；皮肤动画预览 `--skin-mode --skin-pack=<name>`。
 
 ## 制品与 Godot demo
 

@@ -20,6 +20,11 @@ var rgs_walk_reference := false
 var milestone_body_right := false
 var latest_generated_body := false
 var vertical_body_candidate := false
+var skin_mode := false
+var skin_view := "front"
+var skin_pack := ""
+var skin_frames: Array[Texture2D] = []
+var skin_sprite: Sprite2D
 var artifacts_dir := ""
 var layer_y := -26.0
 var appearance_seed: int = 20260730
@@ -60,19 +65,33 @@ func _ready() -> void:
 	milestone_body_right = "--milestone-body-right" in user_args
 	latest_generated_body = "--latest-generated-body" in user_args
 	vertical_body_candidate = "--vertical-body-candidate" in user_args
+	skin_mode = "--skin-mode" in user_args
 	for argument in user_args:
+		if argument.begins_with("--skin-view="):
+			skin_view = argument.trim_prefix("--skin-view=")
+		if argument.begins_with("--skin-pack="):
+			skin_pack = argument.trim_prefix("--skin-pack=")
+	# --artifacts 支持两种写法：`--artifacts=dist/x` 或 `--artifacts dist/x`（空格）。
+	# 之前只认等号，build_demo.sh 用空格传参会被静默忽略，回退到内置素材。
+	var i := 0
+	while i < user_args.size():
+		var argument: String = user_args[i]
+		var value: String = ""
 		if argument.begins_with("--artifacts="):
-			artifacts_dir = argument.trim_prefix("--artifacts=")
+			value = argument.trim_prefix("--artifacts=")
+		elif argument == "--artifacts" and i + 1 < user_args.size():
+			value = user_args[i + 1]
+			i += 1
+		if not value.is_empty():
+			artifacts_dir = value
 			# Image.load_from_file needs an OS path; resolve relative values
 			# against the launch directory (repository root) so dist/ works
 			# regardless of --path.
 			if not artifacts_dir.is_absolute_path():
-				# Resolve relative paths against the repository root (parent of
-				# the Godot project dir) so dist/ works regardless of the launch
-				# directory or --path.
 				var project_root := ProjectSettings.globalize_path("res://")
 				var repo_root := project_root.trim_suffix("/").get_base_dir()
 				artifacts_dir = repo_root.path_join(artifacts_dir)
+		i += 1
 	appearance_seed = _read_appearance_seed()
 	appearance_variant = appearance_variant_for_seed(appearance_seed, variant == "female")
 	_load_frame_textures()
@@ -81,6 +100,8 @@ func _ready() -> void:
 	_load_latest_generated_body_frames()
 	_load_vertical_body_candidate_frames()
 	_load_body_anchor_offsets()
+	if skin_mode:
+		_load_skin_preview_frames()
 	spawn_position = global_position
 	_apply_frame(0)
 
@@ -138,6 +159,11 @@ func _load_artifacts_frames() -> void:
 					push_error("Missing artifact frame: " + path)
 				else:
 					layers[layer].append(ImageTexture.create_from_image(image))
+	# 确认制品加载（每层 4x8=32 帧）
+	var loaded := 0
+	for layer in layers:
+		loaded += layers[layer].size()
+	print("ARTIFACTS_LOADED dir=", artifacts_dir, " layers=", layers.size(), " frames=", loaded)
 	rebuild_head = true
 
 
@@ -246,6 +272,12 @@ func _read_appearance_seed() -> int:
 
 
 func _load_body_anchor_offsets() -> void:
+	if not artifacts_dir.is_empty():
+		# 制品模式：head 层帧已在 cell 内与 body 对齐（烘焙时统一 bbox 变换），
+		# 偏移应为 0——制品 manifest 的 head_anchor_offsets 已由 _load_artifacts_frames
+		# 读入 body_anchor_offsets。内置素材的校准偏移只适用于内置素材，强行套用
+		# 会让脑袋相对身体偏移（歪）。
+		return
 	body_anchor_offsets.clear()
 	if not rebuild_head:
 		return
@@ -321,6 +353,64 @@ func _load_vertical_body_candidate_frames() -> void:
 			vertical_back_frame_textures.append(back_texture)
 
 
+func _load_skin_preview_frames() -> void:
+	# 蒙皮预览：优先加载独立皮肤包 skins/<id>/preview/<skin>_<motion>_<view>/frameN.png
+	# （skin.py render 输出到皮肤包 preview/）；否则回退 dist/<id>/skins/。
+	# 用 --skin-view 指定 front/side/back（默认 front）。
+	skin_frames.clear()
+	var skins_root := ""
+	if not skin_pack.is_empty():
+		var project_root := ProjectSettings.globalize_path("res://")
+		var repo_root := project_root.trim_suffix("/").get_base_dir()
+		skins_root = repo_root.path_join("skins").path_join(skin_pack).path_join("preview")
+	elif not artifacts_dir.is_empty():
+		skins_root = artifacts_dir.path_join("skins")
+	else:
+		return
+	var dir := DirAccess.open(skins_root)
+	if dir == null:
+		push_warning("Skin preview: no directory " + skins_root)
+		return
+	var seq_name := ""
+	dir.list_dir_begin()
+	while true:
+		var name := dir.get_next()
+		if name == "":
+			break
+		# 序列目录名含视图（front/side/back），如 mannequin_walk_front
+		if dir.current_is_dir() and name.contains(skin_view):
+			seq_name = name
+	dir.list_dir_end()
+	if seq_name.is_empty():
+		push_warning("Skin preview: no sequence for view '" + skin_view + "' under " + skins_root)
+		return
+	var seq_path := skins_root.path_join(seq_name)
+	var frame_dir := DirAccess.open(seq_path)
+	if frame_dir == null:
+		return
+	var frame_paths: Array[String] = []
+	frame_dir.list_dir_begin()
+	while true:
+		var file := frame_dir.get_next()
+		if file == "":
+			break
+		if file.begins_with("frame") and file.ends_with(".png"):
+			frame_paths.append(seq_path.path_join(file))
+	frame_dir.list_dir_end()
+	frame_paths.sort()
+	for path in frame_paths:
+		var image := Image.load_from_file(path)
+		if image != null:
+			skin_frames.append(ImageTexture.create_from_image(image))
+	if skin_frames.is_empty():
+		return
+	skin_sprite = Sprite2D.new()
+	skin_sprite.name = "SkinPreview"
+	skin_sprite.z_index = 60
+	add_child(skin_sprite)
+	print("SKIN_PREVIEW_FRAMES=%d seq=%s" % [skin_frames.size(), seq_path])
+
+
 func _current_body_anchor_offset() -> Vector2:
 	if not rebuild_head:
 		return Vector2.ZERO
@@ -373,6 +463,12 @@ func _update_walk_frame(delta: float, is_moving: bool) -> void:
 
 
 func _apply_frame(frame: int) -> void:
+	if skin_mode and not skin_frames.is_empty() and skin_sprite != null:
+		for sprite in [torso_sprite, arms_sprite, lower_body_sprite, feet_sprite, ear_sprite, head_sprite, face_sprite, rgs_walk_reference_sprite]:
+			sprite.visible = false
+		skin_sprite.visible = true
+		skin_sprite.texture = skin_frames[posmod(frame, skin_frames.size())]
+		return
 	if torso_frame_textures.is_empty() or arms_frame_textures.is_empty() or lower_body_frame_textures.is_empty() or feet_frame_textures.is_empty() or head_frame_textures.is_empty() or ear_frame_textures.is_empty() or face_frame_textures.is_empty():
 		return
 	var use_rgs_reference := rgs_walk_reference and direction_row == 1 and rgs_walk_reference_frame_textures.size() == 8

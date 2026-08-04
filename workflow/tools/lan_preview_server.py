@@ -389,8 +389,9 @@ class PreviewHandler(SimpleHTTPRequestHandler):
             if body.get(key) is not None:
                 overrides[key] = float(body[key])
         proportions = {}
-        for name in ("arm_length", "leg_length", "torso_length",
-                     "shoulder_width", "head_scale", "height"):
+        for name in ("head_scale", "neck_length", "torso_length",
+                     "shoulder_width", "upper_arm_length", "forearm_length",
+                     "thigh_length", "shin_length"):
             if body.get(name) is not None:
                 proportions[name] = float(body[name])
         use_ik = bool(body.get("ik", False))

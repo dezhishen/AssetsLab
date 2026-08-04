@@ -24,6 +24,7 @@ prototype/.godot/
 prototype/test_output/
 run/
 dist/
+build/
 
 # --- Third-party reference assets (downloaded on demand, never committed) ---
 third_party/rgs_modular_animated_characters/
