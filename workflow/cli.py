@@ -69,8 +69,7 @@ def _human(data: object) -> str:
             lines.append("actions:")
             for aid, st in actions.items():
                 if isinstance(st, dict):
-                    note = f" note={st.get('note')!r}" if st.get("note") else ""
-                    lines.append(f"  {aid:<28} {st.get('status'):<8} approved={st.get('approved')}{note}")
+                    lines.append(f"  {aid:<28} {st.get('status'):<8}")
         return "\n".join(lines)
     return str(data)
 
@@ -207,28 +206,6 @@ def cmd_update(args: argparse.Namespace) -> int:
     return 0
 
 
-def cmd_approve(args: argparse.Namespace) -> int:
-    runner = _runner(args)
-    try:
-        state = runner.approve(args.action, by=args.by, note=args.note)
-    except RuntimeError as error:
-        _emit({"ok": False, "error": str(error)}, args.json)
-        return 1
-    _emit({"action_id": args.action, "approved": True, **state}, args.json)
-    return 0
-
-
-def cmd_reject(args: argparse.Namespace) -> int:
-    runner = _runner(args)
-    try:
-        state = runner.reject(args.action, by=args.by, note=args.note)
-    except RuntimeError as error:
-        _emit({"ok": False, "error": str(error)}, args.json)
-        return 1
-    _emit({"action_id": args.action, "rejected": True, "status": state["status"], "note": state["note"]}, args.json)
-    return 0
-
-
 def cmd_history(args: argparse.Namespace) -> int:
     runner = _runner(args)
     data = runner.status()
@@ -238,9 +215,6 @@ def cmd_history(args: argparse.Namespace) -> int:
             timeline.append({
                 "action_id": aid,
                 "status": state.get("status"),
-                "approved": state.get("approved"),
-                "approved_by": state.get("approved_by"),
-                "note": state.get("note"),
                 "ran_at": state.get("ran_at"),
                 "finished_at": state.get("finished_at"),
             })
@@ -295,19 +269,14 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--webflow-token", help="GitHub token (env GITHUB_TOKEN also honoured).")
     p.set_defaults(handler=cmd_update)
 
-    for name in ("run", "approve", "reject"):
-        p = sub.add_parser(name, parents=[common], help=f"{name} an action of a workflow instance.")
-        p.add_argument("--workflow", required=True)
-        p.add_argument("--action", required=True, help="action_id, e.g. skeleton.front.")
-        if name == "run":
-            p.add_argument("--param", action="append", metavar="NAME=VALUE",
-                           help="Motion knob for the action (repeatable), e.g. --param stride=1.2 --param pelvis_bob=1.5.")
-            p.add_argument("--body", action="append", metavar="NAME=VALUE",
-                           help="Character proportion override for this run only (repeatable), e.g. --body head_scale=1.6.")
-        if name in ("approve", "reject"):
-            p.add_argument("--by", default="cli", help="Who approves/rejects (e.g. ai, human).")
-            p.add_argument("--note", help="Review note.")
-        p.set_defaults(handler={"run": cmd_run, "approve": cmd_approve, "reject": cmd_reject}[name])
+    p = sub.add_parser("run", parents=[common], help="Run an action of a workflow instance.")
+    p.add_argument("--workflow", required=True)
+    p.add_argument("--action", required=True, help="action_id, e.g. skeleton.front.")
+    p.add_argument("--param", action="append", metavar="NAME=VALUE",
+                   help="Motion knob for the action (repeatable), e.g. --param stride=1.2 --param pelvis_bob=1.5.")
+    p.add_argument("--body", action="append", metavar="NAME=VALUE",
+                   help="Character proportion override for this run only (repeatable), e.g. --body head_scale=1.6.")
+    p.set_defaults(handler=cmd_run)
 
     return parser
 

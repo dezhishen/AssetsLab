@@ -96,11 +96,10 @@ async function runWithParams() {
     await openDetail(pmWorkflow.value)
   } catch (e) { ElMessage.error(e.message) }
 }
-async function act(id, aid, verb) {
+async function act(id, aid) {
   try {
-    if (verb === 'approve') await workflowApi.approve(id, aid)
-    else await workflowApi.reject(id, aid)
-    pushLog(`[${verb}] ${id}/${aid}`)
+    await workflowApi.run(id, aid)
+    pushLog(`[run] ${id}/${aid}`)
     await openDetail(id)
   } catch (e) { ElMessage.error(e.message) }
 }
@@ -179,9 +178,7 @@ onMounted(async () => { await loadAll(); updateBodyTplDesc() })
             </div>
             <div class="flex gap-2 mt-3">
               <el-button v-if="Object.keys(a.params || {}).length" size="small" type="primary" @click="openParams(detail.workflow_id, a)">▶ 运行（带参数）</el-button>
-              <el-button v-else size="small" type="primary" @click="act(detail.workflow_id, a.action_id, 'run')">▶ 运行</el-button>
-              <el-button v-if="stFor(a.action_id).status === 'passed' && !stFor(a.action_id).approved" size="small" type="success" @click="act(detail.workflow_id, a.action_id, 'approve')">通过 ✓</el-button>
-              <el-button v-if="stFor(a.action_id).status === 'passed' || stFor(a.action_id).status === 'failed'" size="small" type="warning" @click="act(detail.workflow_id, a.action_id, 'reject')">打回 ↺</el-button>
+              <el-button v-else size="small" type="primary" @click="act(detail.workflow_id, a.action_id)">▶ 运行</el-button>
             </div>
           </div>
         </div>

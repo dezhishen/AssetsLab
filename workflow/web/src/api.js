@@ -26,10 +26,6 @@ export const workflowApi = {
   // actions
   run: (id, actionId, payload = {}) =>
     raw(`/api/workflow/instances/${encodeURIComponent(id)}/actions/${encodeURIComponent(actionId)}/run`, json(payload)),
-  approve: (id, actionId, note) =>
-    raw(`/api/workflow/instances/${encodeURIComponent(id)}/actions/${encodeURIComponent(actionId)}/approve`, json({ by: 'web', note })),
-  reject: (id, actionId, note) =>
-    raw(`/api/workflow/instances/${encodeURIComponent(id)}/actions/${encodeURIComponent(actionId)}/reject`, json({ by: 'web', note })),
   // catalog
   templates: () => raw('/api/workflow/templates'),
   bodyTemplates: () => raw('/api/workflow/body-templates'),

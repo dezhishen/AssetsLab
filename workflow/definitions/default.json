@@ -42,7 +42,6 @@
       "collect": [
         "prototype/test_output/skeleton_pipeline/front_arm_swing_walk.gif"
       ],
-      "approval": "human",
       "description": "正面完整行走循环，可调整步幅、骨盆起伏、摆臂（体型在角色面板统一调整）"
     },
     {
@@ -87,7 +86,6 @@
       "collect": [
         "prototype/test_output/skeleton_pipeline/side_arm_swing_walk.gif"
       ],
-      "approval": "human",
       "description": "右向侧面完整行走循环，可调整步幅、骨盆起伏、摆臂（体型在角色面板统一调整）"
     },
     {
@@ -129,7 +127,6 @@
       "collect": [
         "prototype/test_output/skeleton_pipeline/back_legs_walk.gif"
       ],
-      "approval": "human",
       "description": "背面行走循环，可调整步幅、骨盆起伏（体型在角色面板统一调整）"
     },
     {
@@ -143,7 +140,6 @@
         "skeleton.back"
       ],
       "collect": [],
-      "approval": "auto",
       "description": "生成随机外观并校验全部资产，再跑 Godot 冒烟测试"
     },
     {
@@ -159,7 +155,6 @@
       "collect": [
         "prototype/test_output/movement_walk.gif"
       ],
-      "approval": "human",
       "description": "四方向行走 GIF 捕获"
     },
     {
@@ -173,7 +168,6 @@
         "capture.walk"
       ],
       "collect": [],
-      "approval": "human",
       "description": "重建预览资产并发布时间戳快照"
     },
     {
@@ -190,7 +184,6 @@
         "preview.publish"
       ],
       "collect": [],
-      "approval": "human",
       "description": "打包 dist/<workflow_id>/ 制品包（atlas + manifest + GIF）供 Godot demo 使用"
     }
   ]

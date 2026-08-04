@@ -1,4 +1,4 @@
-"""Execute and approve workflow actions, delegating to the assetslab executor.
+"""Execute workflow actions, delegating to the assetslab executor.
 
 Each action runs as a subprocess of the cross-platform CLI, so the workflow
 engine never re-implements pipeline logic.  Action outputs are local files
@@ -15,7 +15,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from .model import ActionDef, ActionState, Approval, BODY_NAMES, Status, WorkflowDef, default_body
+from .model import ActionDef, ActionState, BODY_NAMES, Status, WorkflowDef, default_body
 from .store import Store, now_iso
 
 
@@ -84,7 +84,7 @@ def create_instance(root: Path, run_root: Path, workflow_id: str, definition_id:
         "body": body_values,
         "created_at": now_iso(),
         "version": 0,
-        "actions": {a.action_id: {"status": "pending", "approved": False, "outputs": []} for a in definition.actions},
+        "actions": {a.action_id: {"status": "pending", "outputs": []} for a in definition.actions},
     }
     with store.lock():
         store.save(state)
@@ -118,7 +118,7 @@ class WorkflowRunner:
 
     def _done(self, actions: dict[str, ActionState], action_id: str) -> bool:
         state = self._action_state(actions, action_id)
-        return state.status == Status.PASSED.value and state.approved
+        return state.status == Status.PASSED.value
 
     # ----------------------------------------------------------- queries --
 
@@ -152,36 +152,6 @@ class WorkflowRunner:
         return data
 
     # -------------------------------------------------------- transitions --
-
-    def approve(self, action_id: str, by: str = "cli", note: str | None = None) -> dict[str, Any]:
-        action = self._require(action_id)
-        with self.store.lock():
-            actions = self._state_actions()
-            state = self._action_state(actions, action_id)
-            if state.status != Status.PASSED.value:
-                raise RuntimeError(f"action {action_id} is not passed (status={state.status}); cannot approve")
-            state.approved = True
-            state.approved_by = by
-            state.note = note
-            actions[action_id] = state
-            self._save_actions(actions)
-        return state.to_dict()
-
-    def reject(self, action_id: str, by: str = "cli", note: str | None = None) -> dict[str, Any]:
-        """Reject an action and send it back to pending so it can be redone."""
-        self._require(action_id)
-        with self.store.lock():
-            actions = self._state_actions()
-            state = self._action_state(actions, action_id)
-            if state.status not in (Status.PASSED.value, Status.FAILED.value):
-                raise RuntimeError(f"action {action_id} has nothing to reject (status={state.status})")
-            state.status = Status.PENDING.value
-            state.approved = False
-            state.approved_by = None
-            state.note = note
-            actions[action_id] = state
-            self._save_actions(actions)
-        return state.to_dict()
 
     def run(self, action_id: str, params: dict | None = None, body: dict | None = None) -> dict[str, Any]:
         """Run one action, collect outputs, verify the gate, update state.
@@ -276,9 +246,6 @@ class WorkflowRunner:
             state.outputs = outputs
             state.finished_at = now_iso()
             state.status = Status.PASSED.value if ok else Status.FAILED.value
-            if ok and action.approval == Approval.AUTO.value:
-                state.approved = True
-                state.approved_by = "auto"
             actions[action_id] = state
             self._save_actions(actions)
 

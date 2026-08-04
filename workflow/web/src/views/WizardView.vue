@@ -15,7 +15,6 @@ const state = ref(null)    // instance status (includes body + per-action state)
 const wfId = ref('')
 const current = ref(0)
 const paramValues = reactive({})
-const note = ref('')
 const log = ref([])
 const busy = ref(false)
 
@@ -40,15 +39,10 @@ async function openInstance(id) {
   state.value = await workflowApi.status(id)
   const st = state.value
   def.value = await workflowApi.definition(st.definition_id || 'default')
-  // Land on the first step needing attention: a passed-but-unreviewed step,
-  // else the recommended next action.
-  const needsReview = actions.value.findIndex((a) => (st.actions?.[a.action_id] || {}).status === 'passed' && !(st.actions?.[a.action_id] || {}).approved)
-  if (needsReview >= 0) { current.value = needsReview }
-  else {
-    const nr = await workflowApi.next(id).catch(() => ({ next: null }))
-    const idx = nr.next ? actions.value.findIndex((a) => a.action_id === nr.next) : -1
-    current.value = idx >= 0 ? idx : 0
-  }
+  // Land on the recommended next action.
+  const nr = await workflowApi.next(id).catch(() => ({ next: null }))
+  const idx = nr.next ? actions.value.findIndex((a) => a.action_id === nr.next) : -1
+  current.value = idx >= 0 ? idx : 0
   seedParams()
 }
 
@@ -78,17 +72,6 @@ async function runStep() {
   } catch (e) { ElMessage.error(`运行失败：${e.message}`) } finally { busy.value = false }
 }
 
-async function actStep(verb) {
-  busy.value = true
-  try {
-    if (verb === 'approve') { await workflowApi.approve(wfId.value, currentAction.value.action_id, note.value) }
-    else { await workflowApi.reject(wfId.value, currentAction.value.action_id, note.value) }
-    pushLog(`[${verb}] ${currentAction.value.action_id}`)
-    note.value = ''
-    await refresh()
-  } catch (e) { ElMessage.error(`${verb} 失败：${e.message}`) } finally { busy.value = false }
-}
-
 async function refresh() {
   state.value = await workflowApi.status(wfId.value)
   seedParams()
@@ -96,8 +79,7 @@ async function refresh() {
 
 async function goNext() {
   const st = currentState.value
-  if (st.status !== 'passed') { ElMessage.warning('当前步骤尚未运行通过，请先运行并「通过」。'); return }
-  if (!st.approved) { ElMessage.warning('当前步骤已通过但未审核，请先点「通过」完成评审。'); return }
+  if (st.status !== 'passed') { ElMessage.warning('当前步骤尚未运行通过，请先「运行」。'); return }
   const nr = await workflowApi.next(wfId.value).catch(() => ({ next: null }))
   const idx = nr.next ? actions.value.findIndex((a) => a.action_id === nr.next) : -1
   if (idx >= 0) { current.value = idx }
@@ -176,9 +158,6 @@ onMounted(async () => {
 
         <div class="flex flex-wrap gap-2 pt-1">
           <el-button type="primary" :loading="busy" @click="runStep">▶ 运行（带参数）</el-button>
-          <el-button v-if="currentState.status === 'passed' && !currentState.approved" type="success" :loading="busy" @click="actStep('approve')">通过 ✓</el-button>
-          <el-button v-if="currentState.status === 'passed' || currentState.status === 'failed'" type="warning" :loading="busy" @click="actStep('reject')">打回 ↺</el-button>
-          <el-input v-model="note" placeholder="评审备注（可选）" class="max-w-xs" size="default" />
         </div>
         <div v-if="currentState.params && Object.keys(currentState.params).length" class="text-xs text-slate-500">
           上次参数：{{ Object.entries(currentState.params).map(([k, v]) => `${k}=${v}`).join(' · ') }}

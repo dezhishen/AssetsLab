@@ -279,18 +279,10 @@ class PreviewHandler(SimpleHTTPRequestHandler):
                 self._send_json({"ok": False, "error": f"workflow instance not found: {workflow_id}"}, 404)
                 return
             try:
-                if verb == "run":
-                    result = runner.run(action_id, params=body.get("params") or None,
-                                        body=body.get("body") or None)
-                elif verb == "approve":
-                    result = runner.approve(action_id, by=body.get("by", "web"), note=body.get("note"))
-                    result = {"action_id": action_id, "approved": True, **result}
-                elif verb == "reject":
-                    result = runner.reject(action_id, by=body.get("by", "web"), note=body.get("note"))
-                    result = {"action_id": action_id, "rejected": True,
-                              "status": result["status"], "note": result["note"]}
-                else:
+                if verb != "run":
                     raise RuntimeError(f"unknown action verb: {verb}")
+                result = runner.run(action_id, params=body.get("params") or None,
+                                    body=body.get("body") or None)
             except (KeyError, RuntimeError) as error:
                 self._send_json(self._err(error))
                 return

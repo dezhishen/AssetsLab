@@ -2,14 +2,13 @@
 
 from __future__ import annotations
 
-from .model import ActionDef, ActionState, Approval, Status, WorkflowDef
+from .model import ActionDef, ActionState, Status, WorkflowDef
 from .store import FileLock, Store
 from .runner import WorkflowRunner
 
 __all__ = [
     "ActionDef",
     "ActionState",
-    "Approval",
     "Status",
     "WorkflowDef",
     "FileLock",

@@ -8,7 +8,7 @@ persisted per ``workflow_id`` by :mod:`workflow.store`.
 from __future__ import annotations
 
 import json
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass, field, fields
 from enum import Enum
 from pathlib import Path
 from typing import Any
@@ -20,13 +20,6 @@ class Status(str, Enum):
     PASSED = "passed"
     FAILED = "failed"
     SKIPPED = "skipped"
-
-
-class Approval(str, Enum):
-    """auto: passed by the automatic gate; human: needs approve/reject."""
-
-    AUTO = "auto"
-    HUMAN = "human"
 
 
 # Body proportions are a *character* concept (how the skeleton is proportioned:
@@ -60,9 +53,8 @@ class ActionDef:
     title: str
     phase: str
     exec: list[str] = field(default_factory=list)        # assetslab.py sub-command, e.g. ["stage","front","legs"]
-    depends: list[str] = field(default_factory=list)     # action_ids that must pass+approve first
+    depends: list[str] = field(default_factory=list)     # action_ids that must pass first
     collect: list[str] = field(default_factory=list)     # repo-relative outputs copied into the run step dir
-    approval: str = Approval.HUMAN.value
     description: str = ""
     params: dict = field(default_factory=dict)           # tunable knobs: name -> {default,min,max,label}
 
@@ -79,9 +71,6 @@ class ActionState:
     """Per-instance runtime state of an action."""
 
     status: str = Status.PENDING.value
-    approved: bool = False
-    approved_by: str | None = None
-    note: str | None = None
     outputs: list[str] = field(default_factory=list)     # absolute paths to local images/files (latest run)
     prev_outputs: list[str] = field(default_factory=list)  # previous run's outputs, for side-by-side diff
     ran_at: str | None = None
@@ -90,7 +79,10 @@ class ActionState:
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "ActionState":
-        return cls(**data)
+        # Tolerate legacy/unknown keys (e.g. `approved`/`note` from instances
+        # created before reviews were removed) so old state.json still loads.
+        known = {f.name for f in fields(cls)}
+        return cls(**{k: v for k, v in data.items() if k in known})
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
