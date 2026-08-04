@@ -27,7 +27,6 @@ VIEWS = ("front", "side", "back")
 VIEW_ROW = {"front": 0, "side": 1, "back": 2}
 MARGIN = 8
 HEAD_R = 36
-NECK_H = 52
 NECK_W = 22
 TORSO_W_SIDE = 34
 
@@ -42,6 +41,7 @@ COLOR_FOOT = (148, 161, 173, 255)
 # 因为 walk 预设的 front 偏移驱动 left_hand/left_foot/…（skin.py VIEW_JOINT 同款）。
 LAYERS = [
     ("head", "head", None),
+    ("neck", "neck", None),
     ("torso", "pelvis", None),
     ("upper_arm_left", "shoulder_left", "left_elbow"),
     ("upper_arm_right", "shoulder_right", "right_elbow"),
@@ -89,11 +89,24 @@ def _box(size: int) -> tuple[Image.Image, ImageDraw.ImageDraw, int]:
 
 
 def draw_head() -> tuple[Image.Image, tuple[int, int]]:
-    """头（圆）+ 脖子。锚点=圆心（head 关节）。"""
-    size = 2 * (HEAD_R + NECK_H + MARGIN)
+    """纯头（圆）。锚点=圆心（head 关节）。脖子独立为 neck 层。"""
+    size = 2 * (HEAD_R + MARGIN)
     img, d, c = _box(size)
     d.ellipse([c - HEAD_R, c - HEAD_R, c + HEAD_R, c + HEAD_R], fill=COLOR_BODY)
-    d.rectangle([c - NECK_W // 2, c + HEAD_R, c + NECK_W // 2, c + HEAD_R + NECK_H], fill=COLOR_BODY)
+    return img, (c, c)
+
+
+def draw_neck(joints: dict, view: str) -> tuple[Image.Image, tuple[int, int]]:
+    """脖子：head 底 -> neck 关节的垂直段。锚点=图中心（neck 端），向上延伸。
+    随 neck 关节运动（base torso 传导 neck=1.0 刚性），调身躯时脖子独立跟随。"""
+    head = joints[joint_view("head", view)]
+    neck = joints[joint_view("neck", view)]
+    h = max(neck[1] - (head[1] + HEAD_R), 4)  # head 底到 neck 的长度
+    size = 2 * (h + MARGIN)
+    img, d, c = _box(size)
+    d.rectangle([c - NECK_W // 2, c - h, c + NECK_W // 2, c], fill=COLOR_BODY)
+    r = NECK_W // 2
+    d.ellipse([c - r, c - r, c + r, c + r], fill=COLOR_JOINT)  # 底部关节球（neck 端）
     return img, (c, c)
 
 
@@ -140,6 +153,8 @@ def main() -> int:
             joints = views[view]
             if layer == "head":
                 img, _ = draw_head()
+            elif layer == "neck":
+                img, _ = draw_neck(joints, view)
             elif layer == "torso":
                 img, _ = draw_torso(joints, view)
             elif layer.startswith("foot"):

@@ -16,53 +16,61 @@
       "order": 1
     },
     {
-      "name": "torso",
+      "name": "neck",
       "order": 2
     },
     {
-      "name": "upper_arm_left",
+      "name": "torso",
       "order": 3
     },
     {
-      "name": "upper_arm_right",
+      "name": "upper_arm_left",
       "order": 4
     },
     {
-      "name": "forearm_left",
+      "name": "upper_arm_right",
       "order": 5
     },
     {
-      "name": "forearm_right",
+      "name": "forearm_left",
       "order": 6
     },
     {
-      "name": "thigh_left",
+      "name": "forearm_right",
       "order": 7
     },
     {
-      "name": "thigh_right",
+      "name": "thigh_left",
       "order": 8
     },
     {
-      "name": "shin_left",
+      "name": "thigh_right",
       "order": 9
     },
     {
-      "name": "shin_right",
+      "name": "shin_left",
       "order": 10
     },
     {
-      "name": "foot_left",
+      "name": "shin_right",
       "order": 11
     },
     {
-      "name": "foot_right",
+      "name": "foot_left",
       "order": 12
+    },
+    {
+      "name": "foot_right",
+      "order": 13
     }
   ],
   "bindings": {
     "head": {
       "joint": "head",
+      "rotate": false
+    },
+    "neck": {
+      "joint": "neck",
       "rotate": false
     },
     "torso": {
