@@ -16,6 +16,7 @@ datas = [
     (str(ROOT / "workflow" / "templates"), "workflow/templates"),
     (str(ROOT / "workflow" / "body"), "workflow/body"),
     (str(ROOT / "workflow" / "motions"), "workflow/motions"),
+    (str(ROOT / "workflow" / "tools"), "workflow/tools"),
     (str(ROOT / "workflow" / "web" / "dist"), "workflow/web/dist"),
 ]
 
