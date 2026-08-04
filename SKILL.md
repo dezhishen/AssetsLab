@@ -5,7 +5,7 @@ description: >-
   调度骨架→测试→捕获→预览→导出流水线；参数化动作（stride/pelvis_bob/arm_swing）、
   风格模板（realistic/cartoon/bouncy/heavy/light）、体型比例（实例级 body）、
   制品导出（dist/<workflow_id>）与更新（GitHub Releases 三制品）。
-  给 AI 代理的命令行调度指南：创建实例、运行/评审动作、调参、导出制品。
+  给 AI 代理的命令行调度指南：创建实例、运行动作、调参、导出制品。
 ---
 
 # webflow-cli — 命令行手册（SKILL）
@@ -51,8 +51,7 @@ webflow-cli update        # 更新 webflow-cli 二进制自身
 | `new` | 新建实例（`--definition` / `--id` / `--template` / `--body-template` / `--body`） |
 | `status` | 实例状态 + template + body + 各动作 params + 推荐 next |
 | `next` | 推荐下一步动作 id |
-| `run` | 运行动作（`--param` 动作参数 / `--body` 体型覆盖） |
-| `approve` / `reject` | 评审（`--by` / `--note`） |
+| `run` | 运行动作（`--param` 动作参数 / `--body` 体型覆盖；运行通过即自动进入下一步） |
 | `history` | 运行时间线 |
 | `set-body` | 固化角色体型（实例级） |
 | `update` | 更新 CLI 自身二进制 |
@@ -69,15 +68,11 @@ webflow-cli new --definition default --id hero --template cartoon --body-templat
 webflow-cli status --workflow hero --json
 webflow-cli next --workflow hero
 
-# 3. 运行动作（可调动作参数 / 体型覆盖）
+# 3. 运行动作（可调动作参数 / 体型覆盖；运行通过即自动进入下一步，无评审）
 webflow-cli run --workflow hero --action skeleton.front --param stride=1.2 --param pelvis_bob=1.5
 webflow-cli run --workflow hero --action skeleton.front --body head_scale=1.4
 
-# 4. 评审
-webflow-cli approve --workflow hero --action skeleton.front --by ai --note "ok"
-webflow-cli reject --workflow hero --action skeleton.front --by ai --note "改大步幅"
-
-# 5. 走完 7 步 → 导出制品（atlas + runtime_manifest.json + gif → dist/<workflow_id>/）
+# 4. 走完 7 步 → 导出制品（atlas + runtime_manifest.json + gif → dist/<workflow_id>/）
 webflow-cli run --workflow hero --action export.artifacts
 ```
 
@@ -111,9 +106,8 @@ webflow-server --port 8765 --directory <仓库>/prototype/preview --repo-root <�
 
 1. `new --template <风格> --body-template <体型>` 建实例 → `status` 确认 template_params + body
 2. `next` 取推荐动作 → `run`（`--param` 调动作、`--body` 调体型；也可先 `set-body` 固化角色）
-3. `status --json` 看该动作 `outputs`（本地图片绝对路径）+ `params`（实际所用动作+体型）
-4. 满意 `approve`（带 note）→ 不满意 `reject`（附调整建议）→ 重新 `run`
-5. 走完 7 步 → `export.artifacts` → 制品供 Godot demo
+3. `status --json` 看该动作 `outputs`（本地图片绝对路径）+ `params`（实际所用动作+体型）；不满意可重新 `run` 调参
+4. 走完 7 步 → `export.artifacts` → 制品供 Godot demo
 
 ## 约定与注意事项
 
