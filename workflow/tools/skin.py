@@ -35,7 +35,8 @@ from pathlib import Path
 from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[2]
-SKINS_ROOT = ROOT / "workflow" / "skins"
+SKINS_ROOT = ROOT / "skins"
+LEGACY_SKINS = ROOT / "workflow" / "skins"
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from motion import BASE, apply_ik, load_motion, pose  # noqa: E402
@@ -51,25 +52,42 @@ POLICIES = ("center", "top_center", "bottom_center")
 # ---------------------------------------------------------------- skin io --
 
 def load_skin(skin_id: str) -> dict:
-    path = SKINS_ROOT / f"{skin_id}.json"
-    if not path.exists():
-        raise SystemExit(f"skin not found: {skin_id} ({path})")
-    return json.loads(path.read_text(encoding="utf-8"))
+    # 皮肤包：skins/<id>/skin.json（独立目录 + 标准命名部件 <NN>_<layer>_<view>.png）
+    pack = SKINS_ROOT / skin_id / "skin.json"
+    if pack.exists():
+        data = json.loads(pack.read_text(encoding="utf-8"))
+        data.setdefault("skin_id", skin_id)
+        return data
+    # 旧格式：workflow/skins/<id>.json（预烘焙皮肤）
+    legacy = LEGACY_SKINS / f"{skin_id}.json"
+    if legacy.exists():
+        return json.loads(legacy.read_text(encoding="utf-8"))
+    raise SystemExit(f"skin not found: {skin_id} ({pack} or {legacy})")
 
 
 def list_skins() -> list[str]:
-    return sorted(p.stem for p in SKINS_ROOT.glob("*.json"))
+    names = {p.parent.name for p in SKINS_ROOT.glob("*/skin.json")}
+    names |= {p.stem for p in LEGACY_SKINS.glob("*.json")}
+    return sorted(names)
+
+
+def skin_layers(skin: dict) -> list[str]:
+    """皮肤层名列表：皮肤包用 layers（[{name, order}]），旧格式用 atlas_layers。"""
+    layers = skin.get("layers")
+    if isinstance(layers, list):
+        return [l["name"] if isinstance(l, dict) else l for l in layers]
+    return skin.get("atlas_layers", [])
 
 
 def resolve_atlas(skin: dict, atlas_arg: str | Path | None) -> Path:
     """皮肤部件目录。
 
-    - skeleton 坐标皮肤（coordinates="skeleton"）：程序化固定部件，自包含
-      atlas_dir，忽略 --atlas 覆盖（工作流传的实例 atlas 不适用）。
+    - skeleton 坐标皮肤（coordinates="skeleton"）或皮肤包（layout="pack"）：
+      程序化固定部件，自包含 atlas_dir，忽略 --atlas 覆盖（工作流传的实例 atlas 不适用）。
     - 预烘焙皮肤：优先 --atlas（如工作流的 dist/<workflow_id>/atlas），
       否则用皮肤定义的 atlas_dir。
     """
-    if skin.get("coordinates") == "skeleton":
+    if skin.get("coordinates") == "skeleton" or skin.get("layout") == "pack":
         default = skin.get("atlas_dir")
         if default:
             p = ROOT / default
@@ -147,7 +165,17 @@ def layer_anchor(skin: dict, layer: str, image: Image.Image) -> tuple[int, int]:
 
 
 def load_layer_image(skin: dict, layer: str, atlas_dir: Path, view: str) -> Image.Image:
-    """取该层在指定视角（行）下的基础帧（frame 0）作为部件静态形状。"""
+    """取某层在某视图下的部件图。
+    皮肤包（layout="pack"）：skins/<id>/<NN>_<layer>_<view>.png（数字序号前缀 + 标准命名）；
+    旧格式：<atlas>/<layer>/walk_row<row>_frame0.png。"""
+    if skin.get("layout") == "pack":
+        base = resolve_atlas(skin, atlas_dir)
+        candidates = sorted(base.glob(f"*_{layer}_{view}.png"))
+        if not candidates:
+            candidates = sorted(base.glob(f"*_{layer}_*.png"))
+        if not candidates:
+            raise FileNotFoundError(f"no pack image for layer '{layer}' view '{view}' in {base}")
+        return Image.open(candidates[0]).convert("RGBA")
     row = VIEW_ROW[view]
     path = atlas_dir / layer / f"walk_row{row}_frame0.png"
     if not path.exists():
@@ -162,9 +190,14 @@ def load_layer_image(skin: dict, layer: str, atlas_dir: Path, view: str) -> Imag
 # ---------------------------------------------------------------- layout --
 
 def joint_images(skin: dict, atlas_dir: Path, view: str) -> dict[str, Image.Image]:
-    return {layer: load_layer_image(skin, layer, atlas_dir, view)
-            for layer in skin.get("atlas_layers", [])
-            if (atlas_dir / layer).exists()}
+    layers = skin_layers(skin)
+    out: dict[str, Image.Image] = {}
+    for layer in layers:
+        try:
+            out[layer] = load_layer_image(skin, layer, atlas_dir, view)
+        except FileNotFoundError:
+            continue
+    return out
 
 
 def skin_layout(skin: dict, atlas_dir: Path) -> dict:
@@ -226,7 +259,7 @@ def rest_ref(skin: dict, atlas_dir: Path, view: str) -> Image.Image:
     images = joint_images(skin, atlas_dir, view)
     layout = skin_layout(skin, atlas_dir)
     canvas = Image.new("RGBA", (layout["canvas_w"], layout["canvas_h"]), (0, 0, 0, 0))
-    for layer in skin.get("atlas_layers", []):
+    for layer in skin_layers(skin):
         img = images.get(layer)
         if img is None:
             continue
@@ -254,7 +287,7 @@ def skin_frame(motion: dict, view: str, stage: str, index: int,
     apply_ik(motion, view, stage, coords)
     canvas = Image.new("RGBA", (layout["canvas_w"], layout["canvas_h"]), (0, 0, 0, 0))
     images = joint_images(skin, atlas_dir, view)
-    for layer in skin.get("atlas_layers", []):
+    for layer in skin_layers(skin):
         binding = skin.get("bindings", {}).get(layer)
         img = images.get(layer)
         if img is None or binding is None:
@@ -326,7 +359,7 @@ def cmd_anchors(args: argparse.Namespace) -> int:
     atlas_dir = resolve_atlas(skin, args.atlas)
     view = args.view
     out: dict[str, list[int]] = {}
-    for layer in skin.get("atlas_layers", []):
+    for layer in skin_layers(skin):
         try:
             img = load_layer_image(skin, layer, atlas_dir, view)
         except FileNotFoundError:
@@ -347,8 +380,8 @@ def cmd_render(args: argparse.Namespace) -> int:
         if "=" in item:
             k, v = item.split("=", 1)
             proportions[k] = float(v)
-    out = Path(args.gif) if args.gif else (ROOT / "prototype" / "test_output" / "skeleton_pipeline"
-                                           / f"skin_{args.motion}_{args.view}_{args.stage}.gif")
+    out = Path(args.gif) if args.gif else (ROOT / "skins" / args.skin / "preview"
+                                           / f"{args.skin}_{args.motion}_{args.view}.gif")
     skin = load_skin(args.skin)
     render_gif(args.motion, args.view, args.stage, args.skin, resolve_atlas(skin, args.atlas),
                params or None, proportions or None, out)
@@ -360,7 +393,7 @@ def cmd_verify(args: argparse.Namespace) -> int:
     atlas_dir = resolve_atlas(skin, args.atlas)
     errors = []
     for view in VIEWS:
-        for layer in skin.get("atlas_layers", []):
+        for layer in skin_layers(skin):
             try:
                 img = load_layer_image(skin, layer, atlas_dir, view)
                 if not img.getchannel("A").getbbox():
@@ -387,7 +420,7 @@ def cmd_verify(args: argparse.Namespace) -> int:
             skinned.save(out_png)
             bb = skinned.getchannel("A").getbbox()
             missing: list[str] = []
-            for layer in skin.get("atlas_layers", []):
+            for layer in skin_layers(skin):
                 binding = skin.get("bindings", {}).get(layer)
                 if not binding:
                     continue
@@ -424,7 +457,7 @@ def cmd_verify(args: argparse.Namespace) -> int:
         for e in errors:
             print(f"  [x] {e}")
         return 1
-    print(f"SKIN_VERIFY_PASS skin={args.skin} layers={len(skin.get('atlas_layers', []))} views={len(VIEWS)}")
+    print(f"SKIN_VERIFY_PASS skin={args.skin} layers={len(skin_layers(skin))} views={len(VIEWS)}")
     return 0
 
 

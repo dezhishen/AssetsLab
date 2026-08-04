@@ -22,6 +22,7 @@ var latest_generated_body := false
 var vertical_body_candidate := false
 var skin_mode := false
 var skin_view := "front"
+var skin_pack := ""
 var skin_frames: Array[Texture2D] = []
 var skin_sprite: Sprite2D
 var artifacts_dir := ""
@@ -68,6 +69,8 @@ func _ready() -> void:
 	for argument in user_args:
 		if argument.begins_with("--skin-view="):
 			skin_view = argument.trim_prefix("--skin-view=")
+		if argument.begins_with("--skin-pack="):
+			skin_pack = argument.trim_prefix("--skin-pack=")
 	for argument in user_args:
 		if argument.begins_with("--artifacts="):
 			artifacts_dir = argument.trim_prefix("--artifacts=")
@@ -332,14 +335,22 @@ func _load_vertical_body_candidate_frames() -> void:
 
 
 func _load_skin_preview_frames() -> void:
-	# 蒙皮预览：加载 dist/<id>/skins/<skin>_<motion>_<view>/frameN.png 序列
-	# （由 skin.py render 输出）。用 --skin-view 指定 front/side/back，默认 front。
+	# 蒙皮预览：优先加载独立皮肤包 skins/<id>/preview/<skin>_<motion>_<view>/frameN.png
+	# （skin.py render 输出到皮肤包 preview/）；否则回退 dist/<id>/skins/。
+	# 用 --skin-view 指定 front/side/back（默认 front）。
 	skin_frames.clear()
-	if artifacts_dir.is_empty():
+	var skins_root := ""
+	if not skin_pack.is_empty():
+		var project_root := ProjectSettings.globalize_path("res://")
+		var repo_root := project_root.trim_suffix("/").get_base_dir()
+		skins_root = repo_root.path_join("skins").path_join(skin_pack).path_join("preview")
+	elif not artifacts_dir.is_empty():
+		skins_root = artifacts_dir.path_join("skins")
+	else:
 		return
-	var skins_root := artifacts_dir.path_join("skins")
 	var dir := DirAccess.open(skins_root)
 	if dir == null:
+		push_warning("Skin preview: no directory " + skins_root)
 		return
 	var seq_name := ""
 	dir.list_dir_begin()
@@ -347,7 +358,8 @@ func _load_skin_preview_frames() -> void:
 		var name := dir.get_next()
 		if name == "":
 			break
-		if dir.current_is_dir() and name.contains(skin_view) and name.begins_with("skeleton"):
+		# 序列目录名含视图（front/side/back），如 mannequin_walk_front
+		if dir.current_is_dir() and name.contains(skin_view):
 			seq_name = name
 	dir.list_dir_end()
 	if seq_name.is_empty():

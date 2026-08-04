@@ -132,9 +132,10 @@ def draw_segment(length: float, seg: str, color: tuple) -> tuple[Image.Image, tu
 def main() -> int:
     base = json.loads((ROOT / "workflow" / "motions" / "base.json").read_text(encoding="utf-8"))
     views = base["views"]
-    out_atlas = ROOT / "dist" / "mannequin" / "atlas"
+    skin_root = ROOT / "skins" / "mannequin"
+    skin_root.mkdir(parents=True, exist_ok=True)
 
-    for layer, joint, child in LAYERS:
+    for idx, (layer, joint, child) in enumerate(LAYERS, start=1):
         for view in VIEWS:
             joints = views[view]
             if layer == "head":
@@ -148,9 +149,8 @@ def main() -> int:
                 b = joints[joint_view(child, view)]
                 seg = layer.rsplit("_", 1)[0]
                 img, _ = draw_segment(max(_d(a, b), 8.0), seg, COLOR_SEG)
-            out_dir = out_atlas / layer
-            out_dir.mkdir(parents=True, exist_ok=True)
-            img.save(out_dir / f"walk_row{VIEW_ROW[view]}_frame0.png")
+            # 标准命名：<NN>_<layer>_<view>.png（NN = 绘制顺序的数字序号前缀）
+            img.save(skin_root / f"{idx:02d}_{layer}_{view}.png")
             print(f"  {view}/{layer}: {img.size}")
 
     bindings = {}
@@ -161,18 +161,19 @@ def main() -> int:
     skin = {
         "skin_id": "mannequin",
         "schema": "assetslab_skin_v1",
+        "layout": "pack",
         "description": "通用人体模特皮肤：按 base.json 骨架 1:1 绘制的中性人体几何部件。"
-                       "锚点=部件图中心（精确=关节），肢体段按骨骼段方向旋转（rotate_child），rest 天然贴合。",
+                       "锚点=部件图中心（精确=关节），肢体段按骨骼段方向旋转（rotate_child），rest 天然贴合。"
+                       "皮肤包独立于制品：skins/mannequin/（skin.json + <NN>_<layer>_<view>.png）。",
         "views": list(VIEWS),
         "coordinates": "skeleton",
-        "atlas_dir": "dist/mannequin/atlas",
-        "atlas_layers": [l for l, _, _ in LAYERS],
+        "atlas_dir": "skins/mannequin",
+        "layers": [{"name": l, "order": i} for i, (l, _, _) in enumerate(LAYERS, 1)],
         "bindings": bindings,
         "anchors": {},
     }
-    out_def = ROOT / "workflow" / "skins" / "mannequin.json"
-    out_def.write_text(json.dumps(skin, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(f"MANNEQUIN_SKIN_OK layers={len(LAYERS)} views={len(VIEWS)} -> {out_atlas} / {out_def}")
+    (skin_root / "skin.json").write_text(json.dumps(skin, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(f"MANNEQUIN_SKIN_OK layers={len(LAYERS)} views={len(VIEWS)} -> {skin_root}")
     return 0
 
 
