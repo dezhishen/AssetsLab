@@ -38,6 +38,10 @@
   .card .ops { display:flex; gap:6px; flex-wrap:wrap; }
   .card .ops button { padding:5px 9px; font-size:13px; }
   .note { color:var(--warn); font-size:13px; }
+  .prow { display:flex; align-items:center; justify-content:space-between; gap:12px; margin:6px 0; }
+  .numstep { display:inline-flex; align-items:center; gap:4px; }
+  .numstep button { width:30px; height:30px; padding:0; font-size:16px; line-height:1; }
+  .numstep input { width:76px; text-align:center; }
   pre { white-space:pre-wrap; background:#0c101b; border:1px solid var(--line); border-radius:12px; padding:12px; font-size:12px; max-height:300px; overflow:auto; }
   .muted { color:var(--muted); }
 </style>
@@ -77,7 +81,6 @@
     <div class="toolbar">
       <label>混合 → <select id="mvBlend"><option value="">无</option></select></label>
       <label>比例 <input type="range" id="mvBlendT" min="0" max="1" step="0.05" value="0.5" style="width:110px"></label>
-      <span class="muted" style="font-size:12px">完整动作 = 骨架+腿+骨盆+手臂全部合成（GIF 循环）；静态骨架只渲染 1 帧参考。</span>
     </div>
     <div id="mvResult" style="min-height:70px;margin-top:8px"></div>
   </section>
@@ -145,12 +148,16 @@ const PROPORTION_KEYS = ['arm_length', 'leg_length', 'torso_length', 'shoulder_w
 const PROPORTION_LABEL = { arm_length:'臂长', leg_length:'腿长', torso_length:'躯干长', shoulder_width:'肩宽', head_scale:'头大小', height:'身高' };
 
 function buildProportionParams() {
-  $('mvProps').innerHTML = '<span class="muted" style="font-size:12px">体型（1.0=基准）</span> ' + PROPORTION_KEYS.map(k =>
-    `<label>${PROPORTION_LABEL[k]} <input type="range" id="mvPr_${k}" data-key="${k}" min="0.6" max="1.6" step="0.05" value="1"> <span class="muted" id="mvPrv_${k}">1</span></label>`
+  $('mvProps').innerHTML = PROPORTION_KEYS.map(k =>
+    `<label class="prow">${PROPORTION_LABEL[k]}
+      <span class="numstep">
+        <button type="button" data-step="-1" data-key="${k}">−</button>
+        <input type="number" id="mvPr_${k}" data-key="${k}" step="0.05" min="0.6" max="1.6" value="1">
+        <button type="button" data-step="1" data-key="${k}">+</button>
+      </span>
+    </label>`
   ).join('');
-  document.querySelectorAll('#mvProps input[type=range]').forEach(r => {
-    r.oninput = () => { $('mvPrv_' + r.dataset.key).textContent = r.value; renderMotion(); };
-  });
+  bindNumSteps($('mvProps'), renderMotion);
 }
 
 async function loadMotions() {
@@ -175,14 +182,32 @@ function buildMotionParams() {
   if (!m) return;
   const params = m.params || {};
   const keys = Object.keys(params).length ? Object.keys(params) : MV_PARAM_KEYS;
-  const html = keys.map(key => {
+  $('mvParams').innerHTML = keys.map(key => {
     const spec = params[key] || { default: 1.0, min: 0, max: 2, label: key };
     const d = spec.default ?? 1.0;
-    return `<label>${spec.label || key} <input type="range" id="mvP_${key}" data-key="${key}" min="${spec.min ?? 0}" max="${spec.max ?? 3}" step="0.05" value="${d}"> <span class="muted" id="mvPv_${key}">${d}</span></label>`;
+    return `<label class="prow">${spec.label || key}
+      <span class="numstep">
+        <button type="button" data-step="-1" data-key="${key}">−</button>
+        <input type="number" id="mvP_${key}" data-key="${key}" step="0.05" min="${spec.min ?? 0}" max="${spec.max ?? 3}" value="${d}">
+        <button type="button" data-step="1" data-key="${key}">+</button>
+      </span>
+    </label>`;
   }).join('');
-  $('mvParams').innerHTML = html + `<span class="muted">${m.has_ik ? '· 该动作声明 IK 组' : ''}</span>`;
-  document.querySelectorAll('#mvParams input[type=range]').forEach(r => {
-    r.oninput = () => { $('mvPv_' + r.dataset.key).textContent = r.value; renderMotion(); };
+  bindNumSteps($('mvParams'), renderMotion);
+}
+
+function bindNumSteps(scope, onChange) {
+  scope.querySelectorAll('button[data-step]').forEach(btn => {
+    btn.onclick = () => {
+      const inp = scope.querySelector(`input[data-key="${btn.dataset.key}"]`);
+      if (!inp) return;
+      const step = parseFloat(inp.step || '0.05');
+      let v = (parseFloat(inp.value) || 0) + step * parseInt(btn.dataset.step, 10);
+      const min = inp.min !== '' ? parseFloat(inp.min) : -Infinity;
+      const max = inp.max !== '' ? parseFloat(inp.max) : Infinity;
+      inp.value = Math.round(Math.min(max, Math.max(min, v)) * 100) / 100;
+      if (onChange) onChange();
+    };
   });
 }
 
@@ -356,22 +381,23 @@ function openParamModal(workflowId, actionId, lastParams) {
     const s = spec || {};
     const last = (lastParams && lastParams[k] != null) ? lastParams[k] : null;
     const d = (last != null) ? last : (s.default ?? 1.0);
-    return `<label style="display:flex;align-items:center;gap:10px;margin:8px 0">
+    return `<label class="prow">
       <span style="min-width:110px">${s.label || k}</span>
-      <input type="range" data-key="${k}" min="${s.min ?? 0}" max="${s.max ?? 3}" step="0.05" value="${d}" style="flex:1">
-      <span class="muted" style="min-width:40px;text-align:right">${d}</span>
+      <span class="numstep">
+        <button type="button" data-step="-1" data-key="${k}">−</button>
+        <input type="number" data-key="${k}" step="0.05" min="${s.min ?? 0}" max="${s.max ?? 3}" value="${d}">
+        <button type="button" data-step="1" data-key="${k}">+</button>
+      </span>
     </label>`;
   }).join('');
-  document.querySelectorAll('#pmParams input[type=range]').forEach(r => {
-    r.oninput = () => { r.closest('label').querySelector('span:last-child').textContent = r.value; };
-  });
+  bindNumSteps($('pmParams'), null);
   $('paramModal').style.display = 'flex';
 }
 
 $('pmCancel').onclick = () => { $('paramModal').style.display = 'none'; };
 $('pmRun').onclick = async () => {
   const params = {};
-  document.querySelectorAll('#pmParams input[type=range]').forEach(r => { params[r.dataset.key] = parseFloat(r.value); });
+  document.querySelectorAll('#pmParams input[type=number]').forEach(r => { params[r.dataset.key] = parseFloat(r.value); });
   $('paramModal').style.display = 'none';
   const r = await api(`/api/workflow/instances/${encodeURIComponent(pmWorkflow)}/actions/${encodeURIComponent(pmAction)}/run`,
     { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ params }) });

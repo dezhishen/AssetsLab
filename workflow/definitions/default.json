@@ -49,7 +49,7 @@
         "prototype/test_output/skeleton_pipeline/front_arm_swing.gif"
       ],
       "approval": "human",
-      "description": "正面完整行走循环（骨架+腿+骨盆+手臂全合成），三个参数均生效"
+      "description": "正面完整行走循环，可调整步幅、骨盆起伏、摆臂与体型比例"
     },
     {
       "action_id": "skeleton.side",
@@ -100,7 +100,7 @@
         "prototype/test_output/skeleton_pipeline/side_arm_swing.gif"
       ],
       "approval": "human",
-      "description": "右向侧面完整行走循环，三个参数均生效"
+      "description": "右向侧面完整行走循环，可调整步幅、骨盆起伏、摆臂与体型比例"
     },
     {
       "action_id": "skeleton.back",
@@ -148,7 +148,7 @@
         "prototype/test_output/skeleton_pipeline/back_legs.gif"
       ],
       "approval": "human",
-      "description": "背面行走循环（背面仅腿循环阶段，stride 与骨盆起伏均生效）"
+      "description": "背面行走循环，可调整步幅、骨盆起伏与体型比例"
     },
     {
       "action_id": "test.smoke",

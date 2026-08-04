@@ -28,9 +28,10 @@
   .badge.pending { color:var(--muted); }
   .stepHead { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
   #stepOutput img { max-width:100%; max-height:260px; image-rendering:pixelated; background:#080b13; border-radius:8px; border:1px solid var(--line); margin-top:10px; }
-  .sliders label { display:flex; align-items:center; gap:10px; margin:8px 0; }
-  .sliders input[type=range] { flex:1; }
-  .sliders span { min-width:40px; text-align:right; }
+  .prow { display:flex; align-items:center; justify-content:space-between; gap:12px; margin:8px 0; }
+  .numstep { display:inline-flex; align-items:center; gap:4px; }
+  .numstep button { width:30px; height:30px; padding:0; font-size:16px; line-height:1; }
+  .numstep input { width:76px; text-align:center; }
   .nav { display:flex; gap:10px; justify-content:space-between; }
   .nav button { flex:1; padding:12px; font-size:16px; }
   .note { color:var(--warn); font-size:13px; margin-top:8px; }
@@ -186,15 +187,19 @@ async function renderStep() {
   $('stepParams').innerHTML = hasParams ? Object.entries(a.params).map(([k, s]) => {
     const spec = s || {};
     const tpl = STATE.template_params || {};
-    // Keep the slider at the last-run value (user's own tuning), else template,
+    // Keep the value at the last-run param (user's own tuning), else template,
     // else definition default — so re-running keeps what you set.
     const last = (st.params && st.params[k] != null) ? st.params[k] : null;
     const d = (last != null) ? last : ((tpl[k] != null) ? tpl[k] : (spec.default ?? 1.0));
-    return `<label>${spec.label || k} <input type="range" data-key="${k}" min="${spec.min ?? 0}" max="${spec.max ?? 3}" step="0.05" value="${d}"> <span data-v>${d}</span></label>`;
+    return `<label class="prow">${spec.label || k}
+      <span class="numstep">
+        <button type="button" data-step="-1" data-key="${k}">−</button>
+        <input type="number" data-key="${k}" step="0.05" min="${spec.min ?? 0}" max="${spec.max ?? 3}" value="${d}">
+        <button type="button" data-step="1" data-key="${k}">+</button>
+      </span>
+    </label>`;
   }).join('') : '';
-  document.querySelectorAll('#stepParams input[type=range]').forEach(r => {
-    r.oninput = () => { r.closest('label').querySelector('[data-v]').textContent = r.value; };
-  });
+  bindNumSteps($('stepParams'));
 
   // outputs (cache-busted so re-running with new params shows the fresh frame)
   const ts = encodeURIComponent(st.finished_at || Date.now());
@@ -221,12 +226,26 @@ async function renderStep() {
 async function runStep() {
   const a = currentAction();
   const params = {};
-  document.querySelectorAll('#stepParams input[type=range]').forEach(r => { params[r.dataset.key] = parseFloat(r.value); });
+  document.querySelectorAll('#stepParams input[type=number]').forEach(r => { params[r.dataset.key] = parseFloat(r.value); });
   $('opRun').disabled = true; $('opRun').textContent = '运行中…';
   const r = await api(`/api/workflow/instances/${encodeURIComponent(WF_ID)}/actions/${encodeURIComponent(a.action_id)}/run`,
     { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ params }) });
   log(`[run] ${a.action_id} params=${JSON.stringify(params)} → ${JSON.stringify(r.data)}`);
   await refresh();
+}
+
+function bindNumSteps(scope) {
+  scope.querySelectorAll('button[data-step]').forEach(btn => {
+    btn.onclick = () => {
+      const inp = scope.querySelector(`input[data-key="${btn.dataset.key}"]`);
+      if (!inp) return;
+      const step = parseFloat(inp.step || '0.05');
+      let v = (parseFloat(inp.value) || 0) + step * parseInt(btn.dataset.step, 10);
+      const min = inp.min !== '' ? parseFloat(inp.min) : -Infinity;
+      const max = inp.max !== '' ? parseFloat(inp.max) : Infinity;
+      inp.value = Math.round(Math.min(max, Math.max(min, v)) * 100) / 100;
+    };
+  });
 }
 
 async function actStep(verb) {
