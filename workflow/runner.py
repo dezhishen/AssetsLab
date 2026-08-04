@@ -188,7 +188,7 @@ class WorkflowRunner:
         apply to every action so front/side/back stay consistent.  ``{name}``
         placeholders in the exec list are replaced by the resolved value, so the
         same action can be re-run with different parameters and the used values
-        are recorded in the action state for review.
+        are recorded in the action state for inspection.
         """
         action = self._require(action_id)
         resolved = self._resolve_params(action, params)

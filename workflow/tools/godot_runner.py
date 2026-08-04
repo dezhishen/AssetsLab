@@ -32,8 +32,6 @@ else:
 PROTOTYPE_ROOT = ROOT / "prototype"
 TEST_OUTPUT = PROTOTYPE_ROOT / "test_output"
 SKELETON_PIPELINE = TEST_OUTPUT / "skeleton_pipeline"
-PREVIEW_ROOT = PROTOTYPE_ROOT / "preview"
-PREVIEW_ASSETS = PREVIEW_ROOT / "assets"
 PYTHON_MODULES = ROOT / ".tools" / "python"
 
 IS_WINDOWS = os.name == "nt"

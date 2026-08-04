@@ -9,8 +9,6 @@ from PIL import Image, ImageDraw
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE = ROOT / "prototype" / "assets" / "characters" / "rebuild_atlas_v1"
 OUTPUT = ROOT / "prototype" / "assets" / "characters" / "rebuild_atlas_v1_runtime" / "male"
-CALIBRATION_PATH = ROOT / "prototype" / "preview" / "calibration" / "latest.json"
-BODY_CALIBRATION_PATH = ROOT / "prototype" / "preview" / "calibration" / "body_latest.json"
 DIRECTIONS = ("front", "right", "back", "left")
 LAYERS = ("face_base", "face", "ears")
 CELL_SIZE = 64
@@ -50,16 +48,10 @@ FEATURE_SOURCE_DIRECTION = {
 
 
 def body_anchor_offsets() -> tuple[dict[str, tuple[int, int]], dict | None]:
+    # Calibration files lived under the removed prototype/preview/; anchors now
+    # fall back to identity offsets (alignment comes from head_anchors()).
     offsets = {direction: (0, 0) for direction in DIRECTIONS}
-    if not BODY_CALIBRATION_PATH.exists():
-        return offsets, None
-    payload = json.loads(BODY_CALIBRATION_PATH.read_text(encoding="utf-8"))
-    if payload.get("schema") != "body_anchor_calibration_v1":
-        raise ValueError(f"unsupported body calibration schema: {payload.get('schema')}")
-    for direction in DIRECTIONS:
-        value = payload.get("calibration", {}).get(direction, {})
-        offsets[direction] = (round(value.get("x", 0)), round(value.get("y", 0)))
-    return offsets, payload
+    return offsets, None
 
 
 def layer_image(direction: str, layer: str) -> Image.Image:
@@ -188,28 +180,6 @@ def calibrated_anchor_targets() -> tuple[dict[str, dict[str, tuple[int, int]]], 
         direction: {key: tuple(value) for key, value in values.items()}
         for direction, values in DEFAULT_ANCHOR_TARGETS.items()
     }
-    if not CALIBRATION_PATH.exists():
-        return targets, None
-    payload = json.loads(CALIBRATION_PATH.read_text(encoding="utf-8"))
-    if payload.get("schema") != "component_anchor_calibration_v1":
-        raise ValueError(f"unsupported calibration schema: {payload.get('schema')}")
-    calibration = payload.get("calibration", {})
-    for direction in ("front", "right", "back", "left"):
-        values = calibration.get(direction, {})
-        if "face_center" in targets[direction] and "face" in values:
-            delta = values.get("face", {})
-            target = targets[direction]["face_center"]
-            targets[direction]["face_center"] = (target[0] + round(delta.get("x", 0)), target[1] + round(delta.get("y", 0)))
-        if direction in ("front", "back"):
-            for key in ("ear_left", "ear_right"):
-                delta = values.get(key, {})
-                target = targets[direction][key]
-                targets[direction][key] = (target[0] + round(delta.get("x", 0)), target[1] + round(delta.get("y", 0)))
-        else:
-            delta = values.get("ear", {})
-            target = targets[direction]["ear"]
-            targets[direction]["ear"] = (target[0] + round(delta.get("x", 0)), target[1] + round(delta.get("y", 0)))
-
     # Enforce the user's left/right mirror standard. The pair is averaged in
     # mirrored space, so a small manual marking error on either side does not
     # become a permanent directional asymmetry.
@@ -222,7 +192,7 @@ def calibrated_anchor_targets() -> tuple[dict[str, dict[str, tuple[int, int]]], 
         y = round((right[1] + left[1]) / 2)
         targets["right"][key] = (right_x, y)
         targets["left"][key] = (2 * mirror_center_x - right_x, y)
-    return targets, payload
+    return targets, None
 
 
 def prepare_direction(direction: str, anchor_targets: dict[str, dict[str, tuple[int, int]]]) -> tuple[dict[str, Image.Image], dict]:
@@ -275,8 +245,8 @@ def main() -> int:
     if not SOURCE.exists():
         raise FileNotFoundError(SOURCE)
     OUTPUT.mkdir(parents=True, exist_ok=True)
-    anchor_targets, calibration_payload = calibrated_anchor_targets()
-    head_body_offsets, body_calibration_payload = body_anchor_offsets()
+    anchor_targets, _ = calibrated_anchor_targets()
+    head_body_offsets, _ = body_anchor_offsets()
     prepared: dict[str, dict[str, Image.Image]] = {}
     registrations: dict[str, dict] = {}
     for direction in DIRECTIONS:
@@ -294,8 +264,6 @@ def main() -> int:
         "anchor_schema": "head_contour_anchors_v1",
         "anchor_space": "runtime_64x64",
         "anchor_targets": anchor_targets,
-        "calibration_source": CALIBRATION_PATH.relative_to(ROOT).as_posix() if calibration_payload is not None else None,
-        "body_calibration_source": BODY_CALIBRATION_PATH.relative_to(ROOT).as_posix() if body_calibration_payload is not None else None,
         "body_anchor_offsets": {direction: list(head_body_offsets[direction]) for direction in DIRECTIONS},
         "mirror_policy": "right_left_anchor_average_around_x32",
         "feature_source_direction": FEATURE_SOURCE_DIRECTION,

@@ -1,5 +1,7 @@
 # AssetsLab（中文说明）
 
+[English](README.md) · **中文**
+
 基于 **Godot 4.7** 的像素风角色动画实验项目。核心工作是：通过**「骨架验证先行、分层图集渲染、无头测试把关」**的流水线，自研 QQTang 风格（大头）角色**四方向 × 八帧**行走动画，并附带一个最小可玩原型作为运行时验证。
 
 - 引擎：Godot 4.7（GL Compatibility 渲染，适合 2D 像素与跨平台/无头自动化）
@@ -83,7 +85,7 @@ Windows 使用 `.venv\Scripts\python.exe`。`requirements.txt` 固定 Python 依
 
 > **CLI（统一入口）：** `workflow/tools/assetslab.py` 可在 Windows / Linux / macOS
 > 上运行：`doctor`、`test`、`capture-walk`、`stage <视图> <阶段>`、`preview`、
-> `publish`、`run-script`。参数：`--female`、`--compact`、`--rebuild-head`、
+> `run-script`。参数：`--female`、`--compact`、`--rebuild-head`、
 > `--appearance-seed` 等；Godot 解析顺序为 `--godot` → `GODOT_BIN`/`GODOT_PATH` → `PATH` → 相邻 `Godot-4.7` 安装。
 
 ### 1. 运行无头冒烟测试

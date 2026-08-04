@@ -1,5 +1,7 @@
 # AssetsLab
 
+**English** · [中文](README_ZH.md)
+
 A pixel-art character animation experiment built on **Godot 4.7**. The core work is a pipeline of **"skeleton-first validation, layered-atlas rendering, headless-test gating"** that produces a QQTang-style (oversized-head) character walk cycle across **four directions × eight frames**, plus a minimal playable slice as the runtime verification.
 
 - Engine: Godot 4.7 (GL Compatibility renderer, suited for 2D pixels and cross-platform/headless automation)
@@ -11,7 +13,7 @@ A pixel-art character animation experiment built on **Godot 4.7**. The core work
 
 | Module | Description |
 |---|---|
-| `prototype/` | Godot 4.7 project: runtime scripts, layered assets, headless tests, browser preview pages |
+| `prototype/` | Godot 4.7 project: runtime scripts, layered assets, headless tests |
 | `third_party/` | Open-source reference assets (CC0 RGS modular character, Female Adventurer walk reference) — pose-timing reference only, not the final art style |
 | `PROJECT.md` | Project charter: development status, roadmap, review principles |
 | `references/` | Design reference images: mannequin sheets, front character anchors |
@@ -44,7 +46,6 @@ assets-lab/
 │   ├── scripts/               # Runtime + skeleton pipeline stage scripts
 │   ├── assets/characters/     # Layered assets (chibi, faces, generated candidates, etc.)
 │   ├── tests/                 # Headless validation tests (smoke_test, etc.)
-│   ├── preview/               # Browser preview pages + interactive calibration pages
 │   └── README.md              # Detailed prototype run instructions
 ├── workflow/                  # Workflow engine: SDK + tools + definitions
 │   ├── tools/                 # Executable scripts (assetslab, capture, build, validate)
@@ -86,7 +87,7 @@ All commands below are executed from the **repository root**.
 
 > **CLI (unified entry):** `workflow/tools/assetslab.py` runs on Windows, Linux
 > and macOS: `doctor`, `test`, `capture-walk`, `stage <view> <stage>`,
-> `preview`, `publish`, and `run-script`. It accepts flags
+> `preview`, and `run-script`. It accepts flags
 > (`--female`, `--compact`, `--rebuild-head`, `--appearance-seed`, ...) and
 > resolves Godot via `--godot` / `GODOT_BIN` / `GODOT_PATH` / `PATH` / an
 > adjacent `Godot-4.7` install.

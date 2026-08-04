@@ -51,8 +51,7 @@ export function urlFromPath(p) {
 }
 
 export const PHASE_LABEL = {
-  skeleton: '骨架流水线', test: '测试', capture: '捕获', preview: '预览',
-  calibration: '校准', publish: '发布', export: '导出制品',
+  skeleton: '骨架流水线', test: '测试', capture: '捕获', export: '导出制品',
 }
 export const STATUS_LABEL = {
   pending: '待办', running: '运行中', passed: '已通过', failed: '失败', skipped: '跳过',

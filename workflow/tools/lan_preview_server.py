@@ -56,38 +56,7 @@ class PreviewHandler(SimpleHTTPRequestHandler):
         if self.path.startswith("/api/motions/"):
             self._motions_api_post()
             return
-        if self.path != "/api/save-calibration":
-            self.send_error(404)
-            return
-        try:
-            length = int(self.headers.get("Content-Length", "0"))
-            payload = json.loads(self.rfile.read(length).decode("utf-8"))
-            schema = payload.get("schema")
-            output_name = {
-                "component_anchor_calibration_v1": "latest.json",
-                "body_anchor_calibration_v1": "body_latest.json",
-                "walk_body_component_anchor_calibration_v1": "body_components_latest.json",
-                "body_outline_split_v1": "body_outline_split_latest.json",
-            }.get(schema)
-            if output_name is None:
-                raise ValueError("unsupported calibration schema")
-            output = Path.cwd() / "calibration" / "latest.json"
-            output = output.with_name(output_name)
-            output.parent.mkdir(parents=True, exist_ok=True)
-            output.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
-            body = b'{"saved":true}'
-            self.send_response(200)
-            self.send_header("Content-Type", "application/json; charset=utf-8")
-            self.send_header("Content-Length", str(len(body)))
-            self.end_headers()
-            self.wfile.write(body)
-        except Exception as error:
-            body = json.dumps({"saved": False, "error": str(error)}).encode("utf-8")
-            self.send_response(400)
-            self.send_header("Content-Type", "application/json; charset=utf-8")
-            self.send_header("Content-Length", str(len(body)))
-            self.end_headers()
-            self.wfile.write(body)
+        self.send_error(404)
 
     def _save_pixel_art(self) -> None:
         try:

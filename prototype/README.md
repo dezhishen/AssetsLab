@@ -23,10 +23,10 @@ candidate and does not replace the current runtime body. The complete reference
 package on the `history0731` branch contains diagonal timing strips, but the
 prototype remains four-direction until that contract is stable.
 
-The latest automatic vertical preview is published through the snapshot server
-when `python workflow/tools/assetslab.py capture-walk --vertical-candidate --vertical-only` is run. The
+A four-direction walk GIF is written to `prototype/test_output/movement_walk.gif`
+when `python workflow/tools/assetslab.py capture-walk` is run. The
 four-direction clothed style experiment from the external pixel-art skill is
-also preview-only and is stored under
+preview-only and is stored under
 `assets/characters/generated/skill_pixel_art_experiment_v1/`.
 
 The new skeleton-first walk workflow is independent of the older body
