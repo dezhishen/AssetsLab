@@ -23,10 +23,15 @@ export const workflowApi = {
   next: (id) => raw(`/api/workflow/instances/${encodeURIComponent(id)}/next`),
   create: (payload) => raw('/api/workflow/instances', json(payload)),
   setBody: (id, body) => raw(`/api/workflow/instances/${encodeURIComponent(id)}/body`, json({ body })),
-  deleteInstance: (id) => raw(`/api/workflow/instances/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+  deleteInstance: (id, payload = {}) => raw(`/api/workflow/instances/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  }),
   // exported artifacts
   artifacts: () => raw('/api/artifacts'),
   instanceArtifacts: (id) => raw(`/api/workflow/instances/${encodeURIComponent(id)}/artifacts`),
+  deleteArtifacts: (id) => raw(`/api/artifacts/${encodeURIComponent(id)}`, { method: 'DELETE' }),
   // actions
   run: (id, actionId, payload = {}) =>
     raw(`/api/workflow/instances/${encodeURIComponent(id)}/actions/${encodeURIComponent(actionId)}/run`, json(payload)),

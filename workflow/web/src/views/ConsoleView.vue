@@ -1,7 +1,7 @@
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, h, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElCheckbox, ElMessage, ElMessageBox } from 'element-plus'
 import { workflowApi, PHASE_LABEL, STATUS_LABEL } from '../api'
 import MotionStudio from '../components/MotionStudio.vue'
 
@@ -88,18 +88,27 @@ async function openDetail(id) {
 }
 function gotoWizard(id) { router.push({ path: '/wizard', query: { id } }) }
 
+const removeArtifacts = ref(false)
+
 async function removeInstance(id) {
   try {
     await ElMessageBox.confirm(
-      `确定删除实例「${id}」吗？其导出制品（dist/${id}/）也会一并删除，此操作不可恢复。`,
+      h('div', { class: 'space-y-2' }, [
+        h('p', { class: 'm-0 text-sm' }, `确定删除实例「${id}」吗？`),
+        h('p', { class: 'm-0 text-xs text-slate-500' }, '其导出制品默认保留，可在「制品」页单独删除。'),
+        h(ElCheckbox,
+          { modelValue: removeArtifacts.value, 'onUpdate:modelValue': (v) => { removeArtifacts.value = v } },
+          () => `同时删除导出制品（dist/${id}/）`),
+      ]),
       '删除实例',
       { type: 'warning', confirmButtonText: '删除', cancelButtonText: '取消', confirmButtonClass: 'el-button--danger' },
     )
   } catch (e) { return } // cancelled
   try {
-    const r = await workflowApi.deleteInstance(id)
+    const r = await workflowApi.deleteInstance(id, { remove_artifacts: removeArtifacts.value })
     pushLog(`删除实例 → ${JSON.stringify(r)}`)
     if (detail.value?.workflow_id === id) detail.value = null
+    removeArtifacts.value = false
     await loadAll()
   } catch (e) { ElMessage.error(e.message) }
 }

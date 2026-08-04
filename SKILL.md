@@ -54,7 +54,8 @@ webflow-cli update        # 更新 webflow-cli 二进制自身
 | `run` | 运行动作（`--param` 动作参数 / `--body` 体型覆盖；运行通过即自动进入下一步） |
 | `history` | 运行时间线 |
 | `set-body` | 固化角色体型（实例级） |
-| `delete` | 删除实例（连同其导出制品 `dist/<id>/`） |
+| `delete` | 删除实例（默认保留制品；`--remove-artifacts` 连同 `dist/<id>/` 一起删除） |
+| `delete-artifacts` | 仅删除实例的导出制品（`dist/<id>/`），实例本身保留 |
 | `update` | 更新 CLI 自身二进制 |
 
 所有命令支持 `--json`（机器可读输出）。

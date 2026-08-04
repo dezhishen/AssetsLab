@@ -14,7 +14,7 @@ import sys
 from pathlib import Path
 
 from .model import BODY_NAMES, WorkflowDef
-from .runner import WorkflowRunner, create_instance, delete_instance, list_instances
+from .runner import WorkflowRunner, create_instance, delete_artifacts, delete_instance, list_instances
 from .store import Store
 
 if getattr(sys, "frozen", False):
@@ -207,9 +207,20 @@ def cmd_update(args: argparse.Namespace) -> int:
 
 
 def cmd_delete(args: argparse.Namespace) -> int:
-    """Delete a workflow instance and its exported artifacts."""
+    """Delete a workflow instance (keeps artifacts unless --remove-artifacts)."""
     try:
-        result = delete_instance(ROOT, args.run_root, args.workflow)
+        result = delete_instance(ROOT, args.run_root, args.workflow, args.remove_artifacts)
+    except KeyError as error:
+        _emit({"ok": False, "error": str(error)}, args.json)
+        return 1
+    _emit(result, args.json)
+    return 0
+
+
+def cmd_delete_artifacts(args: argparse.Namespace) -> int:
+    """Delete only an instance's exported artifacts (dist/<id>), keep the instance."""
+    try:
+        result = delete_artifacts(ROOT, args.workflow)
     except KeyError as error:
         _emit({"ok": False, "error": str(error)}, args.json)
         return 1
@@ -268,9 +279,14 @@ def build_parser() -> argparse.ArgumentParser:
         p.add_argument("--workflow", required=True)
         p.set_defaults(handler={"status": cmd_status, "next": cmd_next, "history": cmd_history}[name])
 
-    p = sub.add_parser("delete", parents=[common], help="Delete a workflow instance (and its exported artifacts).")
+    p = sub.add_parser("delete", parents=[common], help="Delete a workflow instance (keeps artifacts unless --remove-artifacts).")
     p.add_argument("--workflow", required=True)
+    p.add_argument("--remove-artifacts", action="store_true", help="Also remove dist/<id>/ artifacts.")
     p.set_defaults(handler=cmd_delete)
+
+    p = sub.add_parser("delete-artifacts", parents=[common], help="Delete only an instance's exported artifacts (dist/<id>), keep the instance.")
+    p.add_argument("--workflow", required=True)
+    p.set_defaults(handler=cmd_delete_artifacts)
 
 
     p = sub.add_parser("set-body", parents=[common], help="Persist instance-level character proportions.")

@@ -1,5 +1,6 @@
 <script setup>
 import { ref, onMounted } from 'vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { workflowApi } from '../api'
 import ArtifactFiles from '../components/ArtifactFiles.vue'
 
@@ -25,6 +26,20 @@ async function load() {
   } finally { loading.value = false }
 }
 function totalSize(files) { return files.reduce((s, f) => s + (f.size || 0), 0) }
+
+async function deleteArtifacts(wid) {
+  try {
+    await ElMessageBox.confirm(
+      `确定删除实例「${wid}」的导出制品包（dist/${wid}/）吗？实例本身会保留。`,
+      '删除制品',
+      { type: 'warning', confirmButtonText: '删除', cancelButtonText: '取消', confirmButtonClass: 'el-button--danger' },
+    )
+  } catch (e) { return } // cancelled
+  try {
+    await workflowApi.deleteArtifacts(wid)
+    await load()
+  } catch (e) { ElMessage.error(e.message) }
+}
 onMounted(load)
 </script>
 
@@ -48,6 +63,7 @@ onMounted(load)
           <div class="flex items-center gap-3 text-sm">
             <span class="font-medium">{{ g.workflow_id }}</span>
             <span class="text-xs text-slate-500">{{ g.files.length }} 个文件 · {{ fmtSize(totalSize(g.files)) }}</span>
+            <el-button size="small" type="danger" plain @click.stop="deleteArtifacts(g.workflow_id)">删除制品包</el-button>
           </div>
         </template>
         <ArtifactFiles :files="g.files" />

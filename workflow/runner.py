@@ -93,18 +93,30 @@ def create_instance(root: Path, run_root: Path, workflow_id: str, definition_id:
             "next": definition.actions[0].action_id if definition.actions else None}
 
 
-def delete_instance(root: Path, run_root: Path, workflow_id: str) -> dict:
-    """Delete a workflow instance and its exported artifacts (dist/<id>)."""
+def delete_instance(root: Path, run_root: Path, workflow_id: str, remove_artifacts: bool = False) -> dict:
+    """Delete a workflow instance.  Exported artifacts (dist/<id>) are KEPT
+    unless ``remove_artifacts`` is true; they can be removed separately via
+    :func:`delete_artifacts`."""
     store = Store(run_root, workflow_id)
     if not store.exists():
         raise KeyError(f"workflow instance not found: {workflow_id}")
     store.delete()
-    dist_dir = root / "dist" / workflow_id
     removed_artifacts = False
-    if dist_dir.is_dir():
-        shutil.rmtree(dist_dir)
-        removed_artifacts = True
+    if remove_artifacts:
+        dist_dir = root / "dist" / workflow_id
+        if dist_dir.is_dir():
+            shutil.rmtree(dist_dir)
+            removed_artifacts = True
     return {"workflow_id": workflow_id, "deleted": True, "removed_artifacts": removed_artifacts}
+
+
+def delete_artifacts(root: Path, workflow_id: str) -> dict:
+    """Delete only the exported artifact package (dist/<id>); keep the instance."""
+    dist_dir = root / "dist" / workflow_id
+    if not dist_dir.is_dir():
+        raise KeyError(f"no exported artifacts for instance: {workflow_id}")
+    shutil.rmtree(dist_dir)
+    return {"workflow_id": workflow_id, "deleted": True}
 
 
 class WorkflowRunner:

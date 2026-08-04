@@ -128,6 +128,9 @@ class PreviewHandler(SimpleHTTPRequestHandler):
         if self.path.startswith("/api/workflow/"):
             self._workflow_api_delete()
             return
+        if self.path.startswith("/api/artifacts/"):
+            self._artifacts_api_delete()
+            return
         self.send_error(404)
 
     def _workflow_api_delete(self) -> None:
@@ -140,9 +143,28 @@ class PreviewHandler(SimpleHTTPRequestHandler):
         if REPO_ROOT is None:
             self._send_json({"ok": False, "error": "workflow server not configured"})
             return
-        delete_instance = self._sdk()[-1]
+        delete_instance = self._sdk()[-2]
+        body = self._read_json_body()
+        remove_artifacts = bool(body.get("remove_artifacts"))
         try:
-            result = delete_instance(REPO_ROOT, RUN_ROOT, parts[1])
+            result = delete_instance(REPO_ROOT, RUN_ROOT, parts[1], remove_artifacts)
+        except KeyError as error:
+            self._send_json({"ok": False, "error": str(error)}, 404)
+            return
+        self._send_json(self._ok(result))
+
+    def _artifacts_api_delete(self) -> None:
+        """DELETE /api/artifacts/<id> - remove only the artifact package."""
+        parts = [unquote(p) for p in self.path[len("/api/artifacts/"):].rstrip("/").split("/")]
+        if len(parts) != 1 or not parts[0]:
+            self.send_error(404)
+            return
+        if REPO_ROOT is None:
+            self._send_json({"ok": False, "error": "workflow server not configured"})
+            return
+        delete_artifacts = self._sdk()[-1]
+        try:
+            result = delete_artifacts(REPO_ROOT, parts[0])
         except KeyError as error:
             self._send_json({"ok": False, "error": str(error)}, 404)
             return
@@ -170,7 +192,7 @@ class PreviewHandler(SimpleHTTPRequestHandler):
 
     def _runner(self, workflow_id: str):
         """Bind a WorkflowRunner to an existing instance, or None."""
-        WorkflowRunner, _, _, Store, WorkflowDef, _ = self._sdk()
+        WorkflowRunner, _, _, Store, WorkflowDef, _, _ = self._sdk()
         store = Store(RUN_ROOT, workflow_id)
         if not store.exists():
             return None
@@ -192,7 +214,7 @@ class PreviewHandler(SimpleHTTPRequestHandler):
             if REPO_ROOT is None:
                 self._send_json({"ok": False, "error": "workflow server not configured"})
                 return
-            WorkflowRunner, _, list_instances, _, _, _ = self._sdk()
+            WorkflowRunner, _, list_instances, _, _, _, _ = self._sdk()
             self._send_json(self._ok(list_instances(REPO_ROOT, RUN_ROOT)))
             return
         if parts == ["templates"]:
@@ -284,7 +306,7 @@ class PreviewHandler(SimpleHTTPRequestHandler):
         if REPO_ROOT is None:
             self._send_json({"ok": False, "error": "workflow server not configured"})
             return
-        WorkflowRunner, create_instance, _, _, _, _ = self._sdk()
+        WorkflowRunner, create_instance, _, _, _, _, _ = self._sdk()
         if parts == ["instances"]:
             definition = body.get("definition") or "default"
             workflow_id = body.get("id") or definition
@@ -552,9 +574,9 @@ def main() -> int:
     if str(REPO_ROOT) not in sys.path:
         sys.path.insert(0, str(REPO_ROOT))
     from workflow.model import WorkflowDef  # noqa: E402
-    from workflow.runner import WorkflowRunner, create_instance, delete_instance, list_instances  # noqa: E402
+    from workflow.runner import WorkflowRunner, create_instance, delete_artifacts, delete_instance, list_instances  # noqa: E402
     from workflow.store import Store  # noqa: E402
-    _SDK = (WorkflowRunner, create_instance, list_instances, Store, WorkflowDef, delete_instance)
+    _SDK = (WorkflowRunner, create_instance, list_instances, Store, WorkflowDef, delete_instance, delete_artifacts)
     # Static root: prefer the built Vue frontend (workflow/web/dist); if the
     # local build is missing, try the copy bundled inside a packaged server
     # (sys._MEIPASS), then download from a GitHub Release (based on the build
