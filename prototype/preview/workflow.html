@@ -61,18 +61,21 @@
       <label>视角 <select id="mvView">
         <option value="front">front</option><option value="side">side</option><option value="back">back</option>
       </select></label>
-      <label>阶段 <select id="mvStage">
-        <option value="skeleton">skeleton</option><option value="legs">legs</option>
-        <option value="pelvis">pelvis</option><option value="arms">arms</option>
+      <label>阶段 <select id="mvStage" title="完整动作 = 全部层合成的动画；静态骨架 = 参考图（非动画）">
+        <option value="arms" selected>完整动作</option>
+        <option value="skeleton">静态骨架</option>
+        <option value="legs">腿循环</option>
+        <option value="pelvis">骨盆</option>
       </select></label>
       <label><input type="checkbox" id="mvIk"> IK 落地锁定</label>
+      <button id="mvRender" style="margin-left:auto">⟳ 渲染循环</button>
+      <span id="mvStatus" class="muted"></span>
     </div>
     <div class="toolbar" id="mvParams"></div>
     <div class="toolbar">
       <label>混合 → <select id="mvBlend"><option value="">无</option></select></label>
       <label>比例 <input type="range" id="mvBlendT" min="0" max="1" step="0.05" value="0.5" style="width:110px"></label>
-      <button id="mvRender">⟳ 渲染循环</button>
-      <span id="mvStatus" class="muted"></span>
+      <span class="muted" style="font-size:12px">完整动作 = 骨架+腿+骨盆+手臂全部合成（GIF 循环）；静态骨架只渲染 1 帧参考。</span>
     </div>
     <div id="mvResult" style="min-height:70px;margin-top:8px"></div>
   </section>
@@ -157,7 +160,8 @@ function buildMotionParams() {
   const m = currentMotion();
   if (!m) return;
   const params = m.params || {};
-  const html = MV_PARAM_KEYS.map(key => {
+  const keys = Object.keys(params).length ? Object.keys(params) : MV_PARAM_KEYS;
+  const html = keys.map(key => {
     const spec = params[key] || { default: 1.0, min: 0, max: 2, label: key };
     const d = spec.default ?? 1.0;
     return `<label>${spec.label || key} <input type="range" id="mvP_${key}" data-key="${key}" min="${spec.min ?? 0}" max="${spec.max ?? 3}" step="0.05" value="${d}"> <span class="muted" id="mvPv_${key}">${d}</span></label>`;
@@ -189,7 +193,9 @@ async function renderMotion() {
     const wrap = await res.json();
     if (wrap.ok && wrap.gif) {
       $('mvResult').innerHTML = `<img src="${wrap.gif}" alt="${id} ${body.view}/${body.stage}" style="max-width:480px;image-rendering:pixelated;border:1px solid var(--line);border-radius:8px">`;
-      $('mvStatus').textContent = `${body.view}/${body.stage}` + (body.blend ? ` · 混合 ${body.blend} ${body.blend_t}` : '') + (body.ik ? ' · IK' : '');
+      const blendNote = (body.blend && body.blend_t > 0) ? ` · 混合 ${body.blend} ${body.blend_t}` : '';
+      const stageNote = body.stage === 'skeleton' ? '（静态参考）' : '';
+      $('mvStatus').textContent = `${body.view}/${body.stage}${stageNote}` + blendNote + (body.ik ? ' · IK' : '');
     } else {
       $('mvResult').textContent = '渲染错误：' + (wrap.error || JSON.stringify(wrap));
       $('mvStatus').textContent = '';
@@ -201,7 +207,14 @@ async function renderMotion() {
 }
 
 $('mvMotion').onchange = () => { buildMotionParams(); renderMotion(); };
-['mvView', 'mvStage', 'mvIk', 'mvBlend', 'mvBlendT'].forEach(idEl => { $(idEl).onchange = renderMotion; });
+['mvStage', 'mvIk', 'mvBlend', 'mvBlendT'].forEach(idEl => { $(idEl).onchange = renderMotion; });
+$('mvView').onchange = () => {
+  // back view has no pelvis/arms stages -> fall back to legs.
+  if ($('mvView').value === 'back' && ['pelvis', 'arms'].includes($('mvStage').value)) {
+    $('mvStage').value = 'legs';
+  }
+  renderMotion();
+};
 $('mvBlendT').oninput = renderMotion;
 $('mvRender').onclick = renderMotion;
 

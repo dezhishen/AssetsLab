@@ -5,7 +5,6 @@
   "description": "Breathing idle: subtle pelvis bob, tiny arm sway, feet planted. No leg cycle; arms breathe in counter-phase.",
   "frame_count": 8,
   "params": {
-    "stride":     {"default": 0.0, "min": 0.0, "max": 0.0, "label": "步幅（待机无步态）"},
     "pelvis_bob": {"default": 1.0, "min": 0.0, "max": 3.0, "label": "呼吸起伏"},
     "arm_swing":  {"default": 1.0, "min": 0.0, "max": 2.0, "label": "手臂轻摆"}
   },
