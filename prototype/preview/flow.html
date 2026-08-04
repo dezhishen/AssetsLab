@@ -52,25 +52,17 @@
   .bodyToggle h3 { margin:0; color:var(--accent); font-size:15px; }
   .bodyToggle .caret { margin-left:auto; color:var(--muted); font-size:13px; transition:transform .15s; }
   #bodyPanel.open .caret { transform:rotate(90deg); }
-  .tpldesc { display:block; font-size:12px; color:var(--muted); margin-top:2px; max-width:260px; }
 </style>
 </head>
 <body>
 <main>
   <h1>AssetsLab 流程向导 <a href="workflow.html" class="muted">← 返回控制台</a></h1>
-  <p>一次只渲染一个步骤，按依赖顺序推进，类似「上一步 / 下一步」向导。每步可调整参数、运行、预览输出并评审。</p>
+  <p>一次只渲染一个步骤，按依赖顺序推进，类似「上一步 / 下一步」向导。每步可调整参数、运行、预览输出并评审。新建实例请到<a href="workflow.html" class="muted">控制台</a>。</p>
 
   <div class="toolbar">
     <label>流程实例 <select id="wfSelect"></select></label>
     <button id="refresh">⟳ 刷新</button>
     <span id="wfMeta" class="muted"></span>
-  </div>
-  <div class="toolbar">
-    <label>新实例 <input id="newId" placeholder="实例 id（留空用默认）" style="width:180px"></label>
-    <label>参数模板 <select id="tplSelect"><option value="">默认参数</option></select></label>
-    <label>体型模板 <select id="bodyTplSelect"><option value="">标准体型</option></select>
-      <span id="bodyTplDesc" class="tpldesc"></span></label>
-    <button id="newBtn">＋ 新建</button>
   </div>
 
   <div id="stepper" class="stepper"></div>
@@ -150,33 +142,19 @@ async function loadInstances() {
   if (urlId && items.some(it => it.workflow_id === urlId)) $('wfSelect').value = urlId;
 }
 
-async function loadTemplates() {
-  const res = await fetch('/api/workflow/templates');
-  const data = await res.json().catch(() => ({}));
-  const tpls = Array.isArray(data.templates) ? data.templates : [];
-  $('tplSelect').innerHTML = '<option value="">默认参数</option>' +
-    tpls.map(t => `<option value="${t.id}" title="${(t.description || '').replace(/"/g, '&quot;')}">${t.title}（${t.id}）</option>`).join('');
-}
-
+// Body templates are only used to label the character's preset in the
+// wizard's body panel; instance creation (with a body preset) lives in the
+// console (workflow.html).
 async function loadBodyTemplates() {
   const res = await fetch('/api/workflow/body-templates');
   const data = await res.json().catch(() => ({}));
   BODY_TEMPLATES = Array.isArray(data.body_templates) ? data.body_templates : [];
-  $('bodyTplSelect').innerHTML = '<option value="">标准体型</option>' +
-    BODY_TEMPLATES.map(t => `<option value="${t.id}" title="${(t.description || '').replace(/"/g, '&quot;')}">${t.title}（${t.id}）</option>`).join('');
-  updateBodyTplDesc();
 }
 
 function presetTitle(id) {
   if (!id) return '';
   const t = BODY_TEMPLATES.find(x => x.id === id);
   return t ? t.title : id;
-}
-
-function updateBodyTplDesc() {
-  const id = $('bodyTplSelect').value;
-  const t = BODY_TEMPLATES.find(x => x.id === id);
-  $('bodyTplDesc').textContent = t ? t.description : '创建时套用的角色体型预设；留空 = 标准体型。';
 }
 
 function renderBody() {
@@ -389,27 +367,9 @@ $('nextBtn').onclick = async () => {
 
 $('wfSelect').onchange = () => { history.replaceState(null, '', 'flow.html?id=' + encodeURIComponent($('wfSelect').value)); openInstance($('wfSelect').value); };$('refresh').onclick = async () => { await loadInstances(); if (WF_ID) await refresh(); };
 $('bodyToggle').onclick = () => { BODY_OPEN = !BODY_OPEN; renderBody(); };
-$('bodyTplSelect').onchange = updateBodyTplDesc;
-$('newBtn').onclick = async () => {
-  const body = JSON.stringify({
-    definition: 'default',
-    id: $('newId').value || undefined,
-    template: $('tplSelect').value || undefined,
-    body_template: $('bodyTplSelect').value || undefined
-  });
-  const r = await api('/api/workflow/instances', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body });
-  log('新建实例 → ' + JSON.stringify(r.data));
-  await loadInstances();
-  if (r.ok && r.data && r.data.workflow_id) {
-    BODY_OPEN = false;  // keep the new instance's body panel collapsed
-    history.replaceState(null, '', 'flow.html?id=' + encodeURIComponent(r.data.workflow_id));
-    await openInstance(r.data.workflow_id);
-  }
-};
 
 (async () => {
   await loadInstances();
-  await loadTemplates();
   await loadBodyTemplates();
   const urlId = new URLSearchParams(location.search).get('id');
   if (urlId) await openInstance(urlId);
