@@ -1,7 +1,7 @@
 """Workflow data model: declarative action definitions and per-instance state.
 
 The workflow is decomposed into stable, flat ``action_id`` entries (e.g.
-``skeleton.front.legs``).  A ``WorkflowDef`` is the template; per-run state is
+``skeleton.front``).  A ``WorkflowDef`` is the template; per-run state is
 persisted per ``workflow_id`` by :mod:`workflow.store`.
 """
 

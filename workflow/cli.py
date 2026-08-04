@@ -266,7 +266,7 @@ def build_parser() -> argparse.ArgumentParser:
     for name in ("run", "approve", "reject"):
         p = sub.add_parser(name, parents=[common], help=f"{name} an action of a workflow instance.")
         p.add_argument("--workflow", required=True)
-        p.add_argument("--action", required=True, help="action_id, e.g. skeleton.front.legs.")
+        p.add_argument("--action", required=True, help="action_id, e.g. skeleton.front.")
         if name == "run":
             p.add_argument("--param", action="append", metavar="NAME=VALUE",
                            help="Tunable knob for the action (repeatable), e.g. --param stride=1.2 --param pelvis_bob=1.5.")

@@ -7,12 +7,22 @@ A single pure-Python entry point that runs on Windows, Linux and macOS:
     python workflow/tools/assetslab.py test [options]
     python workflow/tools/assetslab.py capture-walk [options]
     python workflow/tools/assetslab.py stage <view> <stage> [--godot PATH]
+    python workflow/tools/assetslab.py stage front arms --renderer python --motion walk \\
+        --stride 1.2 --pelvis-bob 1.5 --proportion-head-scale 1.4
+    python workflow/tools/assetslab.py motion list|info|render|check
     python workflow/tools/assetslab.py preview [--port N] [--directory DIR]
     python workflow/tools/assetslab.py publish [--name TAG]
     python workflow/tools/assetslab.py run-script <script.py> [args...]
 
-The workflow engine (python -m workflow) and the Web console delegate to this
-CLI for all stage/test/capture/preview execution.
+The workflow engine (``python -m workflow``) and the Web console delegate to
+this CLI for all stage/test/capture/preview execution.
+
+Stage rendering: ``--renderer python`` (default, Pillow preview/verify) or
+``--renderer godot`` (headless capture for consistency checks).  Motion presets
+(``--motion walk|run|idle|jump``) drive the data-driven pose library; body
+proportions are tunable via ``--proportion-arm-length`` / ``--proportion-leg-length``
+/ ``--proportion-torso-length`` / ``--proportion-shoulder-width`` /
+``--proportion-head-scale`` / ``--proportion-height`` (1.0 = reference base).
 """
 
 from __future__ import annotations
