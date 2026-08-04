@@ -74,8 +74,13 @@ webflow-cli next --workflow hero
 webflow-cli run --workflow hero --action skeleton.front --param stride=1.2 --param pelvis_bob=1.5
 webflow-cli run --workflow hero --action skeleton.front --body head_scale=1.4
 
-# 4. 走完 7 步 → 导出制品（atlas + runtime_manifest.json + gif → dist/<workflow_id>/）
+# 4. 走完 6 步 → 导出制品（atlas + runtime_manifest.json + gif → dist/<workflow_id>/）
 webflow-cli run --workflow hero --action export.artifacts
+
+# 5.（可选）清理：删除实例默认保留制品；或仅删制品
+webflow-cli delete --workflow hero                       # 删实例，保留 dist/hero
+webflow-cli delete --workflow hero --remove-artifacts    # 删实例 + 制品
+webflow-cli delete-artifacts --workflow hero             # 仅删制品，实例保留
 ```
 
 **动作 id（6 步精简版）**：`skeleton.front` → `skeleton.side` → `skeleton.back` → `test.smoke` → `capture.walk` → `export.artifacts`。定义在 `workflow/definitions/default.json`。
@@ -109,7 +114,7 @@ webflow-server --port 8765 --directory <仓库>/dist --repo-root <仓库>
 1. `new --template <风格> --body-template <体型>` 建实例 → `status` 确认 template_params + body
 2. `next` 取推荐动作 → `run`（`--param` 调动作、`--body` 调体型；也可先 `set-body` 固化角色）
 3. `status --json` 看该动作 `outputs`（本地图片绝对路径）+ `params`（实际所用动作+体型）；不满意可重新 `run` 调参
-4. 走完 7 步 → `export.artifacts` → 制品供 Godot demo
+4. 走完 6 步 → `export.artifacts` → 制品供 Godot demo
 
 ## 约定与注意事项
 

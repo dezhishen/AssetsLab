@@ -174,8 +174,6 @@ and bomb placement (Space).
 python workflow/tools/build_body_vertical_update.py   # rebuild front/back vertical walk candidate frames
 # or: python3 workflow/tools/assetslab.py run-script build_body_vertical_update.py
 python workflow/tools/recolor_body_palettes.py        # generate light/warm/deep skin variants (size & alpha preserved)
-python workflow/tools/build_preview_assets.py         # rebuild preview asset set
-python workflow/tools/publish_preview.py --name tag   # publish timestamped snapshot to preview/snapshots/
 ```
 
 ### 6. Workflow engine (AI / human scheduling)
@@ -189,13 +187,15 @@ python -m workflow new --definition default --id review-a          # create inst
 python -m workflow status --workflow review-a --json               # view state
 python -m workflow next --workflow review-a                        # recommended next action
 python -m workflow run --workflow review-a --action skeleton.front --json
-python -m workflow approve --workflow review-a --action skeleton.front --by ai --note "ok"
-python -m workflow reject --workflow review-a --action skeleton.front --by human --note "redraw"
+python -m workflow set-body --workflow review-a --body head_scale=1.2   # persist character proportions
+python -m workflow delete --workflow review-a                          # delete instance (keeps artifacts)
+python -m workflow delete-artifacts --workflow review-a                # delete only dist/<id> artifacts
+python -m workflow update                                              # update the webflow-cli binary itself
 ```
 
 **Parameterized actions** — every action can declare tunable knobs in the
 definition (e.g. `stride` / `pelvis_bob` / `arm_swing`), and a run can override
-any of them; the used values are recorded in the action state for review:
+any of them; the used values are recorded in the action state for inspection:
 
 ```bash
 python -m workflow run --workflow review-a --action skeleton.front --param stride=1.2 --param pelvis_bob=1.5 --json
@@ -242,13 +242,12 @@ python -m workflow run --workflow hero --action skeleton.front --body height=1.1
   to the CLI), so neither depends on the other.
   Actions with tunable params open a parameter dialog before running (drag
   stride/pelvis-bob/arm-swing, then run), so a human actually tunes the pose
-  instead of only clicking approve.
+  before running.
 - **Step wizard**: `http://<host>:8765/#/wizard?id=<workflow_id>` renders one
   step at a time (stepper + prev/next navigation, like an installer). Each step
-  shows its params, output and review buttons; clicking an instance in the
-  console (`#/console`) opens the wizard. First-open lands on a
-  passed-but-unreviewed step (approve backlog first), otherwise the recommended
-  next action.
+  shows its params and output; clicking an instance in the console
+  (`#/console`) opens the wizard. First-open lands on the recommended next
+  action.
 - `workflow_id` / `action_id` run through CLI, Web and persistence; multiple
   instances can run in parallel, each persisted to its own JSON.
 

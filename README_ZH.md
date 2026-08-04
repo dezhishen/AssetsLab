@@ -11,7 +11,7 @@
 
 | 模块 | 说明 |
 |---|---|
-| `prototype/` | Godot 4.7 工程：运行时脚本、分层资产、无头测试、浏览器预览页 |
+| `prototype/` | Godot 4.7 工程：运行时脚本、分层资产、无头测试 |
 | `third_party/` | 开源参考素材（CC0 RGS 模块化角色、Female Adventurer 行走参考），仅作姿态时序参考，非最终美术风格 |
 | `PROJECT.md` | 项目总纲：开发状态、路线图、评审原则（英文） |
 | `references/` | 设计参考图：人体模型 sheet、正面角色锚点 |
@@ -44,7 +44,6 @@ assets-lab/
 │   ├── scripts/               # 运行时 + 骨架流水线各阶段脚本
 │   ├── assets/characters/     # 分层资产（chibi、faces、generated 候选等）
 │   ├── tests/                 # 无头验证测试（smoke_test 等）
-│   ├── preview/               # 浏览器预览页 + 交互校准页
 │   └── README.md              # 原型的详细运行说明
 ├── workflow/                  # 工作流引擎：SDK + 工具 + 定义
 │   ├── tools/                 # 可执行脚本（assetslab、捕获、构建、校验）
@@ -166,8 +165,6 @@ godot --path prototype -- --artifacts dist/no-review
 python workflow/tools/build_body_vertical_update.py   # 重建前/后纵向行走候选帧
 # 或：python3 workflow/tools/assetslab.py run-script build_body_vertical_update.py
 python workflow/tools/recolor_body_palettes.py        # 生成 light/warm/deep 肤色变体（保持尺寸与 alpha 不变）
-python workflow/tools/build_preview_assets.py         # 重建预览资产集
-python workflow/tools/publish_preview.py --name tag   # 发布时间戳快照到 preview/snapshots/
 ```
 
 ### 6. 工作流引擎（AI / 人工调度）
@@ -180,11 +177,13 @@ python -m workflow new --definition default --id review-a          # 新建实�
 python -m workflow status --workflow review-a --json               # 查看状态
 python -m workflow next --workflow review-a                        # 推荐下一步
 python -m workflow run --workflow review-a --action skeleton.front --json
-python -m workflow approve --workflow review-a --action skeleton.front --by ai --note "ok"
-python -m workflow reject --workflow review-a --action skeleton.front --by human --note "redraw"
+python -m workflow set-body --workflow review-a --body head_scale=1.2   # 固化角色体型
+python -m workflow delete --workflow review-a                          # 删除实例（默认保留制品）
+python -m workflow delete-artifacts --workflow review-a                # 仅删除 dist/<id> 制品
+python -m workflow update                                              # 更新 webflow-cli 二进制自身
 ```
 
-**动作参数化** — 每个动作可在定义里声明可调旋钮（如 `stride` / `pelvis_bob` / `arm_swing`），运行时可覆盖任意参数，实际使用的参数会记录进该动作状态供评审：
+**动作参数化** — 每个动作可在定义里声明可调旋钮（如 `stride` / `pelvis_bob` / `arm_swing`），运行时可覆盖任意参数，实际使用的参数会记录进该动作状态供查看：
 
 ```bash
 python -m workflow run --workflow review-a --action skeleton.front --param stride=1.2 --param pelvis_bob=1.5 --json
@@ -207,8 +206,8 @@ python -m workflow run --workflow hero --action skeleton.front --body height=1.1
 ```
 
 - **CLI** 是面向 AI 的调度通道：`--json` 输出机器可读，`outputs` 返回本地图片**绝对路径**。CLI 直接驱动工作流 SDK（`workflow.runner`），**不依赖 Web 服务**，无需启动服务器即可独立完成全部调度。
-- **Web** 是面向人工的完整通道：前端是 **Vue 3 + Element Plus + Tailwind CSS** 的 pnpm 工程化 SPA（`workflow/web/`，`pnpm build` → `workflow/web/dist` 由 `http://<host>:8765/` 提供）；图片经 `http://<host>:8765/run/workflows/<id>/steps/<action_id>/` 预览。CLI 与 Web API 是**同一 SDK 的两个平级适配器**——Web 服务器也直接调用 `workflow.runner`（不再外部调用 CLI），二者互不依赖。带可调参数的动作在运行前会弹出**参数调优窗**（拖动 stride/pelvis-bob/arm-swing 再运行），人真正参与调姿态，而不只是点「通过」。
-- **分步流程向导**：`http://<host>:8765/#/wizard?id=<workflow_id>` 一次只渲染一个步骤（步进器 + 上一步/下一步，类似安装向导）。每步展示参数、输出与评审按钮；控制台（`#/console`）中点击实例即进入向导。首次打开优先定位「已通过但未审核」的步骤（先补审核），否则定位推荐的下一步。
+- **Web** 是面向人工的完整通道：前端是 **Vue 3 + Element Plus + Tailwind CSS** 的 pnpm 工程化 SPA（`workflow/web/`，`pnpm build` → `workflow/web/dist` 由 `http://<host>:8765/` 提供）；图片经 `http://<host>:8765/run/workflows/<id>/steps/<action_id>/` 预览。CLI 与 Web API 是**同一 SDK 的两个平级适配器**——Web 服务器也直接调用 `workflow.runner`（不再外部调用 CLI），二者互不依赖。带可调参数的动作在运行前会弹出**参数调优窗**（拖动 stride/pelvis-bob/arm-swing 再运行），人真正参与调姿态。
+- **分步流程向导**：`http://<host>:8765/#/wizard?id=<workflow_id>` 一次只渲染一个步骤（步进器 + 上一步/下一步，类似安装向导）。每步展示参数与输出；控制台（`#/console`）中点击实例即进入向导。首次打开定位推荐的下一步。
 - `workflow_id` / `action_id` 贯穿 CLI、Web、持久化三层；多实例可**并行**，各自分文件存储。
 
 ## 预览渲染（纯 Python）
