@@ -73,6 +73,13 @@ def load_base() -> dict:
 
 
 BASE = load_base()
+_BASE_JSON = json.loads((MOTIONS_ROOT / "base.json").read_text(encoding="utf-8"))
+# Skeleton hierarchy: which joints are rigidly attached to the torso, and how
+# much of the root (pelvis) movement they inherit (1.0 = rigid, 0.5 = damped,
+# e.g. head damps to keep the line of sight stable).  This is the industry
+# "root-driven" pattern: pelvis moves -> shoulders/arms/head follow for free.
+TORSO: dict[str, dict[str, float]] = _BASE_JSON.get("torso", {})
+ROOT_MIN_STAGE = "pelvis"  # root motion applies from the pelvis stage onward
 
 
 # ------------------------------------------------------------ expressions --
@@ -194,6 +201,21 @@ def pose(motion: dict, view: str, stage: str, index: int,
                 target[1] += off_y
             if layer == stage:
                 break
+
+    # Root motion: rigid-torso transmission (industry root-driven animation).
+    # The preset's "root" (pelvis translate) is inherited by every torso joint
+    # at its declared ratio, so shoulders/arms/head follow the pelvis instead of
+    # requiring per-joint patches.
+    root = motion.get("root")
+    if root and stage in STAGE_ORDER[STAGE_ORDER.index(ROOT_MIN_STAGE):]:
+        dx = _eval(root.get("dx", 0.0), ctx)
+        dy = _eval(root.get("dy", 0.0), ctx)
+        for joint, inherit in (TORSO.get(view) or {}).items():
+            target = coords.get(joint)
+            if target is None:
+                continue
+            target[0] += dx * inherit
+            target[1] += dy * inherit
 
     result = {name: (x, y) for name, (x, y) in coords.items()}
     for sel_name in ("front_leg", "foreground_leg", "foreground"):
@@ -402,18 +424,20 @@ def _joints_to_compare(view: str, stage: str) -> list[str]:
         return list(BASE[view])
     if view == "front":
         legs = ["left_hip", "right_hip", "left_knee", "right_knee", "left_foot", "right_foot"]
+        upper = ["shoulder_left", "shoulder_right", "elbow_left", "elbow_right", "hand_left", "hand_right"]
         if stage == "legs":
             return legs
         if stage == "pelvis":
-            return legs + ["pelvis", "head", "neck"]
+            return legs + ["pelvis", "head", "neck"] + upper
         return legs + ["pelvis", "head", "neck", "left_elbow", "left_hand", "right_elbow", "right_hand"]
     if view == "side":
         legs = ["rear_hip", "front_hip", "rear_knee", "front_knee", "rear_foot", "front_foot"]
+        upper = ["rear_shoulder", "front_shoulder", "rear_elbow", "front_elbow", "rear_hand", "front_hand"]
         if stage == "legs":
             return legs
         if stage == "pelvis":
-            return legs + ["pelvis", "head", "neck"]
-        return legs + ["pelvis", "head", "neck", "rear_elbow", "rear_hand", "front_elbow", "front_hand"]
+            return legs + ["pelvis", "head", "neck"] + upper
+        return legs + ["pelvis", "head", "neck"] + upper
     # back
     return ["left_hip", "right_hip", "left_knee", "right_knee", "left_foot", "right_foot", "head", "neck"]
 

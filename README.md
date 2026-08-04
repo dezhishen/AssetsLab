@@ -256,6 +256,12 @@ python workflow/tools/assetslab.py stage side arms --renderer python --motion ru
   sway forward/back on the side view — the classic counter-animation so the
   head is never locked (walk/run bob, idle breathing nod, jump follows the
   body lift).
+- **Skeleton hierarchy (root-driven)**: joints form a rigid torso chain
+  (pelvis → neck/head + shoulders/arms). Each motion declares a `root` — the
+  pelvis translate (bob / jump lift / lean) — and every torso joint inherits
+  it at a per-joint ratio (`base.json` → `torso`): shoulders/arms 1.0 (rigid),
+  knees 0.5 (damped), head 0.5 (stable line of sight). A jump now lifts the
+  shoulders/arms with the pelvis automatically, instead of patching each joint.
 - **Two-bone IK** (`--ik`; presets declare `ik` groups) keeps leg lengths
   constant at large strides, and "foot-plant" locks an unreachable foot back
   onto the reachable radius — used by `run` / `jump`.

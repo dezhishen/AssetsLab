@@ -168,26 +168,33 @@ def front_pelvis_pose(index, stride=1.0, bob=1.0):
     pose = front_leg_pose(index, stride)
     dy = offsets[index % FRAME_COUNT] * bob
     base = front_base()
+    # Root-driven rigid torso: the pelvis movement inherits into the whole
+    # upper body (hips/shoulders/arms rigid at 1.0, knees damped at 0.5, and
+    # the head damped at 0.5 to keep the line of sight stable).
     pose["pelvis"] = vadd(base["pelvis"], (0.0, dy))
-    pose["left_hip"] = vadd(pose["left_hip"], (0.0, dy))
-    pose["right_hip"] = vadd(pose["right_hip"], (0.0, dy))
+    pose["left_hip"] = vadd(base["hip_left"], (0.0, dy))
+    pose["right_hip"] = vadd(base["hip_right"], (0.0, dy))
+    for joint in ("shoulder_left", "shoulder_right",
+                  "elbow_left", "elbow_right", "hand_left", "hand_right"):
+        pose[joint] = vadd(base[joint], (0.0, dy))
     pose["left_knee"] = vadd(pose["left_knee"], vmul((0.0, dy), 0.5))
     pose["right_knee"] = vadd(pose["right_knee"], vmul((0.0, dy), 0.5))
-    # head bob: head/neck follow the pelvis at ~half amplitude (counter-animation)
+    pose["neck"] = vadd(base["neck"], (0.0, dy))
     pose["head"] = vadd(base["head"], (0.0, dy * 0.5))
-    pose["neck"] = vadd(base["neck"], (0.0, dy * 0.5))
     return pose
 
 
-def front_arm_pose(index, swing=1.0):
+def front_arm_pose(index, swing=1.0, bob=1.0):
     base = front_base()
+    offsets = [-2.0, -1.0, 1.0, 3.0, -2.0, -1.0, 1.0, 3.0]
+    dy = offsets[index % FRAME_COUNT] * bob
     left = -math.sin(phase(index)) * swing
     right = -left
     return {
-        "left_elbow": vadd(base["elbow_left"], vmul((5.0, 6.0), left)),
-        "left_hand": vadd(base["hand_left"], vmul((10.0, 14.0), left)),
-        "right_elbow": vadd(base["elbow_right"], vmul((5.0, 6.0), right)),
-        "right_hand": vadd(base["hand_right"], vmul((10.0, 14.0), right)),
+        "left_elbow": vadd(vadd(base["elbow_left"], vmul((5.0, 6.0), left)), (0.0, dy)),
+        "left_hand": vadd(vadd(base["hand_left"], vmul((10.0, 14.0), left)), (0.0, dy)),
+        "right_elbow": vadd(vadd(base["elbow_right"], vmul((5.0, 6.0), right)), (0.0, dy)),
+        "right_hand": vadd(vadd(base["hand_right"], vmul((10.0, 14.0), right)), (0.0, dy)),
     }
 
 
@@ -220,26 +227,30 @@ def side_pelvis_pose(index, stride=1.0, bob=1.0):
     pose = side_leg_pose(index, stride)
     dy = offsets[index % FRAME_COUNT] * bob
     base = side_base()
-    pose["pelvis"] = vadd(base["pelvis"], (0.0, dy))
-    pose["rear_hip"] = vadd(pose["rear_hip"], (0.0, dy))
-    pose["front_hip"] = vadd(pose["front_hip"], (0.0, dy))
+    # Root-driven rigid torso (side view): shoulders/arms ride the pelvis bob.
+    for joint in ("pelvis", "rear_hip", "front_hip",
+                  "rear_shoulder", "front_shoulder",
+                  "rear_elbow", "front_elbow", "rear_hand", "front_hand"):
+        pose[joint] = vadd(base[joint], (0.0, dy))
     # head: vertical bob at half pelvis amplitude + forward/back sway per stride
     hx = math.cos(phase(index)) * 4.0
     pose["head"] = (base["head"][0] + hx, base["head"][1] + dy * 0.5)
-    pose["neck"] = (base["neck"][0] + hx, base["neck"][1] + dy * 0.5)
+    pose["neck"] = (base["neck"][0] + hx, base["neck"][1] + dy)
     return pose
 
 
-def side_arm_pose(index, swing=1.0):
+def side_arm_pose(index, swing=1.0, bob=1.0):
     base = side_base()
+    offsets = [-2.0, -1.0, 1.0, 3.0, -2.0, -1.0, 1.0, 3.0]
+    dy = offsets[index % FRAME_COUNT] * bob
     s = math.cos(phase(index)) * swing
     rear_offset = vmul((7.0, 3.0), s)
     front_offset = vmul(rear_offset, -1.0)
     return {
-        "rear_elbow": vadd(base["rear_elbow"], rear_offset),
-        "rear_hand": vadd(base["rear_hand"], vmul(rear_offset, 2.0)),
-        "front_elbow": vadd(base["front_elbow"], front_offset),
-        "front_hand": vadd(base["front_hand"], vmul(front_offset, 2.0)),
+        "rear_elbow": vadd(vadd(base["rear_elbow"], rear_offset), (0.0, dy)),
+        "rear_hand": vadd(vadd(base["rear_hand"], vmul(rear_offset, 2.0)), (0.0, dy)),
+        "front_elbow": vadd(vadd(base["front_elbow"], front_offset), (0.0, dy)),
+        "front_hand": vadd(vadd(base["front_hand"], vmul(front_offset, 2.0)), (0.0, dy)),
     }
 
 
@@ -287,11 +298,18 @@ def draw_front_legs(image, draw, pose, base):
     pelvis_point = pose.get("pelvis", base["pelvis"])
     head_point = pose.get("head", base["head"])
     neck_point = pose.get("neck", base["neck"])
+    shoulder_l = pose.get("shoulder_left", base["shoulder_left"])
+    shoulder_r = pose.get("shoulder_right", base["shoulder_right"])
+    elbow_l = pose.get("elbow_left", base["elbow_left"])
+    elbow_r = pose.get("elbow_right", base["elbow_right"])
+    hand_l = pose.get("hand_left", base["hand_left"])
+    hand_r = pose.get("hand_right", base["hand_right"])
     bone(draw, head_point, neck_point, BONE)
-    bone(draw, base["shoulder_left"], base["shoulder_right"], BONE)
-    for side in ("left", "right"):
-        bone(draw, base[f"shoulder_{side}"], base[f"elbow_{side}"], BONE)
-        bone(draw, base[f"elbow_{side}"], base[f"hand_{side}"], BONE)
+    bone(draw, shoulder_l, shoulder_r, BONE)
+    bone(draw, shoulder_l, elbow_l, BONE)
+    bone(draw, shoulder_r, elbow_r, BONE)
+    bone(draw, elbow_l, hand_l, BONE)
+    bone(draw, elbow_r, hand_r, BONE)
     bone(draw, neck_point, pelvis_point, BONE)
     head(draw, head_point)
     rear = "right" if pose["front_leg"] == "left" else "left"
@@ -306,13 +324,15 @@ def draw_front_legs(image, draw, pose, base):
 def draw_front_arms(image, draw, pose, arms, base):
     head_point = pose.get("head", base["head"])
     neck_point = pose.get("neck", base["neck"])
+    shoulder_l = pose.get("shoulder_left", base["shoulder_left"])
+    shoulder_r = pose.get("shoulder_right", base["shoulder_right"])
     bone(draw, head_point, neck_point, BONE)
-    bone(draw, base["shoulder_left"], base["shoulder_right"], BONE)
+    bone(draw, shoulder_l, shoulder_r, BONE)
     bone(draw, neck_point, pose["pelvis"], BONE)
     head(draw, head_point)
-    bone(draw, base["shoulder_left"], arms["left_elbow"], ARM, 7)
+    bone(draw, shoulder_l, arms["left_elbow"], ARM, 7)
     bone(draw, arms["left_elbow"], arms["left_hand"], ARM, 7)
-    bone(draw, base["shoulder_right"], arms["right_elbow"], ARM, 7)
+    bone(draw, shoulder_r, arms["right_elbow"], ARM, 7)
     bone(draw, arms["right_elbow"], arms["right_hand"], ARM, 7)
     rear = "right" if pose["front_leg"] == "left" else "left"
     for name, color in ((rear, REAR), (pose["front_leg"], FRONT)):
@@ -360,7 +380,8 @@ def draw_side_arms(image, draw, pose, arms, base):
     bone(draw, neck_point, pose["pelvis"], BONE)
     head(draw, head_point)
     for limb, color in (("rear", ARM), ("front", ARM)):
-        bone(draw, base[f"{limb}_shoulder"], arms[f"{limb}_elbow"], color, 7)
+        shoulder = pose.get(f"{limb}_shoulder", base[f"{limb}_shoulder"])
+        bone(draw, shoulder, arms[f"{limb}_elbow"], color, 7)
         bone(draw, arms[f"{limb}_elbow"], arms[f"{limb}_hand"], color, 7)
     for name, color in ((pose["foreground_leg"], FRONT), ("rear" if pose["foreground_leg"] == "front" else "front", REAR)):
         bone(draw, pose[f"{name}_hip"], pose[f"{name}_knee"], color, 8)
@@ -412,7 +433,7 @@ def render_frame(view, stage, index, stride, bob, swing, base=None):
         elif stage == "pelvis":
             draw_front_legs(image, draw, front_pelvis_pose(index, stride, bob), base)
         else:  # arms
-            draw_front_arms(image, draw, front_pelvis_pose(index, stride, bob), front_arm_pose(index, swing), base)
+            draw_front_arms(image, draw, front_pelvis_pose(index, stride, bob), front_arm_pose(index, swing, bob), base)
     elif view == "side":
         base = base or side_base()
         if stage == "skeleton":
@@ -422,7 +443,7 @@ def render_frame(view, stage, index, stride, bob, swing, base=None):
         elif stage == "pelvis":
             draw_side_legs(image, draw, side_pelvis_pose(index, stride, bob), base)
         else:  # arms
-            draw_side_arms(image, draw, side_pelvis_pose(index, stride, bob), side_arm_pose(index, swing), base)
+            draw_side_arms(image, draw, side_pelvis_pose(index, stride, bob), side_arm_pose(index, swing, bob), base)
     else:  # back
         base = base or back_base()
         if stage == "skeleton":

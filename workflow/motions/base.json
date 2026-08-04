@@ -45,5 +45,32 @@
       "left_knee": [456, 410], "right_knee": [504, 410],
       "left_foot": [456, 470], "right_foot": [504, 470]
     }
+  },
+  "torso": {
+    "front": {
+      "pelvis": 1.0,
+      "left_hip": 1.0, "right_hip": 1.0, "hip_left": 1.0, "hip_right": 1.0,
+      "left_knee": 0.5, "right_knee": 0.5, "knee_left": 0.5, "knee_right": 0.5,
+      "neck": 1.0, "head": 0.5,
+      "shoulder_left": 1.0, "shoulder_right": 1.0,
+      "elbow_left": 1.0, "elbow_right": 1.0, "left_elbow": 1.0, "right_elbow": 1.0,
+      "hand_left": 1.0, "hand_right": 1.0, "left_hand": 1.0, "right_hand": 1.0
+    },
+    "side": {
+      "pelvis": 1.0, "rear_hip": 1.0, "front_hip": 1.0,
+      "neck": 1.0, "head": 0.5,
+      "rear_shoulder": 1.0, "front_shoulder": 1.0,
+      "rear_elbow": 1.0, "front_elbow": 1.0,
+      "rear_hand": 1.0, "front_hand": 1.0
+    },
+    "back": {
+      "neck": 1.0, "head": 0.5,
+      "rear_shoulder_left": 1.0, "rear_shoulder_right": 1.0,
+      "front_shoulder_left": 1.0, "front_shoulder_right": 1.0,
+      "rear_elbow_left": 1.0, "rear_elbow_right": 1.0,
+      "front_elbow_left": 1.0, "front_elbow_right": 1.0,
+      "rear_hand_left": 1.0, "rear_hand_right": 1.0,
+      "front_hand_left": 1.0, "front_hand_right": 1.0
+    }
   }
 }

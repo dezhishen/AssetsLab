@@ -16,6 +16,10 @@
     "knee_bend": {"mul": [{"table": [14, 20, 8, 2, 4, 12, 18, 16]}, {"param": "stride"}]},
     "arm_raise": {"mul": [{"table": [0, 4, 12, 20, 24, 16, 6, 0]}, {"param": "arm_swing"}]}
   },
+  "root": {
+    "dx": 0,
+    "dy": {"signal": "pelvis_dy"}
+  },
   "offsets": {
     "front": {
       "legs": {
@@ -23,15 +27,6 @@
         "right_knee": {"y": {"neg": {"signal": "knee_bend"}}},
         "left_foot":  {"y": {"neg": {"signal": "foot_lift"}}},
         "right_foot": {"y": {"neg": {"signal": "foot_lift"}}}
-      },
-      "pelvis": {
-        "pelvis":    {"y": {"signal": "pelvis_dy"}},
-        "left_hip":  {"y": {"signal": "pelvis_dy"}},
-        "right_hip": {"y": {"signal": "pelvis_dy"}},
-        "left_knee":  {"y": {"mul": [{"signal": "pelvis_dy"}, 0.6]}},
-        "right_knee": {"y": {"mul": [{"signal": "pelvis_dy"}, 0.6]}},
-        "head":      {"y": {"mul": [{"signal": "pelvis_dy"}, 0.9]}},
-        "neck":      {"y": {"mul": [{"signal": "pelvis_dy"}, 0.9]}}
       },
       "arms": {
         "left_elbow":  {"y": {"neg": {"signal": "arm_raise"}}},
@@ -46,13 +41,6 @@
         "front_knee": {"y": {"neg": {"signal": "knee_bend"}}},
         "rear_foot":  {"y": {"neg": {"signal": "foot_lift"}}},
         "front_foot": {"y": {"neg": {"signal": "foot_lift"}}}
-      },
-      "pelvis": {
-        "pelvis":   {"y": {"signal": "pelvis_dy"}},
-        "rear_hip": {"y": {"signal": "pelvis_dy"}},
-        "front_hip": {"y": {"signal": "pelvis_dy"}},
-        "head":     {"y": {"mul": [{"signal": "pelvis_dy"}, 0.9]}},
-        "neck":     {"y": {"mul": [{"signal": "pelvis_dy"}, 0.9]}}
       },
       "arms": {
         "rear_elbow":  {"y": {"neg": {"signal": "arm_raise"}}},
