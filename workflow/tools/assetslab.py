@@ -366,6 +366,31 @@ def cmd_stage(args: argparse.Namespace) -> int:
         raise SystemExit(f"Unknown stage '{args.view} {args.stage}'. Available stages: {json.dumps(available)}")
     test_script, frame_dir_name, expected_name = view_stages[args.stage]
 
+    if args.renderer == "python":
+        # Pure-Python skeleton preview renderer (no Godot needed); pose params
+        # let AI tune stride / pelvis bob / arm swing.
+        SKELETON_PIPELINE.mkdir(parents=True, exist_ok=True)
+        python = resolve_python(args.python)
+        extra = ["--view", args.view, "--stage", args.stage, "--output", str(SKELETON_PIPELINE)]
+        if args.stride is not None:
+            extra += ["--stride", str(args.stride)]
+        if args.pelvis_bob is not None:
+            extra += ["--pelvis-bob", str(args.pelvis_bob)]
+        if args.arm_swing is not None:
+            extra += ["--arm-swing", str(args.arm_swing)]
+        process = _run_python_tool(python, "render_skeleton_preview.py", extra)
+        if process.stdout:
+            print(process.stdout, end="")
+        if process.stderr:
+            print(process.stderr, end="")
+        if process.returncode != 0:
+            raise SystemExit(f"Python render failed for {args.view} {args.stage} (exit {process.returncode}).")
+        output = SKELETON_PIPELINE / expected_name
+        if not output.exists():
+            raise SystemExit(f"Python render did not produce expected output: {output}")
+        print(f"{args.view}_{args.stage}_RENDER_PASS={output}")
+        return 0
+
     godot = resolve_godot(args.godot)
     python = resolve_python(args.python)
 
@@ -486,6 +511,10 @@ def build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("stage", help="Capture one skeleton pipeline stage.")
     p.add_argument("view", choices=list(STAGES), help="front / side / back")
     p.add_argument("stage", choices=sorted({s for stages in STAGES.values() for s in stages}), help="skeleton / legs / pelvis / arms")
+    p.add_argument("--renderer", choices=["godot", "python"], default="godot", help="godot = headless capture (default); python = Pillow preview renderer.")
+    p.add_argument("--stride", type=float, help="Leg swing amplitude multiplier (python renderer).")
+    p.add_argument("--pelvis-bob", type=float, help="Pelvis bob multiplier (python renderer).")
+    p.add_argument("--arm-swing", type=float, help="Arm swing multiplier (python renderer).")
     add_tool_args(p)
 
     p = sub.add_parser("preview", help="Start the LAN preview server (lan_preview_server.py).")

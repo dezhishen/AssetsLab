@@ -26,6 +26,8 @@ from pathlib import Path
 
 from PIL import Image
 
+from recolor_body_palettes import PALETTES, semantic_tone
+
 ROOT = Path(__file__).resolve().parents[2]
 PROTOTYPE = ROOT / "prototype"
 CHIBI_ROOT = PROTOTYPE / "assets/characters/chibi"
@@ -75,12 +77,28 @@ def compose(body: dict[str, list[list[Image.Image]]], head: dict[str, list[list[
     return image
 
 
+def recolor_frame(image: Image.Image, palette: dict[str, tuple[int, int, int]]) -> Image.Image:
+    """Remap body pixels by semantic tone (outline/shadow/base/highlight)."""
+    source = image.convert("RGBA")
+    output = Image.new("RGBA", source.size)
+    pixels = []
+    for r, g, b, a in source.getdata():
+        if a == 0:
+            pixels.append((0, 0, 0, 0))
+            continue
+        tone = semantic_tone((r, g, b))
+        nr, ng, nb = palette[tone]
+        pixels.append((nr, ng, nb, a))
+    output.putdata(pixels)
+    return output
+
+
 def make_gif(frames: list[Image.Image], path: Path) -> None:
     enlarged = [f.resize((256, 256), Image.Resampling.NEAREST) for f in frames]
     enlarged[0].save(path, save_all=True, append_images=enlarged[1:], duration=100, loop=0)
 
 
-def write_manifest(dist: Path, workflow_id: str, offsets: dict, files: list[str]) -> None:
+def write_manifest(dist: Path, workflow_id: str, offsets: dict, files: list[str], runtime_params: dict | None = None) -> None:
     manifest = {
         "schema": "assetslab_artifact_v1",
         "workflow_id": workflow_id,
@@ -91,6 +109,7 @@ def write_manifest(dist: Path, workflow_id: str, offsets: dict, files: list[str]
         "frames_per_direction": FRAMES,
         "layer_order": list(BODY_LAYERS) + list(HEAD_LAYERS),
         "head_anchor_offsets": offsets,
+        "runtime_params": runtime_params or {},
         "atlas_dir": "atlas",
         "preview_gif": "character_walk_4way.gif",
         "files": sorted(files),
@@ -129,6 +148,12 @@ def main() -> int:
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT, help="Dist root (default: <repo>/dist).")
     parser.add_argument("--body-root", type=Path, default=CHIBI_ROOT)
     parser.add_argument("--head-root", type=Path, default=HEAD_ROOT)
+    for direction in DIRECTIONS:
+        parser.add_argument(f"--offset-{direction}", help=f'Override head anchor offset for {direction}, "x,y"')
+    parser.add_argument("--move-speed", type=float, default=180.0, help="Demo move speed (runtime_params).")
+    parser.add_argument("--walk-fps", type=float, default=8.0, help="Demo walk frames per second (runtime_params).")
+    parser.add_argument("--layer-y", type=float, default=-26.0, help="Demo layer registration y (runtime_params).")
+    parser.add_argument("--palette", choices=["none", "light", "warm", "deep"], default="none", help="Skin-tone recolor for body layers.")
     args = parser.parse_args()
 
     workflow_id = args.workflow_id
@@ -137,12 +162,21 @@ def main() -> int:
     if dist.exists():
         shutil.rmtree(dist)
 
+    palette = PALETTES.get(args.palette)
     files: list[str] = []
-    # Body layers from the chibi runtime split.
+    # Body layers from the chibi runtime split (optionally recolored).
     body = {}
     for layer in BODY_LAYERS:
-        body[layer] = load_frames(args.body_root, f"{layer}_frames")
-        files += [str(p.relative_to(dist)) for p in copy_frames(args.body_root, f"{layer}_frames", atlas / layer)]
+        frames = load_frames(args.body_root, f"{layer}_frames")
+        if palette:
+            frames = [[recolor_frame(f, palette) for f in row] for row in frames]
+        body[layer] = frames
+        for row in range(ROWS):
+            for frame in range(FRAMES):
+                dst = atlas / layer
+                dst.mkdir(parents=True, exist_ok=True)
+                frames[row][frame].save(dst / f"walk_row{row}_frame{frame}.png")
+                files.append(f"atlas/{layer}/walk_row{row}_frame{frame}.png")
     # Calibrated head layers from the rebuild runtime.
     head = {}
     for layer in HEAD_LAYERS:
@@ -153,6 +187,16 @@ def main() -> int:
     manifest_src = args.head_root / "runtime_manifest.json"
     if manifest_src.exists():
         offsets = json.loads(manifest_src.read_text(encoding="utf-8")).get("body_anchor_offsets", {})
+    for direction in DIRECTIONS:
+        override = getattr(args, f"offset_{direction}", None)
+        if override:
+            try:
+                x, y = (part.strip() for part in override.split(","))
+                offsets[direction] = [int(x), int(y)]
+            except ValueError:
+                parser.error(f"--offset-{direction} expects \"x,y\", got: {override!r}")
+
+    runtime_params = {"move_speed": args.move_speed, "walk_fps": args.walk_fps, "layer_y": args.layer_y}
 
     # Pillow-composited walk preview (identical layering to the Godot demo).
     frames = []
@@ -164,7 +208,7 @@ def main() -> int:
     make_gif(frames, gif_path)
     files.append(gif_path.relative_to(dist).as_posix())
 
-    write_manifest(dist, workflow_id, offsets, files)
+    write_manifest(dist, workflow_id, offsets, files, runtime_params)
     write_readme(dist, workflow_id)
     print(f"ARTIFACTS_EXPORT_PASS workflow_id={workflow_id} output={dist.resolve()}")
     print(f"ARTIFACT_PREVIEW={gif_path.resolve()}")

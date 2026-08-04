@@ -182,6 +182,21 @@ python -m workflow reject --workflow review-a --action skeleton.front.legs --by 
 - `workflow_id` / `action_id` run through CLI, Web and persistence; multiple
   instances can run in parallel, each persisted to its own JSON.
 
+## Preview rendering (pure Python)
+
+Skeleton pipeline previews are rendered with Pillow
+(`workflow/tools/render_skeleton_preview.py`) — no Godot needed. Pose is
+parameterized so AI can improve the walk directly:
+
+```bash
+python workflow/tools/assetslab.py stage front legs --renderer python --stride 1.2 --pelvis-bob 1.0 --arm-swing 1.1
+python workflow/tools/render_skeleton_preview.py --view side --stage arms --arm-swing 1.5
+```
+
+- `--stride` leg swing amplitude · `--pelvis-bob` pelvis bob · `--arm-swing` arm swing.
+- The workflow's skeleton actions already run `--renderer python`; Godot's
+  headless capture stays available as `--renderer godot` for consistency checks.
+
 ## Artifacts & Godot demo
 
 The final workflow action `export.artifacts` builds a Godot-ready package under

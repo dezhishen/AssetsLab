@@ -176,6 +176,18 @@ python -m workflow reject --workflow review-a --action skeleton.front.legs --by 
 - **Web** 是面向人工的完整通道：`http://<host>:8765/workflow.html`；图片经 `http://<host>:8765/run/workflows/<id>/steps/<action_id>/` 预览。
 - `workflow_id` / `action_id` 贯穿 CLI、Web、持久化三层；多实例可**并行**，各自分文件存储。
 
+## 预览渲染（纯 Python）
+
+骨架流水线预览改用 Pillow 渲染（`workflow/tools/render_skeleton_preview.py`），无需 Godot。姿态参数化，AI 可直接调优：
+
+```bash
+python workflow/tools/assetslab.py stage front legs --renderer python --stride 1.2 --pelvis-bob 1.0 --arm-swing 1.1
+python workflow/tools/render_skeleton_preview.py --view side --stage arms --arm-swing 1.5
+```
+
+- `--stride` 步幅 · `--pelvis-bob` 骨盆浮动 · `--arm-swing` 摆臂幅度。
+- 工作流的骨架动作已默认 `--renderer python`；Godot 无头捕获仍以 `--renderer godot` 保留用于一致性验证。
+
 ## 制品与 Godot demo
 
 工作流的最后一个动作 `export.artifacts` 会用纯 Python（无需 Godot）在 `dist/<workflow_id>/` 下打包一份**Godot 可直接使用**的制品：

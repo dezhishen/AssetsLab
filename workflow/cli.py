@@ -77,7 +77,9 @@ def _runner(args: argparse.Namespace, workflow_id: str | None = None) -> Workflo
     if not store.exists():
         raise SystemExit(f"workflow instance not found: {store.workflow_id} (use 'new' first)")
     definition = _definition(args.definition_root, store.load().get("definition_id", "default"))
-    return WorkflowRunner(args.run_root, definition, store.workflow_id, store)
+    # root is the repository root (for tool paths / cwd / dist); the run state
+    # lives under args.run_root via the store.
+    return WorkflowRunner(ROOT, definition, store.workflow_id, store)
 
 
 def cmd_list(args: argparse.Namespace) -> int:

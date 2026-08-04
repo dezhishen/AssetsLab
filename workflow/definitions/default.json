@@ -6,9 +6,17 @@
       "action_id": "skeleton.front.skeleton",
       "title": "正面静态骨架",
       "phase": "skeleton",
-      "exec": ["stage", "front", "skeleton"],
+      "exec": [
+        "stage",
+        "front",
+        "skeleton",
+        "--renderer",
+        "python"
+      ],
       "depends": [],
-      "collect": ["prototype/test_output/skeleton_pipeline/front_base.png"],
+      "collect": [
+        "prototype/test_output/skeleton_pipeline/front_base.png"
+      ],
       "approval": "human",
       "description": "对称性与共享脚基线，输出 front_base.png"
     },
@@ -16,9 +24,19 @@
       "action_id": "skeleton.front.legs",
       "title": "正面双腿循环",
       "phase": "skeleton",
-      "exec": ["stage", "front", "legs"],
-      "depends": ["skeleton.front.skeleton"],
-      "collect": ["prototype/test_output/skeleton_pipeline/front_legs.gif"],
+      "exec": [
+        "stage",
+        "front",
+        "legs",
+        "--renderer",
+        "python"
+      ],
+      "depends": [
+        "skeleton.front.skeleton"
+      ],
+      "collect": [
+        "prototype/test_output/skeleton_pipeline/front_legs.gif"
+      ],
       "approval": "human",
       "description": "8 帧交替接触/迈步，输出 front_legs.gif"
     },
@@ -26,9 +44,19 @@
       "action_id": "skeleton.front.pelvis",
       "title": "正面骨盆浮动",
       "phase": "skeleton",
-      "exec": ["stage", "front", "pelvis"],
-      "depends": ["skeleton.front.legs"],
-      "collect": ["prototype/test_output/skeleton_pipeline/front_pelvis_bob.gif"],
+      "exec": [
+        "stage",
+        "front",
+        "pelvis",
+        "--renderer",
+        "python"
+      ],
+      "depends": [
+        "skeleton.front.legs"
+      ],
+      "collect": [
+        "prototype/test_output/skeleton_pipeline/front_pelvis_bob.gif"
+      ],
       "approval": "human",
       "description": "≤6px 骨盆起伏，输出 front_pelvis_bob.gif"
     },
@@ -36,9 +64,19 @@
       "action_id": "skeleton.front.arms",
       "title": "正面摆臂",
       "phase": "skeleton",
-      "exec": ["stage", "front", "arms"],
-      "depends": ["skeleton.front.pelvis"],
-      "collect": ["prototype/test_output/skeleton_pipeline/front_arm_swing.gif"],
+      "exec": [
+        "stage",
+        "front",
+        "arms",
+        "--renderer",
+        "python"
+      ],
+      "depends": [
+        "skeleton.front.pelvis"
+      ],
+      "collect": [
+        "prototype/test_output/skeleton_pipeline/front_arm_swing.gif"
+      ],
       "approval": "human",
       "description": "与腿反相摆臂，输出 front_arm_swing.gif"
     },
@@ -46,61 +84,123 @@
       "action_id": "skeleton.side.skeleton",
       "title": "右向侧面静态骨架",
       "phase": "skeleton",
-      "exec": ["stage", "side", "skeleton"],
-      "depends": ["skeleton.front.arms"],
-      "collect": ["prototype/test_output/skeleton_pipeline/side_base.png"],
+      "exec": [
+        "stage",
+        "side",
+        "skeleton",
+        "--renderer",
+        "python"
+      ],
+      "depends": [
+        "skeleton.front.arms"
+      ],
+      "collect": [
+        "prototype/test_output/skeleton_pipeline/side_base.png"
+      ],
       "approval": "human"
     },
     {
       "action_id": "skeleton.side.legs",
       "title": "右向侧面双腿循环",
       "phase": "skeleton",
-      "exec": ["stage", "side", "legs"],
-      "depends": ["skeleton.side.skeleton"],
-      "collect": ["prototype/test_output/skeleton_pipeline/side_legs.gif"],
+      "exec": [
+        "stage",
+        "side",
+        "legs",
+        "--renderer",
+        "python"
+      ],
+      "depends": [
+        "skeleton.side.skeleton"
+      ],
+      "collect": [
+        "prototype/test_output/skeleton_pipeline/side_legs.gif"
+      ],
       "approval": "human"
     },
     {
       "action_id": "skeleton.side.pelvis",
       "title": "右向侧面骨盆浮动",
       "phase": "skeleton",
-      "exec": ["stage", "side", "pelvis"],
-      "depends": ["skeleton.side.legs"],
-      "collect": ["prototype/test_output/skeleton_pipeline/side_pelvis_bob.gif"],
+      "exec": [
+        "stage",
+        "side",
+        "pelvis",
+        "--renderer",
+        "python"
+      ],
+      "depends": [
+        "skeleton.side.legs"
+      ],
+      "collect": [
+        "prototype/test_output/skeleton_pipeline/side_pelvis_bob.gif"
+      ],
       "approval": "human"
     },
     {
       "action_id": "skeleton.side.arms",
       "title": "右向侧面摆臂",
       "phase": "skeleton",
-      "exec": ["stage", "side", "arms"],
-      "depends": ["skeleton.side.pelvis"],
-      "collect": ["prototype/test_output/skeleton_pipeline/side_arm_swing.gif"],
+      "exec": [
+        "stage",
+        "side",
+        "arms",
+        "--renderer",
+        "python"
+      ],
+      "depends": [
+        "skeleton.side.pelvis"
+      ],
+      "collect": [
+        "prototype/test_output/skeleton_pipeline/side_arm_swing.gif"
+      ],
       "approval": "human"
     },
     {
       "action_id": "skeleton.back.skeleton",
       "title": "背面静态骨架",
       "phase": "skeleton",
-      "exec": ["stage", "back", "skeleton"],
-      "depends": ["skeleton.side.arms"],
-      "collect": ["prototype/test_output/skeleton_pipeline/back_base.png"],
+      "exec": [
+        "stage",
+        "back",
+        "skeleton",
+        "--renderer",
+        "python"
+      ],
+      "depends": [
+        "skeleton.side.arms"
+      ],
+      "collect": [
+        "prototype/test_output/skeleton_pipeline/back_base.png"
+      ],
       "approval": "human"
     },
     {
       "action_id": "skeleton.back.legs",
       "title": "背面双腿循环",
       "phase": "skeleton",
-      "exec": ["stage", "back", "legs"],
-      "depends": ["skeleton.back.skeleton"],
-      "collect": ["prototype/test_output/skeleton_pipeline/back_legs.gif"],
+      "exec": [
+        "stage",
+        "back",
+        "legs",
+        "--renderer",
+        "python"
+      ],
+      "depends": [
+        "skeleton.back.skeleton"
+      ],
+      "collect": [
+        "prototype/test_output/skeleton_pipeline/back_legs.gif"
+      ],
       "approval": "human"
     },
     {
       "action_id": "test.smoke",
       "title": "无头冒烟测试",
       "phase": "test",
-      "exec": ["test"],
+      "exec": [
+        "test"
+      ],
       "depends": [],
       "collect": [],
       "approval": "auto",
@@ -110,9 +210,15 @@
       "action_id": "capture.walk",
       "title": "捕获行走 GIF",
       "phase": "capture",
-      "exec": ["capture-walk"],
-      "depends": ["test.smoke"],
-      "collect": ["prototype/test_output/movement_walk.gif"],
+      "exec": [
+        "capture-walk"
+      ],
+      "depends": [
+        "test.smoke"
+      ],
+      "collect": [
+        "prototype/test_output/movement_walk.gif"
+      ],
       "approval": "human",
       "description": "四方向行走 GIF 捕获"
     },
@@ -120,8 +226,12 @@
       "action_id": "preview.publish",
       "title": "发布预览快照",
       "phase": "preview",
-      "exec": ["publish"],
-      "depends": ["capture.walk"],
+      "exec": [
+        "publish"
+      ],
+      "depends": [
+        "capture.walk"
+      ],
       "collect": [],
       "approval": "human",
       "description": "重建预览资产并发布时间戳快照"
@@ -130,8 +240,15 @@
       "action_id": "export.artifacts",
       "title": "导出 Godot 制品",
       "phase": "export",
-      "exec": ["run-script", "export_artifacts.py", "--workflow-id", "{workflow_id}"],
-      "depends": ["preview.publish"],
+      "exec": [
+        "run-script",
+        "export_artifacts.py",
+        "--workflow-id",
+        "{workflow_id}"
+      ],
+      "depends": [
+        "preview.publish"
+      ],
       "collect": [],
       "approval": "human",
       "description": "打包 dist/<workflow_id>/ 制品包（atlas + manifest + GIF）供 Godot demo 使用"

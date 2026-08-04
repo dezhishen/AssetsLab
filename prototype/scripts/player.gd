@@ -21,6 +21,7 @@ var milestone_body_right := false
 var latest_generated_body := false
 var vertical_body_candidate := false
 var artifacts_dir := ""
+var layer_y := -26.0
 var appearance_seed: int = 20260730
 var appearance_variant: int = 0
 var body_anchor_offsets: Dictionary = {}
@@ -120,6 +121,14 @@ func _load_artifacts_frames() -> void:
 		var payload = JSON.parse_string(FileAccess.get_file_as_string(manifest_path))
 		if payload is Dictionary:
 			body_anchor_offsets = payload.get("head_anchor_offsets", {})
+			var params = payload.get("runtime_params", {})
+			if params is Dictionary:
+				if params.get("move_speed") is float:
+					move_speed = params["move_speed"]
+				if params.get("walk_fps") is float:
+					walk_fps = params["walk_fps"]
+				if params.get("layer_y") is float:
+					layer_y = params["layer_y"]
 	for layer in layers:
 		for row in range(4):
 			for frame in range(8):
@@ -397,7 +406,7 @@ func _apply_frame(frame: int) -> void:
 		# The vertical candidate was normalized around the 64x64 center. The
 		# adapter calibration offsets belong to the older body source and would
 		# shift the head several pixels to the right on front/back views.
-		var vertical_registered_position := Vector2(0.0, -26.0)
+		var vertical_registered_position := Vector2(0.0, layer_y)
 		head_sprite.position = vertical_registered_position
 		ear_sprite.position = vertical_registered_position
 		face_sprite.position = vertical_registered_position
@@ -414,7 +423,7 @@ func _apply_frame(frame: int) -> void:
 		head_sprite.texture = head_frame_textures[index]
 		face_sprite.texture = face_frame_textures[index]
 		var latest_body_offset := _current_body_anchor_offset()
-		var latest_registered_position := Vector2(latest_body_offset.x, -26.0 + latest_body_offset.y)
+		var latest_registered_position := Vector2(latest_body_offset.x, layer_y + latest_body_offset.y)
 		head_sprite.position = latest_registered_position
 		ear_sprite.position = latest_registered_position
 		face_sprite.position = latest_registered_position
@@ -431,7 +440,7 @@ func _apply_frame(frame: int) -> void:
 	# The body anchor page stores one shared offset per direction. All head
 	# sublayers move together so calibration cannot separate ears from the face.
 	var body_offset := _current_body_anchor_offset()
-	var registered_position := Vector2(body_offset.x, -26.0 + body_offset.y)
+	var registered_position := Vector2(body_offset.x, layer_y + body_offset.y)
 	head_sprite.position = registered_position
 	ear_sprite.position = registered_position
 	face_sprite.position = registered_position
