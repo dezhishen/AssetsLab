@@ -176,19 +176,14 @@ def cmd_set_body(args: argparse.Namespace) -> int:
 
 
 def cmd_update(args: argparse.Namespace) -> int:
-    """Update a webflow artifact (frontend / cli / server) from a GitHub Release.
+    """Update the webflow-cli binary itself from a GitHub Release.
 
-    The CI pipeline publishes three artifacts: ``webflow-dist.zip`` (cross-platform
-    frontend), ``webflow-cli-<platform>.zip`` and ``webflow-server-<platform>.zip``
-    (per-platform binaries). This command fetches the selected one.
+    The CI pipeline publishes three artifacts (frontend dist, cli and server
+    binaries), but webflow-cli only manages *itself*: the frontend is fetched
+    by the server on startup, and the server manages its own binary.
     """
-    from .webflow import (  # noqa: PLC0415
-        download_release_asset,
-        ensure_webflow_dist,
-        infer_repo,
-        platform_tag,
-        read_version,
-    )
+    from .webflow import download_release_asset, infer_repo, platform_tag  # noqa: PLC0415
+
     token = args.webflow_token or os.environ.get("GITHUB_TOKEN")
     repo = args.webflow_repo or infer_repo(ROOT)
     if not repo:
@@ -196,28 +191,19 @@ def cmd_update(args: argparse.Namespace) -> int:
         return 1
     # Download progress/errors go to stderr so stdout stays pure JSON in --json.
     elog = lambda *a: print(*a, file=sys.stderr)  # noqa: E731
-    component = args.component
-    if component == "frontend":
-        dist = ensure_webflow_dist(ROOT, repo, args.webflow_version, token, log=elog)
-        if dist is None:
-            _emit({"ok": False, "error": "frontend update failed (no local build, no reachable release)"}, args.json)
-            return 1
-        _emit({"ok": True, "component": "frontend", "dist": str(dist), "version": read_version(dist)}, args.json)
-        return 0
     tag = platform_tag()
-    asset = f"webflow-{component}-{tag}.zip"
-    dest = ROOT / "workflow" / "web" / ("cli" if component == "cli" else "server")
+    asset = f"webflow-cli-{tag}.zip"
+    dest = ROOT / "workflow" / "web" / "cli"
     if download_release_asset(repo, args.webflow_version, asset, dest, token, log=elog) is None:
-        _emit({"ok": False, "error": f"{component} update failed ({asset})"}, args.json)
+        _emit({"ok": False, "error": f"cli update failed ({asset})"}, args.json)
         return 1
     # A zip does not reliably preserve the executable bit on POSIX — make the
-    # unpacked binary runnable so `workflow/web/<cli|server>/webflow-<c|s>*`
-    # works straight away.
+    # unpacked binary runnable so `workflow/web/cli/webflow-cli` works.
     if os.name != "nt":
-        exe = dest / (f"webflow-{component}" if component == "cli" else f"webflow-{component}")
+        exe = dest / "webflow-cli"
         if exe.is_file():
             exe.chmod(exe.stat().st_mode | 0o111)
-    _emit({"ok": True, "component": component, "asset": asset, "dir": str(dest)}, args.json)
+    _emit({"ok": True, "component": "cli", "asset": asset, "dir": str(dest)}, args.json)
     return 0
 
 
@@ -303,9 +289,7 @@ def build_parser() -> argparse.ArgumentParser:
                    help="Character proportion to set (repeatable), e.g. --body head_scale=1.4.")
     p.set_defaults(handler=cmd_set_body)
 
-    p = sub.add_parser("update", parents=[common], help="Update a webflow artifact from a GitHub Release.")
-    p.add_argument("--component", choices=["frontend", "cli", "server"], default="frontend",
-                   help="Artifact to update (default: frontend).")
+    p = sub.add_parser("update", parents=[common], help="Update the webflow-cli binary itself from a GitHub Release.")
     p.add_argument("--webflow-repo", help="GitHub owner/repo (default: inferred from git remote).")
     p.add_argument("--webflow-version", help="Release tag (default: latest).")
     p.add_argument("--webflow-token", help="GitHub token (env GITHUB_TOKEN also honoured).")

@@ -36,13 +36,12 @@ tar -xf webflow-cli.zip
 .\webflow-cli\webflow-cli.exe --help
 ```
 
-**更新 CLI 与制品**（用 CLI 自身）：
+**更新 CLI（自身）**：
 ```bash
-webflow-cli update --component cli        # 更新 CLI 二进制（自身）
-webflow-cli update --component frontend   # 更新前端 dist（供 server 用）
-webflow-cli update --component server     # 更新 server 二进制
+webflow-cli update        # 更新 webflow-cli 二进制自身
 # 参数：--webflow-repo <owner/repo>（非仓库目录运行需显式）、--webflow-version <tag>、--webflow-token <PAT>
 ```
+> webflow-cli 只管理自己：**前端 dist** 由 server 启动时自动下载；**server 二进制**更新 = 重新 curl 安装新版 `webflow-server-<platform>.zip`。
 
 ## 命令一览
 
@@ -56,7 +55,7 @@ webflow-cli update --component server     # 更新 server 二进制
 | `approve` / `reject` | 评审（`--by` / `--note`） |
 | `history` | 运行时间线 |
 | `set-body` | 固化角色体型（实例级） |
-| `update` | 更新制品（frontend / cli / server） |
+| `update` | 更新 CLI 自身二进制 |
 
 所有命令支持 `--json`（机器可读输出）。
 
