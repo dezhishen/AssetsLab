@@ -559,7 +559,7 @@ def main() -> int:
     # local build is missing, try the copy bundled inside a packaged server
     # (sys._MEIPASS), then download from a GitHub Release (based on the build
     # params: --webflow-repo/--webflow-version); otherwise fall back to the
-    # legacy --directory (prototype/preview) pages.
+    # --directory static folder (defaults to <repo>/dist).
     frontend_dir = args.frontend_dir or (REPO_ROOT / "workflow" / "web" / "dist")
     usable = frontend_dir.is_dir() and (frontend_dir / "index.html").is_file()
     if not usable:

@@ -17,7 +17,7 @@ pnpm build            # 产物输出到 dist/
 ```
 
 `lan_preview_server.py` 启动时优先 serve `workflow/web/dist`（Vue 制品），
-回退到 `--directory`（旧 prototype/preview 页面）。`/api/*` 与 `/run/*` 保留。
+回退到 `--directory`（默认 <repo>/dist）。`/api/*`、`/run/*` 与 `/dist/*` 保留。
 
 ## 页面
 

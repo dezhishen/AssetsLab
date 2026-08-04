@@ -147,25 +147,18 @@ python3 workflow/tools/assetslab.py stage back legs
 
 每阶段输出到 `prototype/test_output/skeleton_pipeline/`（PNG + GIF），必须在可视化验收通过后才进入下一阶段。
 
-### 4. 本地预览
+### 4. 运行 Godot 预览 demo（复用导出制品）
 
-**Windows（一键发布 + 启动）：**
-
-```bash
-python workflow/tools/lan_preview_server.py --port 8765 --directory prototype/preview --name my_review   # 发布快照并启动局域网服务器
-# stop: kill the lan_preview_server process                             # 停止服务器
-```
-
-**Linux / 跨平台（直接启动静态服务器）：**
+`prototype/` 是纯 Godot 预览 demo，不再有 HTML 预览管线。运行 demo 时直接复用工作流最后一步「导出 Godot 制品」产出的制品包（`dist/<工作流实例>/`，含分层 `atlas/` + `runtime_manifest.json` + `character_walk_4way.gif`）：
 
 ```bash
-python3 workflow/tools/lan_preview_server.py --port 8765 --directory prototype/preview
-# 或等价：
-python3 workflow/tools/assetslab.py preview --port 8765
-# 打开 http://127.0.0.1:8765/  （服务器绑定 0.0.0.0，局域网设备可用 http://<本机IP>:8765/）
+# 在仓库根目录，将 demo 指向某个制品包：
+godot --path prototype -- --artifacts dist/no-review
 ```
 
-预览页汇总展示骨架流水线各阶段、当前基底、候选版本与 GIF；另有交互校准页 `/calibrate.html`、`/limb_calibrate.html`、`/body_calibrate.html`（校准数据经 API 保存到 `prototype/preview/calibration/`）。
+`prototype/scripts/player.gd` 启动时读取 `runtime_manifest.json` 与
+`atlas/<图层>/walk_row<行>_frame<帧>.png`；未传 `--artifacts` 时回退到内置的
+`assets/characters/rebuild_atlas_v1_runtime/male/` 运行时。demo 保留交互移动（WASD/方向键）与放炸弹（空格）。
 
 ### 5. 资产构建与处理
 
@@ -281,7 +274,7 @@ demo 保留 WASD/方向键移动与空格放炸弹的交互验证。
 |---|---|---|
 | 测试 / 捕获输出 | `prototype/test_output/` | 忽略 |
 | 随机外观包 | `prototype/test_output/random_appearance/` | 忽略 |
-| 预览快照 | `prototype/preview/snapshots/` | 忽略 |
+| 导出制品 | `dist/<工作流实例>/` | 忽略 |
 | 运行时分层资产 | `prototype/assets/characters/chibi/` | 跟踪 |
 | 生成候选 / 骨架流水线 | `prototype/assets/characters/generated/` | 跟踪 |
 
@@ -297,4 +290,3 @@ demo 保留 WASD/方向键移动与空格放炸弹的交互验证。
 - [`README.md`](README.md) — 英文版项目说明
 - [`PROJECT.md`](PROJECT.md) — 项目总纲：开发状态、候选评审与资源清理（英文）
 - [`prototype/README.md`](prototype/README.md) — 原型的详细技术说明与全部命令
-- [`prototype/preview/README.md`](prototype/preview/README.md) — 预览页的构建与发布说明

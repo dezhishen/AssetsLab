@@ -158,19 +158,6 @@
       "description": "四方向行走 GIF 捕获"
     },
     {
-      "action_id": "preview.publish",
-      "title": "发布预览快照",
-      "phase": "preview",
-      "exec": [
-        "publish"
-      ],
-      "depends": [
-        "capture.walk"
-      ],
-      "collect": [],
-      "description": "重建预览资产并发布时间戳快照"
-    },
-    {
       "action_id": "export.artifacts",
       "title": "导出 Godot 制品",
       "phase": "export",
@@ -181,7 +168,7 @@
         "{workflow_id}"
       ],
       "depends": [
-        "preview.publish"
+        "capture.walk"
       ],
       "collect": [],
       "description": "打包 dist/<workflow_id>/ 制品包（atlas + manifest + GIF）供 Godot demo 使用"

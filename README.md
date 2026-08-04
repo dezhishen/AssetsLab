@@ -151,25 +151,22 @@ python3 workflow/tools/assetslab.py stage back legs
 
 Each stage writes to `prototype/test_output/skeleton_pipeline/` (PNG + GIF) and must pass visual review before the next stage begins.
 
-### 4. Local preview
+### 4. Run the Godot demo (reuses exported artifacts)
 
-**Windows (one-click publish + start):**
-
-```bash
-python workflow/tools/lan_preview_server.py --port 8765 --directory prototype/preview --name my_review   # publish snapshot and start LAN server
-# stop: kill the lan_preview_server process                             # stop the server
-```
-
-**Linux / cross-platform (start the static server directly):**
+`prototype/` is a pure Godot demo — there is no HTML preview pipeline. Point
+it at an exported artifact package (`dist/<workflow_id>/`) produced by the
+workflow's final 「导出 Godot 制品」step:
 
 ```bash
-python3 workflow/tools/lan_preview_server.py --port 8765 --directory prototype/preview
-# or, equivalently:
-python3 workflow/tools/assetslab.py preview --port 8765
-# open http://127.0.0.1:8765/  (server binds 0.0.0.0; LAN devices can use http://<host-ip>:8765/)
+# from the repository root:
+godot --path prototype -- --artifacts dist/no-review
 ```
 
-The preview page summarizes the skeleton pipeline stages, the current base, candidates, and GIFs; interactive calibration pages `/calibrate.html`, `/limb_calibrate.html`, and `/body_calibrate.html` are also served (calibration data is saved via API to `prototype/preview/calibration/`).
+`prototype/scripts/player.gd` loads `runtime_manifest.json` +
+`atlas/<layer>/walk_row<row>_frame<frame>.png` at startup and falls back to the
+bundled `assets/characters/rebuild_atlas_v1_runtime/male/` runtime when
+`--artifacts` is omitted. The demo keeps interactive movement (WASD/arrows)
+and bomb placement (Space).
 
 ### 5. Asset build & processing
 
@@ -350,7 +347,7 @@ The demo keeps interactive movement (WASD/arrows) and bomb placement (Space).
 |---|---|---|
 | Test / capture output | `prototype/test_output/` | ignored |
 | Random appearance package | `prototype/test_output/random_appearance/` | ignored |
-| Preview snapshots | `prototype/preview/snapshots/` | ignored |
+| Exported artifacts | `dist/<workflow_id>/` | ignored |
 | Runtime layered assets | `prototype/assets/characters/chibi/` | tracked |
 | Generated candidates / skeleton pipeline | `prototype/assets/characters/generated/` | tracked |
 
@@ -365,5 +362,4 @@ The demo keeps interactive movement (WASD/arrows) and bomb placement (Space).
 
 - [`PROJECT.md`](PROJECT.md) — project charter: development status, candidate reviews, resource cleanup
 - [`prototype/README.md`](prototype/README.md) — detailed prototype technical notes and all commands
-- [`prototype/preview/README.md`](prototype/preview/README.md) — preview page build & publish notes
 - [`README_ZH.md`](README_ZH.md) — 中文版项目说明 (Chinese version of this README)

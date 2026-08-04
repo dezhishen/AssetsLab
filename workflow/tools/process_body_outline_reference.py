@@ -40,7 +40,6 @@ def main() -> int:
     args = parser.parse_args()
     source_path = ROOT / f"prototype/assets/characters/generated/walk_body_outline_split_{args.version}.png"
     output = ROOT / f"prototype/assets/characters/generated/body_outline_split_{args.version}_right_walk_8.png"
-    contact = ROOT / f"prototype/preview/assets/body_outline_split_{args.version}_right_contact.png"
     manifest = ROOT / f"prototype/assets/characters/generated/body_outline_split_{args.version}_manifest.json"
     source_image = Image.open(source_path).convert("RGBA")
     frames = [fit_frame(source_image, index) for index in range(FRAME_COUNT)]
@@ -48,9 +47,7 @@ def main() -> int:
     for index, frame in enumerate(frames):
         sheet.alpha_composite(frame, (index * CELL_SIZE, 0))
     output.parent.mkdir(parents=True, exist_ok=True)
-    contact.parent.mkdir(parents=True, exist_ok=True)
     sheet.save(output)
-    sheet.resize((CELL_SIZE * FRAME_COUNT * 4, CELL_SIZE * 4), Image.Resampling.NEAREST).save(contact)
     manifest.write_text(
         json.dumps(
             {

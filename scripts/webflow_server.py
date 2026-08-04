@@ -2,7 +2,7 @@
 """PyInstaller entry point for the webflow server binary.
 
 Packaged as ``webflow-server-<platform>.zip`` by the GitHub Actions pipeline;
-also usable directly: ``python scripts/webflow_server.py --port 8765 --directory prototype/preview``.
+also usable directly: ``python scripts/webflow_server.py --port 8765 --directory dist``.
 """
 import sys
 from pathlib import Path

@@ -201,42 +201,19 @@ runtime stack is independent `Feet` + `LowerBody` + `Arms` + `Torso` + `Ear` +
 male/female `Head` + `Face` layers. The first appearance pass has no nose or
 mouth; hair and clothing remain future layers.
 
-Open `preview/index.html` for the persistent local asset preview. It uses
-project-tracked files instead of `test_output/`, so the page remains usable
-after temporary test artifacts are cleaned.
-
-Publish a timestamped snapshot and start a read-only LAN server for phone
-review from the repository root:
-
-```bash
-python workflow/tools/lan_preview_server.py --port 8765 --directory prototype/preview --name rear_ear_fix
-```
-
-The command prints one or more `http://<LAN-IP>:8765/snapshots/<snapshot>/`
-addresses. Each run creates a separate snapshot under the ignored
-`prototype/preview/snapshots/` directory, so a previous change can be compared
-later without being overwritten.
-
-Stop the background preview server with:
+This `prototype/` is a pure Godot preview demo — there is no HTML preview
+pipeline. The demo runs against the exported artifact package under
+`dist/<workflow_id>/` (layered `atlas/` + `runtime_manifest.json` +
+`character_walk_4way.gif`) produced by the workflow's final
+「导出 Godot 制品」step (`workflow/tools/export_artifacts.py`):
 
 ```bash
-# stop: kill the lan_preview_server process
+# from the repository root, point the demo at an artifact package:
+godot --path prototype -- --artifacts dist/no-review
 ```
 
-Preview access rule: when a person needs to inspect a visual result, use the
-Tailscale URL printed by the preview server. Local file links, `localhost`,
-and temporary chat attachments are not reliable as the only access method.
-Whenever Tailscale is used, proactively include the complete preview URL in
-the response. If nobody requests visual review, do not generate an additional
-preview.
-
-The current preview includes the recommended horizontal leg-depth correction
-candidate, the older redraw adapter as a comparison, the calibrated head
-runtime, and the vertical candidate. Historical proxy GIFs, retired body
-candidates, and old skeleton experiments are intentionally excluded from the
-new page.
-
-Use the interactive component calibration page at
-`http://<Tailscale-IP>:8765/calibrate.html`. It can move the face and ear
-parts independently for all four directions and save the calibration JSON to
-`prototype/preview/calibration/latest.json`.
+`prototype/scripts/player.gd` reads `runtime_manifest.json` and
+`atlas/<layer>/walk_row<row>_frame<frame>.png` at startup; without
+`--artifacts` it falls back to the bundled
+`assets/characters/rebuild_atlas_v1_runtime/male/` runtime. The demo keeps
+interactive movement (WASD/arrows) and bomb placement (Space).

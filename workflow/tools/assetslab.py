@@ -11,7 +11,6 @@ A single pure-Python entry point that runs on Windows, Linux and macOS:
         --stride 1.2 --pelvis-bob 1.5 --proportion-head-scale 1.4
     python workflow/tools/assetslab.py motion list|info|render|check
     python workflow/tools/assetslab.py preview [--port N] [--directory DIR]
-    python workflow/tools/assetslab.py publish [--name TAG]
     python workflow/tools/assetslab.py run-script <script.py> [args...]
 
 The workflow engine (``python -m workflow``) and the Web console delegate to
@@ -40,8 +39,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from godot_runner import (  # noqa: E402
     IS_WINDOWS,
-    PREVIEW_ASSETS,
-    PREVIEW_ROOT,
     PROTOTYPE_ROOT,
     ROOT,
     SKELETON_PIPELINE,
@@ -355,26 +352,6 @@ def _compose_walk_gif(gif_path: Path) -> None:
     make_gif(frames, gif_path)
 
 
-def _copy_preview(args: argparse.Namespace, gif_path: Path) -> None:
-    preview_name: str | None = None
-    if args.rgs_walk_reference:
-        preview_name = "movement_rgs_reference.gif"
-    elif args.rgs_body_right:
-        preview_name = "movement_rgs_body_candidate.gif"
-    elif args.bombo_body_right:
-        preview_name = "movement_bombo_body_candidate.gif"
-    elif args.milestone_body_right:
-        preview_name = "movement_milestone_body_right_only.gif" if args.right_only else "movement_milestone_body.gif"
-    elif args.vertical_only:
-        preview_name = "movement_vertical_body_candidate.gif"
-    elif args.rebuild_head and args.right_only:
-        preview_name = "movement_rebuild_head_right_only.gif"
-    if preview_name:
-        PREVIEW_ASSETS.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(gif_path, PREVIEW_ASSETS / preview_name)
-        print(f"PREVIEW_COPY={PREVIEW_ASSETS / preview_name}")
-
-
 def cmd_capture_walk(args: argparse.Namespace) -> int:
     python = resolve_python(args.python)
 
@@ -398,7 +375,6 @@ def cmd_capture_walk(args: argparse.Namespace) -> int:
         if special:
             raise SystemExit("python renderer supports the standard four-direction walk; use --renderer godot for special candidate captures.")
         _compose_walk_gif(gif_path)
-        _copy_preview(args, gif_path)
         print(f"CAPTURE_COMPLETE={gif_path}")
         return 0
 
@@ -432,7 +408,6 @@ def cmd_capture_walk(args: argparse.Namespace) -> int:
     if process.returncode != 0:
         raise SystemExit("GIF conversion failed.")
 
-    _copy_preview(args, gif_path)
     print(f"CAPTURE_COMPLETE={gif_path}")
     return 0
 
@@ -537,20 +512,9 @@ def cmd_preview(args: argparse.Namespace) -> int:
         raise SystemExit(f"Preview directory does not exist: {directory}")
     print(f"PREVIEW_SERVER_ROOT={directory}")
     print(f"http://127.0.0.1:{args.port}/")
-    cmd = [python, str(TOOLS / "lan_preview_server.py"), "--port", str(args.port), "--directory", str(directory)]
+    cmd = [python, str(TOOLS / "lan_preview_server.py"), "--port", str(args.port),
+           "--directory", str(directory), "--repo-root", str(ROOT)]
     return subprocess.call(cmd)
-
-
-def cmd_publish(args: argparse.Namespace) -> int:
-    python = resolve_python(args.python)
-    extra = ["--name", args.name] if args.name else []
-    process = _run_python_tool(python, "publish_preview.py", extra)
-    print(process.stdout, end="")
-    if process.stderr:
-        print(process.stderr, end="")
-    if process.returncode != 0:
-        raise SystemExit("Preview snapshot publish failed.")
-    return 0
 
 
 def cmd_run_script(args: argparse.Namespace) -> int:
@@ -653,11 +617,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     p = sub.add_parser("preview", help="Start the LAN preview server (lan_preview_server.py).")
     p.add_argument("--port", type=int, default=8765)
-    p.add_argument("--directory", default=str(PREVIEW_ROOT), help="Directory to serve (default: prototype/preview).")
-    p.add_argument("--python", help="Python executable.")
-
-    p = sub.add_parser("publish", help="Build and publish a preview snapshot (publish_preview.py).")
-    p.add_argument("--name", help="Optional English snapshot label.")
+    p.add_argument("--directory", default=str(ROOT / "dist"), help="Directory to serve as static fallback (default: <repo>/dist).")
     p.add_argument("--python", help="Python executable.")
 
     p = sub.add_parser("run-script", help="Run any Python tool script (e.g. build_body_vertical_update.py).")
@@ -698,7 +658,6 @@ def main(argv: list[str] | None = None) -> int:
         "capture-walk": cmd_capture_walk,
         "stage": cmd_stage,
         "preview": cmd_preview,
-        "publish": cmd_publish,
         "run-script": cmd_run_script,
         "motion": cmd_motion,
     }

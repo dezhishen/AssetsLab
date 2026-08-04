@@ -77,7 +77,7 @@ webflow-cli run --workflow hero --action skeleton.front --body head_scale=1.4
 webflow-cli run --workflow hero --action export.artifacts
 ```
 
-**动作 id（7 步精简版）**：`skeleton.front` → `skeleton.side` → `skeleton.back` → `test.smoke` → `capture.walk` → `preview.publish` → `export.artifacts`。定义在 `workflow/definitions/default.json`。
+**动作 id（6 步精简版）**：`skeleton.front` → `skeleton.side` → `skeleton.back` → `test.smoke` → `capture.walk` → `export.artifacts`。定义在 `workflow/definitions/default.json`。
 
 ## 动作 / 体型分离
 
@@ -100,7 +100,7 @@ webflow-cli run --workflow hero --action export.artifacts
 - **启动预览服务器**（REST API + Web 控制台，供人工通道）：
 ```bash
 # 二进制（curl 安装 webflow-server-<linux|macos|windows>.zip）
-webflow-server --port 8765 --directory <仓库>/prototype/preview --repo-root <仓库>
+webflow-server --port 8765 --directory <仓库>/dist --repo-root <仓库>
 ```
 
 ## 给 AI 的推荐执行路径

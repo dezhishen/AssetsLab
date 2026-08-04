@@ -9,7 +9,6 @@ from PIL import Image, ImageChops, ImageDraw
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE = ROOT / "prototype/assets/characters/generated/walk_body_bombo_reference_v6_source.png"
 OUTPUT = ROOT / "prototype/assets/characters/rebuild_body_v6_bombo"
-PREVIEW = ROOT / "prototype/preview/assets"
 CELL_SIZE = 64
 SOURCE_FRAME_COUNT = 8
 FRAME_COUNT = 8
@@ -86,7 +85,6 @@ def main() -> int:
         raise FileNotFoundError(SOURCE)
     source = Image.open(SOURCE).convert("RGBA")
     OUTPUT.mkdir(parents=True, exist_ok=True)
-    PREVIEW.mkdir(parents=True, exist_ok=True)
     phase_frames = [fit_frame(crop_frame(source, frame)) for frame in range(SOURCE_FRAME_COUNT)]
     layers_by_name: dict[str, list[Image.Image]] = {name: [] for name in ("torso", "arms", "lower_body", "feet", "body_base")}
     for body in phase_frames:
@@ -101,13 +99,6 @@ def main() -> int:
             image.save(layer_dir / f"right_frame{frame}.png")
             sheet.alpha_composite(image, (frame * CELL_SIZE, 0))
         sheet.save(layer_dir / "right_walk_8.png")
-
-    contact = Image.new("RGBA", (CELL_SIZE * FRAME_COUNT, CELL_SIZE), (22, 24, 39, 255))
-    for frame, image in enumerate(phase_frames):
-        contact.alpha_composite(image, (frame * CELL_SIZE, 0))
-    contact.resize((CELL_SIZE * FRAME_COUNT * 4, CELL_SIZE * 4), Image.Resampling.NEAREST).save(
-        PREVIEW / "rebuild_body_v6_bombo_right_contact.png"
-    )
 
     manifest = {
         "schema": "rebuild_body_v6_bombo_pose_reference",

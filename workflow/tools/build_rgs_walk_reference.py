@@ -3,13 +3,12 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from PIL import Image, ImageDraw
+from PIL import Image
 
 
 ROOT = Path(__file__).resolve().parents[2]
 RGS_ROOT = ROOT / "third_party/rgs_modular_animated_characters/Free 2D Animated Vector Game Character Sprites/Animated body parts"
 OUTPUT = ROOT / "prototype/assets/characters/open_source/rgs_walk_reference"
-PREVIEW = ROOT / "prototype/preview/assets"
 TARGET_SIZE = 64
 TARGET_HEIGHT = 58
 BASELINE_Y = 61
@@ -48,7 +47,6 @@ def compose_frame(frame: int) -> Image.Image:
 
 def main() -> int:
     OUTPUT.mkdir(parents=True, exist_ok=True)
-    PREVIEW.mkdir(parents=True, exist_ok=True)
     frames = []
     for frame in range(8):
         image = compose_frame(frame)
@@ -59,25 +57,6 @@ def main() -> int:
     for index, frame in enumerate(frames):
         sheet.alpha_composite(frame, (index * TARGET_SIZE, 0))
     sheet.save(OUTPUT / "rgs_right_walk_8.png")
-
-    preview_frames = []
-    for index, frame in enumerate(frames):
-        canvas = Image.new("RGBA", (160, 160), (22, 24, 39, 255))
-        canvas.alpha_composite(frame.resize((128, 128), Image.Resampling.NEAREST), (16, 0))
-        ImageDraw.Draw(canvas).text((8, 140), f"FRAME {index}", fill=(235, 235, 235, 255))
-        preview_frames.append(canvas)
-    contact = Image.new("RGBA", (160 * 8, 160), (22, 24, 39, 255))
-    for index, frame in enumerate(preview_frames):
-        contact.alpha_composite(frame, (index * 160, 0))
-    contact.save(PREVIEW / "rgs_walk_reference_contact.png")
-    preview_frames[0].save(
-        PREVIEW / "rgs_walk_reference.gif",
-        save_all=True,
-        append_images=preview_frames[1:],
-        duration=125,
-        loop=0,
-        disposal=2,
-    )
 
     manifest = {
         "schema": "open_source_walk_reference_v1",
