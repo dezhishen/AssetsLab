@@ -1,6 +1,6 @@
 # AssetsLab Minimal Prototype
 
-Target engine: Godot 4.6.2.
+Target engine: Godot 4.7.
 
 This prototype is intentionally UI-free. It is a command-line validated gameplay slice for:
 
@@ -127,10 +127,10 @@ Append `--appearance-seed=12345` to select a repeatable face/ear combination.
 Use `--base-features` on the test scripts to validate the fixed directional
 `base_features_v1` set before enabling randomization.
 
-Run from the repository root. The test scripts resolve Godot in this order: `--godot`, `GODOT_BIN`/`GODOT_PATH`, `godot`/`godot4` on `PATH`, then the legacy adjacent `Godot-4.6.2` directory:
+Run from the repository root. The test scripts resolve Godot in this order: `--godot`, `GODOT_BIN`/`GODOT_PATH`, `godot`/`godot4` on `PATH`, then the legacy adjacent `Godot-4.7` directory:
 
 ```bash
-# Point GODOT_BIN at a Godot 4.6.2 executable (any platform), then run:
+# Point GODOT_BIN at a Godot 4.7 executable (any platform), then run:
 GODOT_BIN=/path/to/godot python workflow/tools/assetslab.py test --female
 
 # Or pass a different local installation for one run:

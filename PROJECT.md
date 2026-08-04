@@ -26,7 +26,7 @@ Last updated: 2026-07-31.
 
 ### Current Production Candidate
 
-- Runtime animation uses synchronized per-frame `Sprite2D` layers in Godot 4.6.2.
+- Runtime animation uses synchronized per-frame `Sprite2D` layers in Godot 4.7.
 - The first production experiment remains four directions: front, right, back, left.
 - The verified CC0 RGS modular character is integrated only as an eight-frame
   right-facing motion reference under `prototype/assets/characters/open_source/`.
@@ -221,7 +221,7 @@ ordering contract; it is not an alternative body artwork source.
 ### Verification Progress
 
 - Random appearance package: passed with deterministic seed validation.
-- Godot 4.6.2 import and smoke tests: passed.
+- Godot 4.7 import and smoke tests: passed.
 - RGS reference loading: passed with eight runtime frames.
 - Hidden W/A/S/D capture: passed with 36 frames and GIF conversion.
 - GitHub synchronization: `main` and `history0731` are synchronized with GitHub.
@@ -376,7 +376,7 @@ The current raster assets were generated with the built-in `image_gen` workflow 
 
 ### Target Engine
 
-The target runtime is Godot 4.6.2. The reference checkout at `../BomboAdvantureRef` currently declares Godot 4.7 in its `project.godot`, so engine-version compatibility must be verified before importing these assets into the game project. Do not upgrade the project implicitly during asset work.
+The target runtime is Godot 4.7. The reference checkout at `../BomboAdvantureRef` currently declares Godot 4.7 in its `project.godot`, so engine-version compatibility must be verified before importing these assets into the game project. Do not upgrade the project implicitly during asset work.
 
 ### Recommended Runtime Structure
 
@@ -391,7 +391,7 @@ Use one gameplay root and one synchronized visual stack:
 - One controller stores `direction` and `walk_frame`, then applies the same `frame_coords` to every layer. This prevents random layers from drifting out of sync.
 - Use `AnimatedSprite2D` with `SpriteFrames` when a character is already flattened into a single composite animation.
 
-This layered `Sprite2D` approach is preferred for the planned random face, hair, and clothing system. Godot 4.6 supports sprite-sheet regions and frame coordinates on `Sprite2D`, while `AnimatedSprite2D` is better suited to a preassembled frame list.
+This layered `Sprite2D` approach is preferred for the planned random face, hair, and clothing system. Godot 4.7 supports sprite-sheet regions and frame coordinates on `Sprite2D`, while `AnimatedSprite2D` is better suited to a preassembled frame list.
 
 ### Asset Handoff Rule
 
@@ -412,7 +412,7 @@ The current runtime processing pass is complete for the QQTang-style neutral lay
 
 ### Silent Verification
 
-The Godot 4.6.2 console executable can be selected from `--godot`, the `GODOT_BIN`/`GODOT_PATH` environment variable, `godot`/`godot4` on `PATH`, or the legacy sibling directory `Godot-4.6.2`. The resolver accepts only a `_console.exe` binary for automated work; when no unambiguous console sibling exists it fails rather than falling back to a GUI executable. Automated capture also uses `--headless` and hidden process windows, so preview generation must not open the editor or game UI.
+The Godot 4.7 console executable can be selected from `--godot`, the `GODOT_BIN`/`GODOT_PATH` environment variable, `godot`/`godot4` on `PATH`, or the legacy sibling directory `Godot-4.7`. The resolver accepts only a `_console.exe` binary for automated work; when no unambiguous console sibling exists it fails rather than falling back to a GUI executable. Automated capture also uses `--headless` and hidden process windows, so preview generation must not open the editor or game UI.
 
 Verified commands:
 

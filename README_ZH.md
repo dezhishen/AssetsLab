@@ -1,8 +1,8 @@
 # AssetsLab（中文说明）
 
-基于 **Godot 4.6.2** 的像素风角色动画实验项目。核心工作是：通过**「骨架验证先行、分层图集渲染、无头测试把关」**的流水线，自研 QQTang 风格（大头）角色**四方向 × 八帧**行走动画，并附带一个最小可玩原型作为运行时验证。
+基于 **Godot 4.7** 的像素风角色动画实验项目。核心工作是：通过**「骨架验证先行、分层图集渲染、无头测试把关」**的流水线，自研 QQTang 风格（大头）角色**四方向 × 八帧**行走动画，并附带一个最小可玩原型作为运行时验证。
 
-- 引擎：Godot 4.6.2（GL Compatibility 渲染，适合 2D 像素与跨平台/无头自动化）
+- 引擎：Godot 4.7（GL Compatibility 渲染，适合 2D 像素与跨平台/无头自动化）
 - 方向：front / right / back / left 四方向，每方向 8 帧行走循环
 - 运行时角色：7 层 `Sprite2D` 叠合（脚 / 下肢 / 手臂 / 躯干 / 耳朵 / 头 / 脸），头部与脸部外观由**确定性种子**选择
 - 最小玩法：WASD/方向键移动，空格放置一枚短引信炸弹（爆炸会把玩家炸回出生点）
@@ -11,7 +11,7 @@
 
 | 模块 | 说明 |
 |---|---|
-| `prototype/` | Godot 4.6.2 工程：运行时脚本、分层资产、无头测试、浏览器预览页 |
+| `prototype/` | Godot 4.7 工程：运行时脚本、分层资产、无头测试、浏览器预览页 |
 | `third_party/` | 开源参考素材（CC0 RGS 模块化角色、Female Adventurer 行走参考），仅作姿态时序参考，非最终美术风格 |
 | `PROJECT.md` | 项目总纲：开发状态、路线图、评审原则（英文） |
 | `references/` | 设计参考图：人体模型 sheet、正面角色锚点 |
@@ -38,7 +38,7 @@ assets-lab/
 ├── README.md                  # 英文版项目说明
 ├── README_ZH.md               # 中文版项目说明（本文件）
 ├── references/                # 设计参考图（人体模型 sheet、角色锚点）
-├── prototype/                 # Godot 4.6.2 工程
+├── prototype/                 # Godot 4.7 工程
 │   ├── project.godot
 │   ├── main.tscn              # 主场景（角色 + 竞技场 + 墙体）
 │   ├── scripts/               # 运行时 + 骨架流水线各阶段脚本
@@ -57,7 +57,7 @@ assets-lab/
 
 ### 环境要求
 
-- **Godot 4.6.2**：自动化脚本要求 `_console.exe` 无头构建（`--headless`）。解析顺序：`--godot` → `GODOT_BIN`/`GODOT_PATH` → `PATH` 上的 `godot`/`godot4` → 相邻 `Godot-4.6.2` 目录。
+- **Godot 4.7**：自动化脚本要求 `_console.exe` 无头构建（`--headless`）。解析顺序：`--godot` → `GODOT_BIN`/`GODOT_PATH` → `PATH` 上的 `godot`/`godot4` → 相邻 `Godot-4.7` 目录。
 - **Python 3 + Pillow**：资产处理与 GIF 合成需要。解析顺序：`--python` → `PYTHON_BIN` → `PATH` → 本地 `.venv`/相邻目录。
 - 全部为**纯 Python 跨平台**方案，不依赖任何 PowerShell / shell 脚本。
 
@@ -66,7 +66,7 @@ assets-lab/
 > **CLI（统一入口）：** `workflow/tools/assetslab.py` 可在 Windows / Linux / macOS
 > 上运行：`doctor`、`test`、`capture-walk`、`stage <视图> <阶段>`、`preview`、
 > `publish`、`run-script`。参数：`--female`、`--compact`、`--rebuild-head`、
-> `--appearance-seed` 等；Godot 解析顺序为 `--godot` → `GODOT_BIN`/`GODOT_PATH` → `PATH` → 相邻 `Godot-4.6.2` 安装。
+> `--appearance-seed` 等；Godot 解析顺序为 `--godot` → `GODOT_BIN`/`GODOT_PATH` → `PATH` → 相邻 `Godot-4.7` 安装。
 
 ### 1. 运行无头冒烟测试
 

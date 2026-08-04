@@ -1,8 +1,8 @@
 # AssetsLab
 
-A pixel-art character animation experiment built on **Godot 4.6.2**. The core work is a pipeline of **"skeleton-first validation, layered-atlas rendering, headless-test gating"** that produces a QQTang-style (oversized-head) character walk cycle across **four directions × eight frames**, plus a minimal playable slice as the runtime verification.
+A pixel-art character animation experiment built on **Godot 4.7**. The core work is a pipeline of **"skeleton-first validation, layered-atlas rendering, headless-test gating"** that produces a QQTang-style (oversized-head) character walk cycle across **four directions × eight frames**, plus a minimal playable slice as the runtime verification.
 
-- Engine: Godot 4.6.2 (GL Compatibility renderer, suited for 2D pixels and cross-platform/headless automation)
+- Engine: Godot 4.7 (GL Compatibility renderer, suited for 2D pixels and cross-platform/headless automation)
 - Directions: front / right / back / left, an 8-frame walk cycle per direction
 - Runtime character: 7 stacked `Sprite2D` layers (Feet / LowerBody / Arms / Torso / Ear / Head / Face); head and face appearance are selected by a **deterministic seed**
 - Minimal gameplay: move with WASD/arrow keys, place one short-fuse bomb with Space (its blast sends the player back to spawn)
@@ -11,7 +11,7 @@ A pixel-art character animation experiment built on **Godot 4.6.2**. The core wo
 
 | Module | Description |
 |---|---|
-| `prototype/` | Godot 4.6.2 project: runtime scripts, layered assets, headless tests, browser preview pages |
+| `prototype/` | Godot 4.7 project: runtime scripts, layered assets, headless tests, browser preview pages |
 | `third_party/` | Open-source reference assets (CC0 RGS modular character, Female Adventurer walk reference) — pose-timing reference only, not the final art style |
 | `PROJECT.md` | Project charter: development status, roadmap, review principles |
 | `references/` | Design reference images: mannequin sheets, front character anchors |
@@ -38,7 +38,7 @@ assets-lab/
 ├── README.md                  # This file (English)
 ├── README_ZH.md               # Chinese version of this README
 ├── references/                # Design reference images (mannequin sheets, anchors)
-├── prototype/                 # Godot 4.6.2 project
+├── prototype/                 # Godot 4.7 project
 │   ├── project.godot
 │   ├── main.tscn              # Main scene (player + arena + walls)
 │   ├── scripts/               # Runtime + skeleton pipeline stage scripts
@@ -57,7 +57,7 @@ assets-lab/
 
 ### Prerequisites
 
-- **Godot 4.6.2**: automation scripts require a `_console.exe` headless build (`--headless`). Resolution order: `--godot` → `GODOT_BIN`/`GODOT_PATH` → `godot`/`godot4` on `PATH` → adjacent `Godot-4.6.2` directory.
+- **Godot 4.7**: automation scripts require a `_console.exe` headless build (`--headless`). Resolution order: `--godot` → `GODOT_BIN`/`GODOT_PATH` → `godot`/`godot4` on `PATH` → adjacent `Godot-4.7` directory.
 - **Python 3 + Pillow**: required for asset processing and GIF compositing. Resolution order: `--python` → `PYTHON_BIN` → `PATH` → local `.venv`/adjacent directory.
 - Everything is pure Python and cross-platform — no PowerShell or shell scripts are used.
 
@@ -68,7 +68,7 @@ All commands below are executed from the **repository root**.
 > `preview`, `publish`, and `run-script`. It accepts flags
 > (`--female`, `--compact`, `--rebuild-head`, `--appearance-seed`, ...) and
 > resolves Godot via `--godot` / `GODOT_BIN` / `GODOT_PATH` / `PATH` / an
-> adjacent `Godot-4.6.2` install.
+> adjacent `Godot-4.7` install.
 
 ### 1. Headless smoke test
 

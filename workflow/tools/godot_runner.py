@@ -124,12 +124,12 @@ def _godot_from_path() -> str | None:
 
 
 def _godot_adjacent() -> str | None:
-    """Look next to the repository for a Godot 4.6.2 install."""
-    base = ROOT.parent / "Godot-4.6.2"
+    """Look next to the repository for a Godot 4.7 install."""
+    base = ROOT.parent / "Godot-4.7"
     if not base.is_dir():
         return None
     if IS_WINDOWS:
-        exe = base / "unpacked" / "Godot_v4.6.2-stable_win64_console.exe"
+        exe = base / "unpacked" / "Godot_v4.7-stable_win64_console.exe"
         if exe.is_file():
             return str(exe)
     else:
@@ -149,7 +149,7 @@ def resolve_godot(requested: str | None = None) -> str:
 
     Resolution order:
     ``--godot`` / ``GODOT_BIN`` / ``GODOT_PATH`` -> ``PATH`` (godot4, godot)
-    -> adjacent ``Godot-4.6.2`` install.  On Windows, the ``*_console.exe``
+    -> adjacent ``Godot-4.7`` install.  On Windows, the ``*_console.exe``
     build is always preferred so capture never opens a window.
     """
     raw = _godot_from_env(requested) or _godot_from_path() or _godot_adjacent()

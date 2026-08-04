@@ -238,9 +238,26 @@ def cmd_doctor(args: argparse.Namespace) -> int:
     return 0
 
 
+def _verify_compose() -> None:
+    """Pure-Python sanity check: compose one walk frame from the runtime layers."""
+    from export_artifacts import (  # noqa: E402
+        BODY_LAYERS,
+        CHIBI_ROOT,
+        HEAD_LAYERS,
+        HEAD_ROOT,
+        HEAD_SOURCE_DIRS,
+        compose,
+        load_frames,
+    )
+    body = {layer: load_frames(CHIBI_ROOT, f"{layer}_frames") for layer in BODY_LAYERS}
+    head = {layer: load_frames(HEAD_ROOT, HEAD_SOURCE_DIRS[layer]) for layer in HEAD_LAYERS}
+    frame = compose(body, head, 0, 0, (0, 0))
+    if frame.getbbox() is None:
+        raise SystemExit("python compose check failed: composited frame is empty")
+
+
 def cmd_test(args: argparse.Namespace) -> int:
     python = resolve_python(args.python)
-    godot = resolve_godot(args.godot)
 
     random_root = TEST_OUTPUT / "random_appearance"
     if args.female:
@@ -252,6 +269,16 @@ def cmd_test(args: argparse.Namespace) -> int:
         _validate_appearance(python, package_root, both=False)
 
     _validate_asset_stack(python, args)
+
+    if args.renderer == "python":
+        # Pure-Python verification: asset stack + composited frame check (no
+        # Godot binary needed). Godot runtime smoke stays available via
+        # --renderer godot.
+        _verify_compose()
+        print("PYTHON_TESTS_PASS")
+        return 0
+
+    godot = resolve_godot(args.godot)
 
     # Godot headless asset import.
     TEST_OUTPUT.mkdir(parents=True, exist_ok=True)
@@ -289,9 +316,57 @@ def cmd_test(args: argparse.Namespace) -> int:
     return 0
 
 
+def _compose_walk_gif(gif_path: Path) -> None:
+    """Pure-Python four-direction walk GIF from runtime layers (no Godot)."""
+    from export_artifacts import (  # noqa: E402
+        BODY_LAYERS,
+        CHIBI_ROOT,
+        DIRECTIONS,
+        FRAMES,
+        HEAD_LAYERS,
+        HEAD_ROOT,
+        HEAD_SOURCE_DIRS,
+        ROWS,
+        compose,
+        load_frames,
+        make_gif,
+    )
+    body = {layer: load_frames(CHIBI_ROOT, f"{layer}_frames") for layer in BODY_LAYERS}
+    head = {layer: load_frames(HEAD_ROOT, HEAD_SOURCE_DIRS[layer]) for layer in HEAD_LAYERS}
+    offsets = {}
+    manifest_src = HEAD_ROOT / "runtime_manifest.json"
+    if manifest_src.exists():
+        offsets = json.loads(manifest_src.read_text(encoding="utf-8")).get("body_anchor_offsets", {})
+    frames = []
+    for row in range(ROWS):
+        offset = tuple(offsets.get(DIRECTIONS[row], [0, 0]))
+        for frame in range(FRAMES):
+            frames.append(compose(body, head, row, frame, offset))
+    make_gif(frames, gif_path)
+
+
+def _copy_preview(args: argparse.Namespace, gif_path: Path) -> None:
+    preview_name: str | None = None
+    if args.rgs_walk_reference:
+        preview_name = "movement_rgs_reference.gif"
+    elif args.rgs_body_right:
+        preview_name = "movement_rgs_body_candidate.gif"
+    elif args.bombo_body_right:
+        preview_name = "movement_bombo_body_candidate.gif"
+    elif args.milestone_body_right:
+        preview_name = "movement_milestone_body_right_only.gif" if args.right_only else "movement_milestone_body.gif"
+    elif args.vertical_only:
+        preview_name = "movement_vertical_body_candidate.gif"
+    elif args.rebuild_head and args.right_only:
+        preview_name = "movement_rebuild_head_right_only.gif"
+    if preview_name:
+        PREVIEW_ASSETS.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(gif_path, PREVIEW_ASSETS / preview_name)
+        print(f"PREVIEW_COPY={PREVIEW_ASSETS / preview_name}")
+
+
 def cmd_capture_walk(args: argparse.Namespace) -> int:
     python = resolve_python(args.python)
-    godot = resolve_godot(args.godot)
 
     if args.milestone_body_right:
         args.right_only = True
@@ -307,6 +382,17 @@ def cmd_capture_walk(args: argparse.Namespace) -> int:
         _run_or_die(python, "validate_base_features.py", [])
 
     gif_path = TEST_OUTPUT / _gif_name(args)
+
+    if args.renderer == "python":
+        special = args.rgs_walk_reference or args.rgs_body_right or args.bombo_body_right or args.milestone_body_right or args.vertical_candidate
+        if special:
+            raise SystemExit("python renderer supports the standard four-direction walk; use --renderer godot for special candidate captures.")
+        _compose_walk_gif(gif_path)
+        _copy_preview(args, gif_path)
+        print(f"CAPTURE_COMPLETE={gif_path}")
+        return 0
+
+    godot = resolve_godot(args.godot)
     log_path = TEST_OUTPUT / "capture.log"
     user = _walk_user_args(args, seed)
     cmd = [godot, *godot_base_args(
@@ -336,25 +422,7 @@ def cmd_capture_walk(args: argparse.Namespace) -> int:
     if process.returncode != 0:
         raise SystemExit("GIF conversion failed.")
 
-    # Mirror the preview copy rules used by the capture-walk command.
-    preview_name: str | None = None
-    if args.rgs_walk_reference:
-        preview_name = "movement_rgs_reference.gif"
-    elif args.rgs_body_right:
-        preview_name = "movement_rgs_body_candidate.gif"
-    elif args.bombo_body_right:
-        preview_name = "movement_bombo_body_candidate.gif"
-    elif args.milestone_body_right:
-        preview_name = "movement_milestone_body_right_only.gif" if args.right_only else "movement_milestone_body.gif"
-    elif args.vertical_only:
-        preview_name = "movement_vertical_body_candidate.gif"
-    elif args.rebuild_head and args.right_only:
-        preview_name = "movement_rebuild_head_right_only.gif"
-    if preview_name:
-        PREVIEW_ASSETS.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(gif_path, PREVIEW_ASSETS / preview_name)
-        print(f"PREVIEW_COPY={PREVIEW_ASSETS / preview_name}")
-
+    _copy_preview(args, gif_path)
     print(f"CAPTURE_COMPLETE={gif_path}")
     return 0
 
@@ -497,6 +565,7 @@ def build_parser() -> argparse.ArgumentParser:
         p.add_argument("--rgs-walk-reference", action="store_true")
         p.add_argument("--milestone-body-right", action="store_true")
         p.add_argument("--appearance-seed", type=int, help="Reproducible appearance seed.")
+        p.add_argument("--renderer", choices=["python", "godot"], default="python", help="python = Pillow preview/verify (default); godot = headless Godot run.")
         add_tool_args(p)
 
     p = sub.add_parser("doctor", help="Print the resolved Godot/Python tool paths.")
