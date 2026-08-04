@@ -8,6 +8,7 @@ import subprocess
 import sys
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from urllib.parse import urlparse
 
 # Repository root, set by main(). The workflow console API shells out to the
 # cross-platform workflow CLI (python -m workflow), so scheduling behaves
@@ -318,7 +319,10 @@ class PreviewHandler(SimpleHTTPRequestHandler):
         if RUN_ROOT is None:
             self.send_error(404)
             return
-        target = (RUN_ROOT / self.path[len("/run/"):].lstrip("/")).resolve()
+        # Strip any cache-busting query (?t=...) added by the web UI so the
+        # same output file can be re-served without hitting the browser cache.
+        path = urlparse(self.path).path
+        target = (RUN_ROOT / path[len("/run/"):].lstrip("/")).resolve()
         try:
             target.relative_to(RUN_ROOT.resolve())
         except ValueError:

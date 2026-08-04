@@ -283,8 +283,9 @@ function renderActions(id, actions) {
   for (const [phase, items] of Object.entries(groups)) {
     html += `<div class="group"><h3>${PHASE_LABEL[phase] || phase}</h3><div class="grid">`;
     for (const { aid, st } of items) {
+      const ts = encodeURIComponent(st.finished_at || Date.now());
       const imgs = (st.outputs || []).map(urlFromPath).filter(Boolean)
-        .map(u => `<img src="${u}" alt="${aid}" loading="lazy">`).join('');
+        .map(u => `<img src="${u}?t=${ts}" alt="${aid}" loading="lazy">`).join('');
       const note = st.note ? `<div class="note">备注：${st.note}${st.approved_by ? '（' + st.approved_by + '）' : ''}</div>` : '';
       const pused = (st.params && Object.keys(st.params).length)
         ? `<div class="muted" style="font-size:12px">参数：${Object.entries(st.params).map(([k,v]) => `${k}=${v}`).join(' · ')}</div>` : '';
@@ -308,7 +309,7 @@ function renderActions(id, actions) {
     btn.onclick = async () => {
       const verb = btn.dataset.v, aid = btn.dataset.aid;
       if (verb === 'run' && ACTIONS_PARAMS[aid] && Object.keys(ACTIONS_PARAMS[aid]).length) {
-        openParamModal(id, aid);
+        openParamModal(id, aid, (actions[aid] || {}).params);
         return;
       }
       btn.disabled = true; btn.textContent = '处理中…';
@@ -326,7 +327,7 @@ function renderActions(id, actions) {
 
 let pmWorkflow = null, pmAction = null;
 
-function openParamModal(workflowId, actionId) {
+function openParamModal(workflowId, actionId, lastParams) {
   pmWorkflow = workflowId; pmAction = actionId;
   const params = ACTIONS_PARAMS[actionId] || {};
   $('pmTitle').textContent = `调整参数 · ${actionId}`;
@@ -334,7 +335,8 @@ function openParamModal(workflowId, actionId) {
   if (!entries.length) { $('pmParams').innerHTML = '<span class="muted">该动作没有可调参数，直接运行。</span>'; return; }
   $('pmParams').innerHTML = entries.map(([k, spec]) => {
     const s = spec || {};
-    const d = s.default ?? 1.0;
+    const last = (lastParams && lastParams[k] != null) ? lastParams[k] : null;
+    const d = (last != null) ? last : (s.default ?? 1.0);
     return `<label style="display:flex;align-items:center;gap:10px;margin:8px 0">
       <span style="min-width:110px">${s.label || k}</span>
       <input type="range" data-key="${k}" min="${s.min ?? 0}" max="${s.max ?? 3}" step="0.05" value="${d}" style="flex:1">

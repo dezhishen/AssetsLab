@@ -186,15 +186,19 @@ async function renderStep() {
   $('stepParams').innerHTML = hasParams ? Object.entries(a.params).map(([k, s]) => {
     const spec = s || {};
     const tpl = STATE.template_params || {};
-    const d = (tpl[k] != null) ? tpl[k] : (spec.default ?? 1.0);
+    // Keep the slider at the last-run value (user's own tuning), else template,
+    // else definition default — so re-running keeps what you set.
+    const last = (st.params && st.params[k] != null) ? st.params[k] : null;
+    const d = (last != null) ? last : ((tpl[k] != null) ? tpl[k] : (spec.default ?? 1.0));
     return `<label>${spec.label || k} <input type="range" data-key="${k}" min="${spec.min ?? 0}" max="${spec.max ?? 3}" step="0.05" value="${d}"> <span data-v>${d}</span></label>`;
   }).join('') : '';
   document.querySelectorAll('#stepParams input[type=range]').forEach(r => {
     r.oninput = () => { r.closest('label').querySelector('[data-v]').textContent = r.value; };
   });
 
-  // outputs
-  const imgs = (st.outputs || []).map(urlFromPath).filter(Boolean).map(u => `<img src="${u}" alt="${a.action_id}" loading="lazy">`).join('');
+  // outputs (cache-busted so re-running with new params shows the fresh frame)
+  const ts = encodeURIComponent(st.finished_at || Date.now());
+  const imgs = (st.outputs || []).map(urlFromPath).filter(Boolean).map(u => `<img src="${u}?t=${ts}" alt="${a.action_id}" loading="lazy">`).join('');
   $('stepOutput').innerHTML = imgs || '<span class="muted">（尚无输出）</span>';
 
   // note + params used
