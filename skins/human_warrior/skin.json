@@ -10,6 +10,16 @@
   ],
   "coordinates": "skeleton",
   "atlas_dir": "skins/human_warrior",
+  "body": {
+    "head_scale": 1.0,
+    "neck_length": 1.0,
+    "torso_length": 1.05,
+    "shoulder_width": 1.2,
+    "upper_arm_length": 1.1,
+    "forearm_length": 1.1,
+    "thigh_length": 1.1,
+    "shin_length": 1.1
+  },
   "layers": [
     {
       "name": "head",

@@ -235,6 +235,7 @@ def main(argv: list[str] | None = None) -> int:
         "views": list(VIEWS),
         "coordinates": "skeleton",
         "atlas_dir": f"skins/{args.out}",
+        "body": body or None,
         "layers": [{"name": l, "zone": z, "order": seq_of[l] % 100} for z, l, _, _ in ZONES],
         "bindings": bindings,
         "anchors": {},

@@ -10,6 +10,16 @@
   ],
   "coordinates": "skeleton",
   "atlas_dir": "skins/undead",
+  "body": {
+    "head_scale": 1.05,
+    "neck_length": 1.3,
+    "torso_length": 0.85,
+    "shoulder_width": 0.75,
+    "upper_arm_length": 1.3,
+    "forearm_length": 1.3,
+    "thigh_length": 1.25,
+    "shin_length": 1.25
+  },
   "layers": [
     {
       "name": "head",

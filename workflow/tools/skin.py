@@ -282,12 +282,16 @@ def rotate_to_joint(image: Image.Image, anchor: tuple[int, int],
 
 def skin_frame(motion: dict, view: str, stage: str, index: int,
                params: dict | None, proportions: dict | None,
-               skin: dict, atlas_dir: Path, layout: dict) -> Image.Image:
+               skin: dict, atlas_dir: Path, layout: dict,
+               only_layers: list[str] | None = None) -> Image.Image:
+    """渲染一帧蒙皮。only_layers 传层名列表则只渲染这些层（供制品分层烘焙）。"""
     coords = pose(motion, view, stage, index, params, proportions)
     apply_ik(motion, view, stage, coords)
     canvas = Image.new("RGBA", (layout["canvas_w"], layout["canvas_h"]), (0, 0, 0, 0))
     images = joint_images(skin, atlas_dir, view)
     for layer in skin_layers(skin):
+        if only_layers is not None and layer not in only_layers:
+            continue
         binding = skin.get("bindings", {}).get(layer)
         img = images.get(layer)
         if img is None or binding is None:

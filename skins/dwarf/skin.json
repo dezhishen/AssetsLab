@@ -10,6 +10,16 @@
   ],
   "coordinates": "skeleton",
   "atlas_dir": "skins/dwarf",
+  "body": {
+    "head_scale": 1.25,
+    "neck_length": 0.8,
+    "torso_length": 1.25,
+    "shoulder_width": 1.35,
+    "upper_arm_length": 0.9,
+    "forearm_length": 0.9,
+    "thigh_length": 0.7,
+    "shin_length": 0.7
+  },
   "layers": [
     {
       "name": "head",

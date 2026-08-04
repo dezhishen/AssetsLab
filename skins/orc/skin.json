@@ -10,6 +10,16 @@
   ],
   "coordinates": "skeleton",
   "atlas_dir": "skins/orc",
+  "body": {
+    "head_scale": 1.15,
+    "neck_length": 0.9,
+    "torso_length": 1.15,
+    "shoulder_width": 1.4,
+    "upper_arm_length": 1.2,
+    "forearm_length": 1.2,
+    "thigh_length": 1.1,
+    "shin_length": 1.1
+  },
   "layers": [
     {
       "name": "head",
