@@ -217,6 +217,21 @@ python -m workflow run --workflow hero --action skeleton.front              # us
 python -m workflow run --workflow hero --action skeleton.front --param stride=1.5   # override one knob
 ```
 
+**Motion / body separation** — motion knobs (`stride`/`pelvis_bob`/`arm_swing`)
+describe *how* the character moves and belong to a single action; **body
+proportions** (arm_length/leg_length/torso_length/shoulder_width/head_scale/
+height) describe *what the character looks like* and belong to the whole
+instance (`state.body`), shared by front/side/back so all views stay
+consistent for the same character. Pick a body template at creation with
+`--body-template standard|chibi|tall|stocky`; `set-body` persists the
+character, `run --body` overrides for one run:
+
+```bash
+python -m workflow new --definition default --id hero --template bouncy --body-template chibi
+python -m workflow set-body --workflow hero --body head_scale=1.4
+python -m workflow run --workflow hero --action skeleton.front --body height=1.1
+```
+
 - CLI is the AI-facing scheduling channel: `--json` output is machine-readable
   and `outputs` returns absolute paths to local images.
 - Web is the human-facing full channel: `http://<host>:8765/workflow.html`;
@@ -283,7 +298,11 @@ python workflow/tools/assetslab.py stage side arms --renderer python --motion ru
   (each 1.0 = reference). They scale each bone segment around its anchor
   (e.g. `head_scale` grows the head from the neck, `leg_length` lengthens the
   thighs with feet planted), so the same motion presets drive any body shape.
-  Exposed as sliders in the Motion Studio and in the workflow step params:
+  In the workflow these are a **character-level** property (instance `body`,
+  shared by front/side/back so all views stay consistent): each step tunes
+  only motion knobs, while the body is adjusted in the wizard's 「角色体型」
+  panel or via `set-body`/`--body`. The low-level renderer still exposes
+  `--proportion-*`:
 
   ```bash
   python workflow/tools/assetslab.py motion render walk --view front --stage arms \

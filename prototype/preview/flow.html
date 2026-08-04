@@ -63,10 +63,21 @@
   <div class="toolbar">
     <label>新实例 <input id="newId" placeholder="实例 id（留空用默认）" style="width:180px"></label>
     <label>参数模板 <select id="tplSelect"><option value="">默认参数</option></select></label>
+    <label>体型模板 <select id="bodyTplSelect"><option value="">标准体型</option></select></label>
     <button id="newBtn">＋ 新建</button>
   </div>
 
   <div id="stepper" class="stepper"></div>
+
+  <section class="panel" id="bodyPanel" hidden>
+    <div class="stepHead">
+      <h3>角色体型</h3>
+      <span class="muted" style="font-size:12px">实例级全局 · 三视图共享，改一次全步骤生效</span>
+    </div>
+    <p class="muted">骨骼比例（臂长/腿长/躯干长/肩宽/头大小/身高）属于「角色」而非「动作」；与每步的动作参数（步幅/摆臂等）正交。修改后立即保存到该实例。</p>
+    <div id="bodyParams" class="sliders"></div>
+    <div id="bodySaved" class="muted" style="font-size:12px;margin-top:4px"></div>
+  </section>
 
   <section class="panel" id="stepPanel">
     <div class="stepHead">
@@ -96,6 +107,11 @@
 const $ = id => document.getElementById(id);
 const PHASE_LABEL = {skeleton:'骨架流水线', test:'测试', capture:'捕获', preview:'预览', calibration:'校准', publish:'发布', export:'导出制品'};
 const BADGE = {passed:'passed 已通过', running:'running 运行中', failed:'failed 失败', pending:'pending 待办', skipped:'skipped 跳过'};
+const BODY_KEYS = ['arm_length','leg_length','torso_length','shoulder_width','head_scale','height'];
+const BODY_LABEL = { arm_length:'臂长', leg_length:'腿长', torso_length:'躯干长', shoulder_width:'肩宽', head_scale:'头大小', height:'身高' };
+const BODY_STEP = { arm_length:0.05, leg_length:0.05, torso_length:0.05, shoulder_width:0.05, head_scale:0.05, height:0.05 };
+const BODY_MIN = { arm_length:0.6, leg_length:0.6, torso_length:0.6, shoulder_width:0.6, head_scale:0.6, height:0.8 };
+const BODY_MAX = { arm_length:1.6, leg_length:1.6, torso_length:1.6, shoulder_width:1.6, head_scale:1.6, height:1.4 };
 
 let WF_ID = null, STATE = null, DEF = null, CURRENT = 0;
 
@@ -132,6 +148,59 @@ async function loadTemplates() {
     tpls.map(t => `<option value="${t.id}" title="${(t.description || '').replace(/"/g, '&quot;')}">${t.title}（${t.id}）</option>`).join('');
 }
 
+async function loadBodyTemplates() {
+  const res = await fetch('/api/workflow/body-templates');
+  const data = await res.json().catch(() => ({}));
+  const tpls = Array.isArray(data.body_templates) ? data.body_templates : [];
+  $('bodyTplSelect').innerHTML = '<option value="">标准体型</option>' +
+    tpls.map(t => `<option value="${t.id}" title="${(t.description || '').replace(/"/g, '&quot;')}">${t.title}（${t.id}）</option>`).join('');
+}
+
+function renderBody() {
+  const body = (STATE && STATE.body) || {};
+  $('bodyPanel').hidden = !WF_ID;
+  if (!WF_ID) return;
+  $('bodyParams').innerHTML = BODY_KEYS.map(k =>
+    `<label class="prow">${BODY_LABEL[k]}
+      <span class="numstep">
+        <button type="button" data-bstep="-1" data-key="${k}">−</button>
+        <input type="number" id="bp_${k}" data-key="${k}" step="${BODY_STEP[k]}" min="${BODY_MIN[k]}" max="${BODY_MAX[k]}" value="${body[k] ?? 1}">
+        <button type="button" data-bstep="1" data-key="${k}">+</button>
+      </span>
+    </label>`).join('');
+  bindBodySteps();
+}
+
+function bindBodySteps() {
+  document.querySelectorAll('#bodyParams button[data-bstep]').forEach(btn => {
+    btn.onclick = async () => {
+      const inp = $('bp_' + btn.dataset.key);
+      if (!inp) return;
+      const step = parseFloat(inp.step || '0.05');
+      let v = (parseFloat(inp.value) || 0) + step * parseInt(btn.dataset.bstep, 10);
+      const min = inp.min !== '' ? parseFloat(inp.min) : -Infinity;
+      const max = inp.max !== '' ? parseFloat(inp.max) : Infinity;
+      inp.value = Math.round(Math.min(max, Math.max(min, v)) * 100) / 100;
+      await saveBody();
+    };
+  });
+  document.querySelectorAll('#bodyParams input[type=number]').forEach(inp => { inp.onchange = saveBody; });
+}
+
+async function saveBody() {
+  const body = {};
+  BODY_KEYS.forEach(k => { body[k] = parseFloat(($('bp_' + k) || {}).value ?? 1); });
+  const r = await api(`/api/workflow/instances/${encodeURIComponent(WF_ID)}/body`,
+    { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ body }) });
+  if (r.ok) {
+    STATE.body = r.data.body || body;
+    $('bodySaved').textContent = '已保存角色体型（三视图共享）';
+    setTimeout(() => { $('bodySaved').textContent = ''; }, 1500);
+  } else {
+    $('bodySaved').textContent = '保存失败：' + r.data;
+  }
+}
+
 async function openInstance(id, keepStep = false) {
   WF_ID = id;
   $('stepPanel').hidden = false;
@@ -161,6 +230,7 @@ async function openInstance(id, keepStep = false) {
   }
   if (CURRENT < 0) CURRENT = 0;
   if (CURRENT >= DEF.actions.length) CURRENT = DEF.actions.length - 1;
+  renderBody();
   renderAll();
 }
 
@@ -289,7 +359,12 @@ $('nextBtn').onclick = async () => {
 
 $('wfSelect').onchange = () => { history.replaceState(null, '', 'flow.html?id=' + encodeURIComponent($('wfSelect').value)); openInstance($('wfSelect').value); };$('refresh').onclick = async () => { await loadInstances(); if (WF_ID) await refresh(); };
 $('newBtn').onclick = async () => {
-  const body = JSON.stringify({ definition: 'default', id: $('newId').value || undefined, template: $('tplSelect').value || undefined });
+  const body = JSON.stringify({
+    definition: 'default',
+    id: $('newId').value || undefined,
+    template: $('tplSelect').value || undefined,
+    body_template: $('bodyTplSelect').value || undefined
+  });
   const r = await api('/api/workflow/instances', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body });
   log('新建实例 → ' + JSON.stringify(r.data));
   await loadInstances();
@@ -302,6 +377,7 @@ $('newBtn').onclick = async () => {
 (async () => {
   await loadInstances();
   await loadTemplates();
+  await loadBodyTemplates();
   const urlId = new URLSearchParams(location.search).get('id');
   if (urlId) await openInstance(urlId);
   else if ($('wfSelect').value) await openInstance($('wfSelect').value);

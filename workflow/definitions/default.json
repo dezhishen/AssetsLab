@@ -36,20 +36,14 @@
       "params": {
         "stride": {"default": 1.0, "min": 0.0, "max": 2.5, "label": "步幅"},
         "pelvis_bob": {"default": 1.0, "min": 0.0, "max": 3.0, "label": "骨盆起伏"},
-        "arm_swing": {"default": 1.0, "min": 0.0, "max": 2.0, "label": "摆臂"},
-        "arm_length": {"default": 1.0, "min": 0.6, "max": 1.6, "label": "臂长"},
-        "leg_length": {"default": 1.0, "min": 0.6, "max": 1.6, "label": "腿长"},
-        "torso_length": {"default": 1.0, "min": 0.6, "max": 1.6, "label": "躯干长"},
-        "shoulder_width": {"default": 1.0, "min": 0.6, "max": 1.6, "label": "肩宽"},
-        "head_scale": {"default": 1.0, "min": 0.6, "max": 1.6, "label": "头大小"},
-        "height": {"default": 1.0, "min": 0.8, "max": 1.4, "label": "身高"}
+        "arm_swing": {"default": 1.0, "min": 0.0, "max": 2.0, "label": "摆臂"}
       },
       "depends": [],
       "collect": [
         "prototype/test_output/skeleton_pipeline/front_arm_swing_walk.gif"
       ],
       "approval": "human",
-      "description": "正面完整行走循环，可调整步幅、骨盆起伏、摆臂与体型比例"
+      "description": "正面完整行走循环，可调整步幅、骨盆起伏、摆臂（体型在角色面板统一调整）"
     },
     {
       "action_id": "skeleton.side",
@@ -85,13 +79,7 @@
       "params": {
         "stride": {"default": 1.0, "min": 0.0, "max": 2.5, "label": "步幅"},
         "pelvis_bob": {"default": 1.0, "min": 0.0, "max": 3.0, "label": "骨盆起伏"},
-        "arm_swing": {"default": 1.0, "min": 0.0, "max": 2.0, "label": "摆臂"},
-        "arm_length": {"default": 1.0, "min": 0.6, "max": 1.6, "label": "臂长"},
-        "leg_length": {"default": 1.0, "min": 0.6, "max": 1.6, "label": "腿长"},
-        "torso_length": {"default": 1.0, "min": 0.6, "max": 1.6, "label": "躯干长"},
-        "shoulder_width": {"default": 1.0, "min": 0.6, "max": 1.6, "label": "肩宽"},
-        "head_scale": {"default": 1.0, "min": 0.6, "max": 1.6, "label": "头大小"},
-        "height": {"default": 1.0, "min": 0.8, "max": 1.4, "label": "身高"}
+        "arm_swing": {"default": 1.0, "min": 0.0, "max": 2.0, "label": "摆臂"}
       },
       "depends": [
         "skeleton.front"
@@ -100,7 +88,7 @@
         "prototype/test_output/skeleton_pipeline/side_arm_swing_walk.gif"
       ],
       "approval": "human",
-      "description": "右向侧面完整行走循环，可调整步幅、骨盆起伏、摆臂与体型比例"
+      "description": "右向侧面完整行走循环，可调整步幅、骨盆起伏、摆臂（体型在角色面板统一调整）"
     },
     {
       "action_id": "skeleton.back",
@@ -133,13 +121,7 @@
       ],
       "params": {
         "stride": {"default": 1.0, "min": 0.0, "max": 2.5, "label": "步幅"},
-        "pelvis_bob": {"default": 1.0, "min": 0.0, "max": 3.0, "label": "骨盆起伏"},
-        "arm_length": {"default": 1.0, "min": 0.6, "max": 1.6, "label": "臂长"},
-        "leg_length": {"default": 1.0, "min": 0.6, "max": 1.6, "label": "腿长"},
-        "torso_length": {"default": 1.0, "min": 0.6, "max": 1.6, "label": "躯干长"},
-        "shoulder_width": {"default": 1.0, "min": 0.6, "max": 1.6, "label": "肩宽"},
-        "head_scale": {"default": 1.0, "min": 0.6, "max": 1.6, "label": "头大小"},
-        "height": {"default": 1.0, "min": 0.8, "max": 1.4, "label": "身高"}
+        "pelvis_bob": {"default": 1.0, "min": 0.0, "max": 3.0, "label": "骨盆起伏"}
       },
       "depends": [
         "skeleton.side"
@@ -148,7 +130,7 @@
         "prototype/test_output/skeleton_pipeline/back_legs_walk.gif"
       ],
       "approval": "human",
-      "description": "背面行走循环，可调整步幅、骨盆起伏与体型比例"
+      "description": "背面行走循环，可调整步幅、骨盆起伏（体型在角色面板统一调整）"
     },
     {
       "action_id": "test.smoke",

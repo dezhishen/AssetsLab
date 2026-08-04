@@ -205,6 +205,14 @@ python -m workflow run --workflow hero --action skeleton.front              # �
 python -m workflow run --workflow hero --action skeleton.front --param stride=1.5   # 覆盖单个旋钮
 ```
 
+**动作 / 体型分离** — 动作参数（`stride`/`pelvis_bob`/`arm_swing`）描述「怎么动」，是每动作的属性；**体型比例**（臂长/腿长/躯干长/肩宽/头大小/身高）描述「长什么样」，是**角色**的属性，属于整个实例（`state.body`），三视图（front/side/back）共享——改一次全步骤生效，避免同一角色三视图比例不一致。创建实例可套体型模板 `--body-template standard|chibi|tall|stocky`；`set-body` 固化角色，`run --body` 仅本次覆盖：
+
+```bash
+python -m workflow new --definition default --id hero --template bouncy --body-template chibi
+python -m workflow set-body --workflow hero --body head_scale=1.4
+python -m workflow run --workflow hero --action skeleton.front --body height=1.1
+```
+
 - **CLI** 是面向 AI 的调度通道：`--json` 输出机器可读，`outputs` 返回本地图片**绝对路径**。
 - **Web** 是面向人工的完整通道：`http://<host>:8765/workflow.html`；图片经 `http://<host>:8765/run/workflows/<id>/steps/<action_id>/` 预览。带可调参数的动作在运行前会弹出**参数调优窗**（拖动 stride/pelvis-bob/arm-swing 再运行），人真正参与调姿态，而不只是点「通过」。
 - **分步流程向导**：`http://<host>:8765/flow.html?id=<workflow_id>` 一次只渲染一个步骤（步进器 + 上一步/下一步，类似安装向导）。每步展示参数、输出与评审按钮；`workflow.html` 中点击实例即进入向导。首次打开优先定位「已通过但未审核」的步骤（先补审核），否则定位推荐的下一步。
@@ -238,7 +246,7 @@ python workflow/tools/assetslab.py stage side arms --renderer python --motion ru
 - **头部运动**：`head`/`neck` 以骨盆起伏的一半幅度跟随浮动，侧视图还有前后摆动——经典的「反向补偿」动画，头不再锁死（walk/run 上下浮动、idle 呼吸点头、jump 随身体升降）。
 - **骨骼层级（根驱动）**：关节构成刚性躯干链（pelvis → neck/head + shoulders/arms）。每个动作声明 `root`（骨盆平移：bob / 跳跃升降 / 前倾），躯干上的每个关节按各自系数继承它（`base.json` 的 `torso`）：肩/臂 1.0（刚性）、膝 0.5（衰减）、头 0.5（视线稳定）。跳跃时肩/臂随骨盆整体升降，无需逐关节补丁。
 - **双骨骼 IK**（`--ik`；预设内声明 `ik` 组）在大步幅下保持腿长恒定，并做「落地锁定」——脚目标超出可达半径时锁定回可达边界，用于 `run` / `jump`。
-- **体型比例参数**：静态基座本身也可调——`arm_length` / `leg_length` / `torso_length` / `shoulder_width` / `head_scale` / `height`（各 1.0 = 基准）。每个比例围绕锚点缩放骨骼段（如 `head_scale` 从颈部放大头、`leg_length` 在脚贴地下加长腿），因此**同一套动作预设可驱动任意体型**。在动作预览台与流程步骤参数中都以滑块暴露：
+- **体型比例参数**：静态基座本身也可调——`arm_length` / `leg_length` / `torso_length` / `shoulder_width` / `head_scale` / `height`（各 1.0 = 基准）。每个比例围绕锚点缩放骨骼段（如 `head_scale` 从颈部放大头、`leg_length` 在脚贴地下加长腿），因此**同一套动作预设可驱动任意体型**。在工作流里体型是**角色级**属性（实例 `body`，三视图一致）：每步只调动作参数，体型在流程向导顶部「角色体型」面板或 `set-body`/`--body` 统一调整；底层渲染器仍以 `--proportion-*` 暴露：
 
   ```bash
   python workflow/tools/assetslab.py motion render walk --view front --stage arms \

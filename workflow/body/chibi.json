@@ -1,0 +1,13 @@
+{
+  "body_id": "chibi",
+  "title": "大头 Q 版",
+  "description": "Q 版卡通：大头、短腿短臂、略矮，参考 chibi 角色比例。",
+  "body": {
+    "arm_length": 0.85,
+    "leg_length": 0.8,
+    "torso_length": 0.8,
+    "shoulder_width": 1.1,
+    "head_scale": 1.4,
+    "height": 0.9
+  }
+}

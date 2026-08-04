@@ -12,7 +12,7 @@ import json
 import sys
 from pathlib import Path
 
-from .model import WorkflowDef
+from .model import BODY_NAMES, WorkflowDef, default_body
 from .runner import WorkflowRunner
 from .store import Store, now_iso
 
@@ -20,6 +20,7 @@ ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_RUN_ROOT = ROOT / "run"
 DEFAULT_DEFINITION_ROOT = ROOT / "workflow" / "definitions"
 DEFAULT_TEMPLATE_ROOT = ROOT / "workflow" / "templates"
+DEFAULT_BODY_ROOT = ROOT / "workflow" / "body"
 
 
 def _emit(data: object, as_json: bool) -> None:
@@ -77,6 +78,16 @@ def _template(templates_root: Path, template_id: str) -> dict:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def _apply_body(body: dict, item: str) -> None:
+    """Parse one ``--body NAME=VALUE`` into the body dict, validating the name."""
+    if "=" not in item:
+        raise SystemExit(f"--body expects NAME=VALUE, got: {item}")
+    key, value = item.split("=", 1)
+    if key not in BODY_NAMES:
+        raise SystemExit(f"unknown body proportion: {key} (known: {', '.join(BODY_NAMES)})")
+    body[key] = float(value)
+
+
 def _store(run_root: Path, workflow_id: str) -> Store:
     return Store(run_root, workflow_id)
 
@@ -126,6 +137,14 @@ def cmd_new(args: argparse.Namespace) -> int:
     if template_id:
         template = _template(args.template_root, template_id)
         template_params = {k: float(v) for k, v in (template.get("params") or {}).items()}
+    # Character body proportions (shared by every action of this instance):
+    # optional body template, then explicit --body overrides.
+    body = default_body()
+    if args.body_template:
+        body_tpl = _template(args.body_root, args.body_template)
+        body.update({k: float(v) for k, v in (body_tpl.get("body") or {}).items() if k in BODY_NAMES})
+    for item in args.body or []:
+        _apply_body(body, item)
     state = {
         "schema": "assetslab_workflow_v1",
         "workflow_id": workflow_id,
@@ -133,13 +152,15 @@ def cmd_new(args: argparse.Namespace) -> int:
         "title": definition.title,
         "template_id": template_id,
         "template_params": template_params,
+        "body": body,
         "created_at": now_iso(),
         "version": 0,
         "actions": {a.action_id: {"status": "pending", "approved": False, "outputs": []} for a in definition.actions},
     }
     with store.lock():
         store.save(state)
-    _emit({"workflow_id": workflow_id, "created": True, "template": template_id, "next": _first_pending(definition)}, args.json)
+    _emit({"workflow_id": workflow_id, "created": True, "template": template_id,
+           "body": body, "next": _first_pending(definition)}, args.json)
     return 0
 
 
@@ -182,13 +203,31 @@ def cmd_run(args: argparse.Namespace) -> int:
             params[key] = value
         else:
             params[item] = True
+    body: dict[str, float] = {}
+    for item in args.body or []:
+        _apply_body(body, item)
     try:
-        result = runner.run(args.action, params=params or None)
+        result = runner.run(args.action, params=params or None, body=body or None)
     except (KeyError, RuntimeError) as error:
         _emit({"ok": False, "error": str(error)}, args.json)
         return 1
     _emit(result, args.json)
     return 0 if result["ok"] else 1
+
+
+def cmd_set_body(args: argparse.Namespace) -> int:
+    """Persist instance-level character proportions (state['body'])."""
+    runner = _runner(args)
+    body: dict[str, float] = {}
+    for item in args.body or []:
+        _apply_body(body, item)
+    try:
+        result = runner.set_body(body)
+    except RuntimeError as error:
+        _emit({"ok": False, "error": str(error)}, args.json)
+        return 1
+    _emit({"workflow_id": args.workflow, "body": result}, args.json)
+    return 0
 
 
 def cmd_approve(args: argparse.Namespace) -> int:
@@ -237,6 +276,7 @@ def _common_parser() -> argparse.ArgumentParser:
     common.add_argument("--run-root", type=Path, default=DEFAULT_RUN_ROOT, help="Run directory (default: <repo>/run).")
     common.add_argument("--definition-root", type=Path, default=DEFAULT_DEFINITION_ROOT, help="Workflow definitions directory.")
     common.add_argument("--template-root", type=Path, default=DEFAULT_TEMPLATE_ROOT, help="Parameter template directory.")
+    common.add_argument("--body-root", type=Path, default=DEFAULT_BODY_ROOT, help="Body (character proportions) template directory.")
     common.add_argument("--json", action="store_true", help="Machine-readable JSON output.")
     return common
 
@@ -256,6 +296,9 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--definition", default="default")
     p.add_argument("--id", help="Instance id (defaults to definition id).")
     p.add_argument("--template", help="Industry-style parameter template id (realistic/cartoon/bouncy/heavy/light/...).")
+    p.add_argument("--body-template", help="Body (character proportions) template id (standard/chibi/tall/stocky/...).")
+    p.add_argument("--body", action="append", metavar="NAME=VALUE",
+                   help="Character proportion override (repeatable), e.g. --body head_scale=1.4.")
     p.set_defaults(handler=cmd_new)
 
     for name in ("status", "next", "history"):
@@ -263,13 +306,21 @@ def build_parser() -> argparse.ArgumentParser:
         p.add_argument("--workflow", required=True)
         p.set_defaults(handler={"status": cmd_status, "next": cmd_next, "history": cmd_history}[name])
 
+    p = sub.add_parser("set-body", parents=[common], help="Persist instance-level character proportions.")
+    p.add_argument("--workflow", required=True)
+    p.add_argument("--body", action="append", metavar="NAME=VALUE", required=True,
+                   help="Character proportion to set (repeatable), e.g. --body head_scale=1.4.")
+    p.set_defaults(handler=cmd_set_body)
+
     for name in ("run", "approve", "reject"):
         p = sub.add_parser(name, parents=[common], help=f"{name} an action of a workflow instance.")
         p.add_argument("--workflow", required=True)
         p.add_argument("--action", required=True, help="action_id, e.g. skeleton.front.")
         if name == "run":
             p.add_argument("--param", action="append", metavar="NAME=VALUE",
-                           help="Tunable knob for the action (repeatable), e.g. --param stride=1.2 --param pelvis_bob=1.5.")
+                           help="Motion knob for the action (repeatable), e.g. --param stride=1.2 --param pelvis_bob=1.5.")
+            p.add_argument("--body", action="append", metavar="NAME=VALUE",
+                           help="Character proportion override for this run only (repeatable), e.g. --body head_scale=1.6.")
         if name in ("approve", "reject"):
             p.add_argument("--by", default="cli", help="Who approves/rejects (e.g. ai, human).")
             p.add_argument("--note", help="Review note.")

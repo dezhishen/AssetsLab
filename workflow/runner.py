@@ -14,7 +14,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from .model import ActionDef, ActionState, Approval, Status, WorkflowDef
+from .model import ActionDef, ActionState, Approval, BODY_NAMES, Status, WorkflowDef, default_body
 from .store import Store, now_iso
 
 
@@ -93,17 +93,20 @@ class WorkflowRunner:
             self._save_actions(actions)
         return state.to_dict()
 
-    def run(self, action_id: str, params: dict | None = None) -> dict[str, Any]:
+    def run(self, action_id: str, params: dict | None = None, body: dict | None = None) -> dict[str, Any]:
         """Run one action, collect outputs, verify the gate, update state.
 
-        ``params`` override the tunable knobs declared in the action definition
-        (e.g. stride / pelvis_bob / arm_swing).  ``{name}`` placeholders in the
-        exec list are replaced by the resolved value, so the same action can be
-        re-run with different parameters and the used values are recorded in
-        the action state for review.
+        ``params`` override the *motion* knobs declared in the action definition
+        (stride / pelvis_bob / arm_swing).  ``body`` overrides the instance-level
+        *character* proportions (arm_length … height) for this run only; they
+        apply to every action so front/side/back stay consistent.  ``{name}``
+        placeholders in the exec list are replaced by the resolved value, so the
+        same action can be re-run with different parameters and the used values
+        are recorded in the action state for review.
         """
         action = self._require(action_id)
         resolved = self._resolve_params(action, params)
+        body = self._resolve_body(body)
         step_dir = self.store.steps_dir(action_id)
 
         with self.store.lock():
@@ -114,16 +117,16 @@ class WorkflowRunner:
             state = self._action_state(actions, action_id)
             state.status = Status.RUNNING.value
             state.ran_at = now_iso()
-            state.params = resolved
+            state.params = {**resolved, **body}  # record motion + body knobs used
             actions[action_id] = state
             self._save_actions(actions)
             step_dir.mkdir(parents=True, exist_ok=True)
 
         # Long-running subprocess runs outside the lock.
         log_path = step_dir / "run.log"
-        # Expand {workflow_id} and {param} placeholders so exec can target
-        # dist/<workflow_id>/ and accept tunable knobs.
-        expanded_exec = self._expand_exec(action, resolved)
+        # Expand {workflow_id}, {motion param} and {body proportion} placeholders
+        # so exec can target dist/<workflow_id>/ and accept tunable knobs.
+        expanded_exec = self._expand_exec(action, resolved, body)
         try:
             process = subprocess.run(
                 self._cli + expanded_exec,
@@ -208,7 +211,8 @@ class WorkflowRunner:
     def _resolve_params(self, action: ActionDef, overrides: dict | None) -> dict:
         """Merge, in priority order: definition defaults < instance template
         (industry-style default knob values chosen at creation) < run-time
-        overrides."""
+        overrides.  Only *motion* knobs declared in ``action.params`` live here;
+        character proportions come from :meth:`_resolve_body`."""
         resolved: dict[str, Any] = {}
         for name, spec in action.params.items():
             if isinstance(spec, dict):
@@ -223,12 +227,44 @@ class WorkflowRunner:
             resolved[name] = value
         return resolved
 
-    def _expand_exec(self, action: ActionDef, params: dict) -> list[str]:
-        """Replace {workflow_id} and {param} placeholders in the exec list."""
+    def _resolve_body(self, overrides: dict | None) -> dict[str, float]:
+        """Instance-level character proportions: state['body'] merged with
+        run-time --body overrides.  All six proportions are always present so
+        ``{name}`` placeholders in exec are always substituted."""
+        data = self.store.load()
+        body = default_body()
+        body.update({k: float(v) for k, v in (data.get("body") or {}).items() if k in BODY_NAMES})
+        for name, value in (overrides or {}).items():
+            if name in BODY_NAMES:
+                body[name] = float(value)
+        return body
+
+    def set_body(self, overrides: dict) -> dict[str, float]:
+        """Persist instance-level body proportions (merge into state['body'])."""
+        if not overrides:
+            raise RuntimeError("no body values given")
+        with self.store.lock():
+            data = self.store.load()
+            body = default_body()
+            body.update({k: float(v) for k, v in (data.get("body") or {}).items() if k in BODY_NAMES})
+            for name, value in overrides.items():
+                if name not in BODY_NAMES:
+                    raise RuntimeError(f"unknown body proportion: {name} (known: {', '.join(BODY_NAMES)})")
+                body[name] = float(value)
+            data["body"] = body
+            self.store.save(data)
+        return body
+
+    def _expand_exec(self, action: ActionDef, params: dict, body: dict | None = None) -> list[str]:
+        """Replace {workflow_id}, {motion param} and {body proportion}
+        placeholders in the exec list."""
+        values: dict[str, Any] = dict(params)
+        if body:
+            values.update(body)
         out: list[str] = []
         for part in action.exec:
             part = part.replace("{workflow_id}", self.workflow_id)
-            for name, value in params.items():
+            for name, value in values.items():
                 part = part.replace("{" + name + "}", "" if value is None else str(value))
             out.append(part)
         return out

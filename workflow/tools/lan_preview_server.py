@@ -176,6 +176,26 @@ class PreviewHandler(SimpleHTTPRequestHandler):
                 return
             self.send_error(404)
             return
+        if parts == ["body-templates"]:
+            if REPO_ROOT is not None:
+                body_dir = REPO_ROOT / "workflow" / "body"
+                items = []
+                if body_dir.is_dir():
+                    for path in sorted(body_dir.glob("*.json")):
+                        try:
+                            data = json.loads(path.read_text(encoding="utf-8"))
+                        except Exception:
+                            continue
+                        items.append({
+                            "id": data.get("body_id"),
+                            "title": data.get("title"),
+                            "description": data.get("description", ""),
+                            "body": data.get("body", {}),
+                        })
+                self._send_json({"body_templates": items})
+                return
+            self.send_error(404)
+            return
         if parts and parts[0] == "definitions":
             if len(parts) == 1 and DEFINITIONS_ROOT is not None:
                 self._send_json({"definitions": sorted(p.stem for p in DEFINITIONS_ROOT.glob("*.json"))})
@@ -211,6 +231,17 @@ class PreviewHandler(SimpleHTTPRequestHandler):
                 args += ["--id", body["id"]]
             if body.get("template"):
                 args += ["--template", body["template"]]
+            if body.get("body_template"):
+                args += ["--body-template", body["body_template"]]
+            for key, value in (body.get("body") or {}).items():
+                args += ["--body", f"{key}={value}"]
+            self._send_json(self._workflow_cli(args))
+            return
+        if len(parts) == 3 and parts[0] == "instances" and parts[2] == "body":
+            # POST /api/workflow/instances/<id>/body  {body: {head_scale: 1.4, ...}}
+            args = ["set-body", "--workflow", parts[1], "--json"]
+            for key, value in (body.get("body") or {}).items():
+                args += ["--body", f"{key}={value}"]
             self._send_json(self._workflow_cli(args))
             return
         if len(parts) == 5 and parts[0] == "instances" and parts[2] == "actions":
@@ -219,6 +250,9 @@ class PreviewHandler(SimpleHTTPRequestHandler):
             if verb == "run" and isinstance(body.get("params"), dict):
                 for key, value in body["params"].items():
                     args += ["--param", f"{key}={value}"]
+            if verb == "run" and isinstance(body.get("body"), dict):
+                for key, value in body["body"].items():
+                    args += ["--body", f"{key}={value}"]
             if verb in ("approve", "reject"):
                 args += ["--by", body.get("by", "web")]
                 if body.get("note"):
