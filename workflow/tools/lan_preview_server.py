@@ -5,6 +5,7 @@ import base64
 import json
 import os
 import sys
+from datetime import datetime, timezone
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlparse
@@ -33,6 +34,12 @@ class PreviewHandler(SimpleHTTPRequestHandler):
             return
         if self.path == "/api/motions" or self.path.startswith("/api/motions/"):
             self._motions_api_get()
+            return
+        if self.path == "/api/artifacts":
+            self._artifacts_api_get()
+            return
+        if self.path.startswith("/dist/"):
+            self._serve_dist_file()
             return
         if self.path.startswith("/run/"):
             self._serve_run_file()
@@ -117,6 +124,30 @@ class PreviewHandler(SimpleHTTPRequestHandler):
 
     # ------------------------------------------------------------ workflow --
 
+    def do_DELETE(self) -> None:
+        if self.path.startswith("/api/workflow/"):
+            self._workflow_api_delete()
+            return
+        self.send_error(404)
+
+    def _workflow_api_delete(self) -> None:
+        """DELETE /api/workflow/instances/<id> - remove instance + artifacts."""
+        path = self.path[len("/api/workflow/"):].rstrip("/")
+        parts = path.split("/")
+        if len(parts) != 2 or parts[0] != "instances":
+            self.send_error(404)
+            return
+        if REPO_ROOT is None:
+            self._send_json({"ok": False, "error": "workflow server not configured"})
+            return
+        delete_instance = self._sdk()[-1]
+        try:
+            result = delete_instance(REPO_ROOT, RUN_ROOT, parts[1])
+        except KeyError as error:
+            self._send_json({"ok": False, "error": str(error)}, 404)
+            return
+        self._send_json(self._ok(result))
+
     def _send_json(self, payload: object, status: int = 200) -> None:
         body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
         self.send_response(status)
@@ -139,7 +170,7 @@ class PreviewHandler(SimpleHTTPRequestHandler):
 
     def _runner(self, workflow_id: str):
         """Bind a WorkflowRunner to an existing instance, or None."""
-        WorkflowRunner, _, _, Store, WorkflowDef = self._sdk()
+        WorkflowRunner, _, _, Store, WorkflowDef, _ = self._sdk()
         store = Store(RUN_ROOT, workflow_id)
         if not store.exists():
             return None
@@ -161,7 +192,7 @@ class PreviewHandler(SimpleHTTPRequestHandler):
             if REPO_ROOT is None:
                 self._send_json({"ok": False, "error": "workflow server not configured"})
                 return
-            WorkflowRunner, _, list_instances, _, _ = self._sdk()
+            WorkflowRunner, _, list_instances, _, _, _ = self._sdk()
             self._send_json(self._ok(list_instances(REPO_ROOT, RUN_ROOT)))
             return
         if parts == ["templates"]:
@@ -223,6 +254,16 @@ class PreviewHandler(SimpleHTTPRequestHandler):
                 return
             self._send_json(self._ok(runner.status_view()))
             return
+        if len(parts) == 3 and parts[0] == "instances" and parts[2] == "artifacts":
+            # Exported artifacts for one instance (dist/<workflow_id>/).
+            if REPO_ROOT is None:
+                self._send_json({"ok": False, "error": "workflow server not configured"})
+                return
+            try:
+                self._send_json({"artifacts": self._artifacts_for(parts[1])})
+            except FileNotFoundError as error:
+                self._send_json({"ok": False, "error": str(error)}, 404)
+            return
         if len(parts) == 3 and parts[0] == "instances" and parts[2] == "next":
             runner = self._runner(parts[1])
             if runner is None:
@@ -243,7 +284,7 @@ class PreviewHandler(SimpleHTTPRequestHandler):
         if REPO_ROOT is None:
             self._send_json({"ok": False, "error": "workflow server not configured"})
             return
-        WorkflowRunner, create_instance, _, _, _ = self._sdk()
+        WorkflowRunner, create_instance, _, _, _, _ = self._sdk()
         if parts == ["instances"]:
             definition = body.get("definition") or "default"
             workflow_id = body.get("id") or definition
@@ -415,6 +456,75 @@ class PreviewHandler(SimpleHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(data)
 
+    # ----------------------------------------------------------- artifacts --
+
+    def _artifacts_api_get(self) -> None:
+        """GET /api/artifacts - exported artifact packages per instance."""
+        if REPO_ROOT is None:
+            self._send_json({"ok": False, "error": "workflow server not configured"})
+            return
+        self._send_json({"artifacts": self._artifacts_for(None)})
+
+    def _artifacts_for(self, workflow_id: str | None) -> list[dict]:
+        """Index dist/<workflow_id>/ file trees; workflow_id=None -> all."""
+        dist_root = (REPO_ROOT / "dist").resolve()
+        ids = [workflow_id] if workflow_id else [d.name for d in sorted(dist_root.iterdir()) if d.is_dir()]
+        out: list[dict] = []
+        for wid in ids:
+            directory = dist_root / wid
+            if not directory.is_dir():
+                if workflow_id:
+                    raise FileNotFoundError(f"no exported artifacts for instance: {wid}")
+                continue
+            files = []
+            for f in sorted(directory.rglob("*")):
+                if not f.is_file():
+                    continue
+                rel = f.relative_to(directory)
+                stat = f.stat()
+                files.append({
+                    "name": f.name,
+                    "path": rel.as_posix(),
+                    "size": stat.st_size,
+                    "mtime": datetime.fromtimestamp(stat.st_mtime, tz=timezone.utc).isoformat(timespec="seconds"),
+                    "url": f"/dist/{wid}/{rel.as_posix()}",
+                })
+            out.append({"workflow_id": wid, "files": files})
+        return out
+
+    def _serve_dist_file(self) -> None:
+        """Serve exported artifacts under /dist/<workflow_id>/...; append
+        ?download=1 to force a Content-Disposition attachment."""
+        if REPO_ROOT is None:
+            self.send_error(404)
+            return
+        parsed = urlparse(self.path)
+        dist_root = (REPO_ROOT / "dist").resolve()
+        target = (dist_root / parsed.path[len("/dist/"):].lstrip("/")).resolve()
+        try:
+            target.relative_to(dist_root)
+        except ValueError:
+            self.send_error(403)
+            return
+        if not target.is_file():
+            self.send_error(404)
+            return
+        suffix = target.suffix.lower()
+        content_type = {
+            ".png": "image/png", ".gif": "image/gif", ".jpg": "image/jpeg",
+            ".webp": "image/webp", ".json": "application/json; charset=utf-8",
+            ".md": "text/markdown; charset=utf-8", ".txt": "text/plain; charset=utf-8",
+            ".log": "text/plain; charset=utf-8",
+        }.get(suffix, "application/octet-stream")
+        data = target.read_bytes()
+        self.send_response(200)
+        self.send_header("Content-Type", content_type)
+        if "download" in parsed.query:
+            self.send_header("Content-Disposition", f'attachment; filename="{target.name}"')
+        self.send_header("Content-Length", str(len(data)))
+        self.end_headers()
+        self.wfile.write(data)
+
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="AssetsLab LAN preview server with workflow console API")
@@ -442,9 +552,9 @@ def main() -> int:
     if str(REPO_ROOT) not in sys.path:
         sys.path.insert(0, str(REPO_ROOT))
     from workflow.model import WorkflowDef  # noqa: E402
-    from workflow.runner import WorkflowRunner, create_instance, list_instances  # noqa: E402
+    from workflow.runner import WorkflowRunner, create_instance, delete_instance, list_instances  # noqa: E402
     from workflow.store import Store  # noqa: E402
-    _SDK = (WorkflowRunner, create_instance, list_instances, Store, WorkflowDef)
+    _SDK = (WorkflowRunner, create_instance, list_instances, Store, WorkflowDef, delete_instance)
     # Static root: prefer the built Vue frontend (workflow/web/dist); if the
     # local build is missing, try the copy bundled inside a packaged server
     # (sys._MEIPASS), then download from a GitHub Release (based on the build

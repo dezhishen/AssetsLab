@@ -93,6 +93,20 @@ def create_instance(root: Path, run_root: Path, workflow_id: str, definition_id:
             "next": definition.actions[0].action_id if definition.actions else None}
 
 
+def delete_instance(root: Path, run_root: Path, workflow_id: str) -> dict:
+    """Delete a workflow instance and its exported artifacts (dist/<id>)."""
+    store = Store(run_root, workflow_id)
+    if not store.exists():
+        raise KeyError(f"workflow instance not found: {workflow_id}")
+    store.delete()
+    dist_dir = root / "dist" / workflow_id
+    removed_artifacts = False
+    if dist_dir.is_dir():
+        shutil.rmtree(dist_dir)
+        removed_artifacts = True
+    return {"workflow_id": workflow_id, "deleted": True, "removed_artifacts": removed_artifacts}
+
+
 class WorkflowRunner:
     def __init__(self, root: Path, definition: WorkflowDef, workflow_id: str, store: Store):
         self.root = root.resolve()

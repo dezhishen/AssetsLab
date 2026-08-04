@@ -14,7 +14,7 @@ import sys
 from pathlib import Path
 
 from .model import BODY_NAMES, WorkflowDef
-from .runner import WorkflowRunner, create_instance, list_instances
+from .runner import WorkflowRunner, create_instance, delete_instance, list_instances
 from .store import Store
 
 if getattr(sys, "frozen", False):
@@ -206,6 +206,17 @@ def cmd_update(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_delete(args: argparse.Namespace) -> int:
+    """Delete a workflow instance and its exported artifacts."""
+    try:
+        result = delete_instance(ROOT, args.run_root, args.workflow)
+    except KeyError as error:
+        _emit({"ok": False, "error": str(error)}, args.json)
+        return 1
+    _emit(result, args.json)
+    return 0
+
+
 def cmd_history(args: argparse.Namespace) -> int:
     runner = _runner(args)
     data = runner.status()
@@ -256,6 +267,11 @@ def build_parser() -> argparse.ArgumentParser:
         p = sub.add_parser(name, parents=[common], help=f"{name} for a workflow instance.")
         p.add_argument("--workflow", required=True)
         p.set_defaults(handler={"status": cmd_status, "next": cmd_next, "history": cmd_history}[name])
+
+    p = sub.add_parser("delete", parents=[common], help="Delete a workflow instance (and its exported artifacts).")
+    p.add_argument("--workflow", required=True)
+    p.set_defaults(handler=cmd_delete)
+
 
     p = sub.add_parser("set-body", parents=[common], help="Persist instance-level character proportions.")
     p.add_argument("--workflow", required=True)

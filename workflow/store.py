@@ -88,6 +88,13 @@ class Store:
     def exists(self) -> bool:
         return self.state_path.exists()
 
+    def delete(self) -> None:
+        """Remove the whole instance directory (state, lock, step outputs)."""
+        import shutil
+
+        if self.dir.exists():
+            shutil.rmtree(self.dir)
+
     def load(self) -> dict[str, Any]:
         if not self.state_path.exists():
             raise FileNotFoundError(f"workflow instance not found: {self.workflow_id}")

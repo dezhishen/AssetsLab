@@ -1,7 +1,7 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { workflowApi, PHASE_LABEL, STATUS_LABEL } from '../api'
 import MotionStudio from '../components/MotionStudio.vue'
 
@@ -88,6 +88,22 @@ async function openDetail(id) {
 }
 function gotoWizard(id) { router.push({ path: '/wizard', query: { id } }) }
 
+async function removeInstance(id) {
+  try {
+    await ElMessageBox.confirm(
+      `确定删除实例「${id}」吗？其导出制品（dist/${id}/）也会一并删除，此操作不可恢复。`,
+      '删除实例',
+      { type: 'warning', confirmButtonText: '删除', cancelButtonText: '取消', confirmButtonClass: 'el-button--danger' },
+    )
+  } catch (e) { return } // cancelled
+  try {
+    const r = await workflowApi.deleteInstance(id)
+    pushLog(`删除实例 → ${JSON.stringify(r)}`)
+    if (detail.value?.workflow_id === id) detail.value = null
+    await loadAll()
+  } catch (e) { ElMessage.error(e.message) }
+}
+
 function stFor(aid) { return (detail.value?.actions || {})[aid] || {} }
 
 function openParams(workflowId, action) {
@@ -167,6 +183,7 @@ onMounted(async () => { await loadAll(); updateBodyTplDesc() })
           </div>
           <span class="text-xs text-slate-500 whitespace-nowrap dark:text-slate-400 w-10 text-right shrink-0">{{ it.progress }}</span>
           <el-button size="small" @click.stop="openDetail(it.workflow_id)">详情</el-button>
+          <el-button size="small" type="danger" plain @click.stop="removeInstance(it.workflow_id)">删除</el-button>
         </div>
       </div>
     </div>

@@ -24,6 +24,7 @@ const modeLabel = computed(() => ({ light: '日间', dark: '夜间', system: '�
         <nav class="flex gap-2">
           <router-link to="/console" class="px-3 py-1.5 rounded-lg text-sm hover:bg-slate-100 dark:hover:bg-slate-800" active-class="bg-slate-200 text-cyan-600 dark:bg-slate-800 dark:text-cyan-300">控制台</router-link>
           <router-link to="/wizard" class="px-3 py-1.5 rounded-lg text-sm hover:bg-slate-100 dark:hover:bg-slate-800" active-class="bg-slate-200 text-cyan-600 dark:bg-slate-800 dark:text-cyan-300">流程向导</router-link>
+          <router-link to="/artifacts" class="px-3 py-1.5 rounded-lg text-sm hover:bg-slate-100 dark:hover:bg-slate-800" active-class="bg-slate-200 text-cyan-600 dark:bg-slate-800 dark:text-cyan-300">制品</router-link>
         </nav>
         <el-dropdown trigger="click" @command="setMode" class="ml-auto">
           <button class="flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800">

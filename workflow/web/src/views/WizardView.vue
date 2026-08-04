@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { workflowApi, urlFromPath, PHASE_LABEL, STATUS_LABEL } from '../api'
 import BodyPanel from '../components/BodyPanel.vue'
+import ArtifactFiles from '../components/ArtifactFiles.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -22,6 +23,12 @@ const actions = computed(() => def.value?.actions || [])
 const currentAction = computed(() => actions.value[current.value] || { action_id: '', params: {} })
 const currentState = computed(() => (state.value?.actions || {})[currentAction.value.action_id] || {})
 const body = computed(() => state.value?.body || {})
+const artifacts = ref([])
+
+async function loadArtifacts(id) {
+  const d = await workflowApi.instanceArtifacts(id).catch(() => ({ artifacts: [] }))
+  artifacts.value = (d.artifacts || [])[0]?.files || []
+}
 
 function pushLog(text) { log.value = [text, ...log.value].slice(0, 60) }
 
@@ -46,6 +53,7 @@ async function openInstance(id) {
   const idx = nr.next ? actions.value.findIndex((a) => a.action_id === nr.next) : -1
   current.value = idx >= 0 ? idx : 0
   seedParams()
+  loadArtifacts(id)
 }
 
 function seedParams() {
@@ -131,6 +139,19 @@ onMounted(async () => {
 
       <!-- body panel -->
       <BodyPanel :workflow-id="wfId" :body="body" :body-template="state.body_template" :body-templates="bodyTemplates" @saved="(b) => (state.body = b)" />
+
+      <!-- exported artifacts -->
+      <el-collapse class="rounded-lg border border-slate-200 bg-white/70 dark:border-slate-700 dark:bg-slate-900/60">
+        <el-collapse-item name="artifacts">
+          <template #title>
+            <div class="flex items-center gap-3 text-sm">
+              <span class="font-medium text-cyan-600 dark:text-cyan-300">制品包</span>
+              <span class="text-xs text-slate-500">{{ artifacts.length }} 个文件 · dist/{{ wfId }}/</span>
+            </div>
+          </template>
+          <ArtifactFiles :files="artifacts" />
+        </el-collapse-item>
+      </el-collapse>
 
       <!-- current step -->
       <div class="rounded-xl border border-slate-200 bg-white/70 dark:border-slate-700 dark:bg-slate-900/60 p-5 space-y-4">
