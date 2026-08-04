@@ -1,0 +1,85 @@
+{
+  "skin_id": "mannequin",
+  "schema": "assetslab_skin_v1",
+  "description": "通用人体模特皮肤：按 base.json 骨架 1:1 绘制的中性人体几何部件。锚点=部件图中心（精确=关节），肢体段按骨骼段方向旋转（rotate_child），rest 天然贴合。",
+  "views": [
+    "front",
+    "side",
+    "back"
+  ],
+  "coordinates": "skeleton",
+  "atlas_dir": "dist/mannequin/atlas",
+  "atlas_layers": [
+    "head",
+    "torso",
+    "upper_arm_left",
+    "upper_arm_right",
+    "forearm_left",
+    "forearm_right",
+    "thigh_left",
+    "thigh_right",
+    "shin_left",
+    "shin_right",
+    "foot_left",
+    "foot_right"
+  ],
+  "bindings": {
+    "head": {
+      "joint": "head",
+      "rotate": false
+    },
+    "torso": {
+      "joint": "pelvis",
+      "rotate": false
+    },
+    "upper_arm_left": {
+      "joint": "shoulder_left",
+      "rotate": false,
+      "rotate_child": "left_elbow"
+    },
+    "upper_arm_right": {
+      "joint": "shoulder_right",
+      "rotate": false,
+      "rotate_child": "right_elbow"
+    },
+    "forearm_left": {
+      "joint": "left_elbow",
+      "rotate": false,
+      "rotate_child": "left_hand"
+    },
+    "forearm_right": {
+      "joint": "right_elbow",
+      "rotate": false,
+      "rotate_child": "right_hand"
+    },
+    "thigh_left": {
+      "joint": "left_hip",
+      "rotate": false,
+      "rotate_child": "left_knee"
+    },
+    "thigh_right": {
+      "joint": "right_hip",
+      "rotate": false,
+      "rotate_child": "right_knee"
+    },
+    "shin_left": {
+      "joint": "left_knee",
+      "rotate": false,
+      "rotate_child": "left_foot"
+    },
+    "shin_right": {
+      "joint": "right_knee",
+      "rotate": false,
+      "rotate_child": "right_foot"
+    },
+    "foot_left": {
+      "joint": "left_foot",
+      "rotate": false
+    },
+    "foot_right": {
+      "joint": "right_foot",
+      "rotate": false
+    }
+  },
+  "anchors": {}
+}

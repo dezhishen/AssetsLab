@@ -78,6 +78,31 @@ def resolve_joint(binding: dict, limb: str | None) -> str:
     return joint % limb if "%s" in joint else joint
 
 
+# 逻辑关节名 -> 各视图实际关节名（side/back 用 front_ 侧为主侧；front 用 left_ 系
+# 别名，因为 walk 预设的 front 偏移驱动 left_hand/left_foot/…）
+VIEW_JOINT = {
+    ("shoulder_left", "side"): "front_shoulder", ("shoulder_left", "back"): "front_shoulder_left",
+    ("shoulder_right", "side"): "front_shoulder", ("shoulder_right", "back"): "front_shoulder_right",
+    ("left_elbow", "side"): "front_elbow", ("left_elbow", "back"): "front_elbow_left",
+    ("right_elbow", "side"): "front_elbow", ("right_elbow", "back"): "front_elbow_right",
+    ("left_hand", "side"): "front_hand", ("left_hand", "back"): "front_hand_left",
+    ("right_hand", "side"): "front_hand", ("right_hand", "back"): "front_hand_right",
+    ("left_hip", "side"): "front_hip", ("left_hip", "back"): "front_hip_left",
+    ("right_hip", "side"): "front_hip", ("right_hip", "back"): "front_hip_right",
+    ("left_knee", "side"): "front_knee", ("left_knee", "back"): "front_knee_left",
+    ("right_knee", "side"): "front_knee", ("right_knee", "back"): "front_knee_right",
+    ("left_foot", "side"): "front_foot", ("left_foot", "back"): "front_foot_left",
+    ("right_foot", "side"): "front_foot", ("right_foot", "back"): "front_foot_right",
+}
+
+
+def joint_view(joint: str, view: str) -> str:
+    """把逻辑关节名（front 惯例）映射到指定视图的实际关节名。"""
+    if view == "front":
+        return joint
+    return VIEW_JOINT.get((joint, view), joint)
+
+
 # ---------------------------------------------------------------- anchors --
 
 def bbox_anchor(image: Image.Image, policy: str) -> tuple[int, int]:
@@ -94,7 +119,10 @@ def bbox_anchor(image: Image.Image, policy: str) -> tuple[int, int]:
 
 
 def layer_anchor(skin: dict, layer: str, image: Image.Image) -> tuple[int, int]:
-    """锚点优先取皮肤定义 anchors[layer]，否则按 binding 的 anchor_policy 提取。"""
+    """锚点优先取皮肤定义 anchors[layer]，否则按 binding 的 anchor_policy 提取。
+    skeleton 坐标模式约定：锚点 = 部件图中心（肢体段从中心水平延伸，rotate 绕中心）。"""
+    if skin.get("coordinates") == "skeleton":
+        return (image.width // 2, image.height // 2)
     stored = skin.get("anchors", {}).get(layer)
     if isinstance(stored, list) and len(stored) == 2:
         return (int(stored[0]), int(stored[1]))
@@ -129,8 +157,15 @@ def joint_images(skin: dict, atlas_dir: Path, view: str) -> dict[str, Image.Imag
 def skin_layout(skin: dict, atlas_dir: Path) -> dict:
     """计算骨架->部件画布的缩放与偏移（rest 校准）。
 
-    scale = 部件集高度 / 骨架高度；offset 使「骨架骨盆」对齐「部件下身底部中心」。
+    coordinates="skeleton"：部件按骨架 1:1 坐标绘制（皮肤定义自带 anchors），
+    直接映射到 960x600 画布；否则（默认）缩放适配部件尺寸。
     """
+    if skin.get("coordinates") == "skeleton":
+        return {
+            "scale": 1.0, "ox": 0.0, "oy": 0.0,
+            "canvas_w": 960, "canvas_h": 600,
+            "origin_x": 0, "origin_y": 0,
+        }
     images = joint_images(skin, atlas_dir, "front")
     boxes = [im.getchannel("A").getbbox() for im in images.values()]
     boxes = [b for b in boxes if b]
@@ -171,7 +206,10 @@ def to_canvas(joint: tuple, layout: dict) -> tuple[int, int]:
 
 
 def rest_ref(skin: dict, atlas_dir: Path, view: str) -> Image.Image:
-    """frame 对齐叠加 = 各层静态部件在预烘焙位置的完整角色（参考真值）。"""
+    """frame 对齐叠加 = 各层静态部件在预烘焙位置的完整角色（参考真值）。
+    skeleton 坐标模式部件相互独立，此参考不适用（verify 会走专门分支）。"""
+    if skin.get("coordinates") == "skeleton":
+        return Image.new("RGBA", (960, 600), (0, 0, 0, 0))
     images = joint_images(skin, atlas_dir, view)
     layout = skin_layout(skin, atlas_dir)
     canvas = Image.new("RGBA", (layout["canvas_w"], layout["canvas_h"]), (0, 0, 0, 0))
@@ -183,7 +221,18 @@ def rest_ref(skin: dict, atlas_dir: Path, view: str) -> Image.Image:
     return canvas
 
 
-# ------------------------------------------------------------------ render --
+# ---------------------------------------------------------------- render --
+
+def rotate_to_joint(image: Image.Image, anchor: tuple[int, int],
+                    joint: tuple[int, int], child: tuple[int, int]) -> Image.Image:
+    """把「从锚点水平延伸」的部件绕锚点旋转，使其指向 关节->子关节 方向。
+    部件图约定：锚点在图中心，段从锚点沿 +x 水平延伸（base_angle=0）。
+    PIL rotate(+θ) 把 +x 段转向 -y（屏幕上方）；要指向屏幕角 φ=atan2(dy,dx)
+    （y 向下为正）需 rotate(-φ)。"""
+    dx = child[0] - joint[0]
+    dy = child[1] - joint[1]
+    deg = math.degrees(math.atan2(dy, dx))
+    return image.rotate(-deg, center=anchor, resample=Image.Resampling.NEAREST)
 
 def skin_frame(motion: dict, view: str, stage: str, index: int,
                params: dict | None, proportions: dict | None,
@@ -212,11 +261,18 @@ def skin_frame(motion: dict, view: str, stage: str, index: int,
             cy = sum(p[1] for p in pts) // len(pts)
             canvas.alpha_composite(img, (cx - anchor[0], cy - anchor[1]))
         else:
-            jc = coords.get(resolve_joint(binding, None))
+            joint_name = joint_view(resolve_joint(binding, None), view)
+            jc = coords.get(joint_name)
             if jc is None:
                 continue
             pos = to_canvas(jc, layout)
-            canvas.alpha_composite(img, (pos[0] - anchor[0], pos[1] - anchor[1]))
+            piece = img
+            child = binding.get("rotate_child")
+            if child:
+                cc = coords.get(joint_view(child, view))
+                if cc is not None:
+                    piece = rotate_to_joint(img, anchor, pos, to_canvas(cc, layout))
+            canvas.alpha_composite(piece, (pos[0] - anchor[0], pos[1] - anchor[1]))
     return canvas
 
 
@@ -298,25 +354,57 @@ def cmd_verify(args: argparse.Namespace) -> int:
             except FileNotFoundError:
                 errors.append(f"{view}/{layer}: missing atlas frame")
 
-    # rest 贴合验证：程序化蒙皮 vs frame 对齐参考（IoU 越大贴合越好）
+    # 贴合验证
     layout = skin_layout(skin, atlas_dir)
     print(f"  [i] layout: scale={layout['scale']:.3f} "
-          f"canvas={layout['canvas_w']}x{layout['canvas_h']}")
-    for view in VIEWS:
-        ref = rest_ref(skin, atlas_dir, view)
-        motion = load_motion("walk")
-        skinned = skin_frame(motion, view, "arms", 0, None, None, skin, atlas_dir, layout)
-        ref_a = ref.getchannel("A")
-        sk_a = skinned.getchannel("A")
-        ref_px = {(x, y) for x in range(ref.width) for y in range(ref.height)
-                  if ref_a.getpixel((x, y)) > 0}
-        sk_px = {(x, y) for x in range(skinned.width) for y in range(skinned.height)
-                 if sk_a.getpixel((x, y)) > 0}
-        union = ref_px | sk_px
-        inter = ref_px & sk_px
-        iou = len(inter) / len(union) if union else 1.0
-        print(f"  [i] {view}: rest-skin IoU vs frame-align = {iou:.3f} "
-              f"(ref_px={len(ref_px)} skin_px={len(sk_px)})")
+          f"canvas={layout['canvas_w']}x{layout['canvas_h']} coords={skin.get('coordinates', 'normalized')}")
+    if skin.get("coordinates") == "skeleton":
+        # skeleton 坐标：锚点=图中心精确贴关节。校验关节映射完整性 + 渲染 rest 合成帧。
+        base = BASE
+        out_dir = ROOT / "prototype" / "test_output" / "skeleton_pipeline"
+        out_dir.mkdir(parents=True, exist_ok=True)
+        problems = []
+        for view in VIEWS:
+            joints = base.get(view, {})
+            motion = load_motion("idle")
+            skinned = skin_frame(motion, view, "arms", 0, None, None, skin, atlas_dir, layout)
+            out_png = out_dir / f"skin_{args.skin}_rest_{view}.png"
+            skinned.save(out_png)
+            bb = skinned.getchannel("A").getbbox()
+            missing: list[str] = []
+            for layer in skin.get("atlas_layers", []):
+                binding = skin.get("bindings", {}).get(layer)
+                if not binding:
+                    continue
+                for ref in [resolve_joint(binding, None), binding.get("rotate_child")]:
+                    if not ref:
+                        continue
+                    if joint_view(ref, view) not in joints:
+                        missing.append(f"{layer}->{ref}")
+            if missing:
+                problems.append(f"{view}: missing joints {missing}")
+            print(f"  [i] {view}: rest composite bbox={bb} -> {out_png}")
+        if problems:
+            for p in problems:
+                print(f"  [x] {p}")
+            return 1
+    else:
+        # 归一化坐标：程序化蒙皮 vs frame 对齐参考（IoU 越大贴合越好）
+        for view in VIEWS:
+            ref = rest_ref(skin, atlas_dir, view)
+            motion = load_motion("walk")
+            skinned = skin_frame(motion, view, "arms", 0, None, None, skin, atlas_dir, layout)
+            ref_a = ref.getchannel("A")
+            sk_a = skinned.getchannel("A")
+            ref_px = {(x, y) for x in range(ref.width) for y in range(ref.height)
+                      if ref_a.getpixel((x, y)) > 0}
+            sk_px = {(x, y) for x in range(skinned.width) for y in range(skinned.height)
+                     if sk_a.getpixel((x, y)) > 0}
+            union = ref_px | sk_px
+            inter = ref_px & sk_px
+            iou = len(inter) / len(union) if union else 1.0
+            print(f"  [i] {view}: rest-skin IoU vs frame-align = {iou:.3f} "
+                  f"(ref_px={len(ref_px)} skin_px={len(sk_px)})")
     if errors:
         for e in errors:
             print(f"  [x] {e}")
