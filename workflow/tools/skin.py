@@ -113,17 +113,18 @@ def resolve_joint(binding: dict, limb: str | None) -> str:
 # back 视图：手臂用 rear_ 侧（外扩、从背面可见），腿用 front_ 侧（walk back 偏移驱动）。
 VIEW_JOINT = {
     ("shoulder_left", "side"): "front_shoulder", ("shoulder_left", "back"): "rear_shoulder_left",
-    ("shoulder_right", "side"): "front_shoulder", ("shoulder_right", "back"): "rear_shoulder_right",
+    ("shoulder_right", "side"): "rear_shoulder", ("shoulder_right", "back"): "rear_shoulder_right",
     ("left_elbow", "side"): "front_elbow", ("left_elbow", "back"): "rear_elbow_left",
-    ("right_elbow", "side"): "front_elbow", ("right_elbow", "back"): "rear_elbow_right",
+    ("right_elbow", "side"): "rear_elbow", ("right_elbow", "back"): "rear_elbow_right",
     ("left_hand", "side"): "front_hand", ("left_hand", "back"): "rear_hand_left",
-    ("right_hand", "side"): "front_hand", ("right_hand", "back"): "rear_hand_right",
+    ("right_hand", "side"): "rear_hand", ("right_hand", "back"): "rear_hand_right",
+    # side 视图左右成对层分别绑 front_/rear_（前腿/后腿、前臂/后臂），避免重叠成一条
     ("left_hip", "side"): "front_hip", ("left_hip", "back"): "left_hip",
-    ("right_hip", "side"): "front_hip", ("right_hip", "back"): "right_hip",
+    ("right_hip", "side"): "rear_hip", ("right_hip", "back"): "right_hip",
     ("left_knee", "side"): "front_knee", ("left_knee", "back"): "left_knee",
-    ("right_knee", "side"): "front_knee", ("right_knee", "back"): "right_knee",
+    ("right_knee", "side"): "rear_knee", ("right_knee", "back"): "right_knee",
     ("left_foot", "side"): "front_foot", ("left_foot", "back"): "left_foot",
-    ("right_foot", "side"): "front_foot", ("right_foot", "back"): "right_foot",
+    ("right_foot", "side"): "rear_foot", ("right_foot", "back"): "right_foot",
 }
 
 

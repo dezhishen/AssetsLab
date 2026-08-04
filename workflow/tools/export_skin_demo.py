@@ -210,7 +210,9 @@ def main() -> int:
                      duration=100, loop=0, disposal=2)
     files.append("character_walk_4way.gif")
 
-    runtime_params = {"move_speed": args.move_speed, "walk_fps": args.walk_fps, "layer_y": 0.0}
+    # layer_y 需与 main.tscn 里 body 层 sprite 的位置一致（(0,-26)），否则 head
+    # sprite 被放到 (0,layer_y) 而 body 在 (0,-26)，脑袋会脱离躯干上移。
+    runtime_params = {"move_speed": args.move_speed, "walk_fps": args.walk_fps, "layer_y": -26.0}
     write_manifest(dist, name, skin_id, skin.get("body"), files, runtime_params)
     write_readme(dist, name, skin_id)
     print(f"SKIN_DEMO_EXPORT_PASS skin={skin_id} -> {dist.resolve()}")
