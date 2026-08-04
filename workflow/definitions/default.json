@@ -12,17 +12,37 @@
         "arms",
         "--renderer",
         "python",
+        "--motion",
+        "walk",
         "--stride",
         "{stride}",
         "--pelvis-bob",
         "{pelvis_bob}",
         "--arm-swing",
-        "{arm_swing}"
+        "{arm_swing}",
+        "--proportion-arm-length",
+        "{arm_length}",
+        "--proportion-leg-length",
+        "{leg_length}",
+        "--proportion-torso-length",
+        "{torso_length}",
+        "--proportion-shoulder-width",
+        "{shoulder_width}",
+        "--proportion-head-scale",
+        "{head_scale}",
+        "--proportion-height",
+        "{height}"
       ],
       "params": {
         "stride": {"default": 1.0, "min": 0.0, "max": 2.5, "label": "步幅"},
         "pelvis_bob": {"default": 1.0, "min": 0.0, "max": 3.0, "label": "骨盆起伏"},
-        "arm_swing": {"default": 1.0, "min": 0.0, "max": 2.0, "label": "摆臂"}
+        "arm_swing": {"default": 1.0, "min": 0.0, "max": 2.0, "label": "摆臂"},
+        "arm_length": {"default": 1.0, "min": 0.6, "max": 1.6, "label": "臂长"},
+        "leg_length": {"default": 1.0, "min": 0.6, "max": 1.6, "label": "腿长"},
+        "torso_length": {"default": 1.0, "min": 0.6, "max": 1.6, "label": "躯干长"},
+        "shoulder_width": {"default": 1.0, "min": 0.6, "max": 1.6, "label": "肩宽"},
+        "head_scale": {"default": 1.0, "min": 0.6, "max": 1.6, "label": "头大小"},
+        "height": {"default": 1.0, "min": 0.8, "max": 1.4, "label": "身高"}
       },
       "depends": [],
       "collect": [
@@ -41,17 +61,37 @@
         "arms",
         "--renderer",
         "python",
+        "--motion",
+        "walk",
         "--stride",
         "{stride}",
         "--pelvis-bob",
         "{pelvis_bob}",
         "--arm-swing",
-        "{arm_swing}"
+        "{arm_swing}",
+        "--proportion-arm-length",
+        "{arm_length}",
+        "--proportion-leg-length",
+        "{leg_length}",
+        "--proportion-torso-length",
+        "{torso_length}",
+        "--proportion-shoulder-width",
+        "{shoulder_width}",
+        "--proportion-head-scale",
+        "{head_scale}",
+        "--proportion-height",
+        "{height}"
       ],
       "params": {
         "stride": {"default": 1.0, "min": 0.0, "max": 2.5, "label": "步幅"},
         "pelvis_bob": {"default": 1.0, "min": 0.0, "max": 3.0, "label": "骨盆起伏"},
-        "arm_swing": {"default": 1.0, "min": 0.0, "max": 2.0, "label": "摆臂"}
+        "arm_swing": {"default": 1.0, "min": 0.0, "max": 2.0, "label": "摆臂"},
+        "arm_length": {"default": 1.0, "min": 0.6, "max": 1.6, "label": "臂长"},
+        "leg_length": {"default": 1.0, "min": 0.6, "max": 1.6, "label": "腿长"},
+        "torso_length": {"default": 1.0, "min": 0.6, "max": 1.6, "label": "躯干长"},
+        "shoulder_width": {"default": 1.0, "min": 0.6, "max": 1.6, "label": "肩宽"},
+        "head_scale": {"default": 1.0, "min": 0.6, "max": 1.6, "label": "头大小"},
+        "height": {"default": 1.0, "min": 0.8, "max": 1.4, "label": "身高"}
       },
       "depends": [
         "skeleton.front"
@@ -72,14 +112,34 @@
         "legs",
         "--renderer",
         "python",
+        "--motion",
+        "walk",
         "--stride",
         "{stride}",
         "--pelvis-bob",
-        "{pelvis_bob}"
+        "{pelvis_bob}",
+        "--proportion-arm-length",
+        "{arm_length}",
+        "--proportion-leg-length",
+        "{leg_length}",
+        "--proportion-torso-length",
+        "{torso_length}",
+        "--proportion-shoulder-width",
+        "{shoulder_width}",
+        "--proportion-head-scale",
+        "{head_scale}",
+        "--proportion-height",
+        "{height}"
       ],
       "params": {
         "stride": {"default": 1.0, "min": 0.0, "max": 2.5, "label": "步幅"},
-        "pelvis_bob": {"default": 1.0, "min": 0.0, "max": 3.0, "label": "骨盆起伏"}
+        "pelvis_bob": {"default": 1.0, "min": 0.0, "max": 3.0, "label": "骨盆起伏"},
+        "arm_length": {"default": 1.0, "min": 0.6, "max": 1.6, "label": "臂长"},
+        "leg_length": {"default": 1.0, "min": 0.6, "max": 1.6, "label": "腿长"},
+        "torso_length": {"default": 1.0, "min": 0.6, "max": 1.6, "label": "躯干长"},
+        "shoulder_width": {"default": 1.0, "min": 0.6, "max": 1.6, "label": "肩宽"},
+        "head_scale": {"default": 1.0, "min": 0.6, "max": 1.6, "label": "头大小"},
+        "height": {"default": 1.0, "min": 0.8, "max": 1.4, "label": "身高"}
       },
       "depends": [
         "skeleton.side"

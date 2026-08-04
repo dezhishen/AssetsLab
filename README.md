@@ -278,6 +278,17 @@ python workflow/tools/assetslab.py stage side arms --renderer python --motion ru
 - **Two-bone IK** (`--ik`; presets declare `ik` groups) keeps leg lengths
   constant at large strides, and "foot-plant" locks an unreachable foot back
   onto the reachable radius — used by `run` / `jump`.
+- **Body proportions** — the static base is tunable too: `arm_length`,
+  `leg_length`, `torso_length`, `shoulder_width`, `head_scale`, `height`
+  (each 1.0 = reference). They scale each bone segment around its anchor
+  (e.g. `head_scale` grows the head from the neck, `leg_length` lengthens the
+  thighs with feet planted), so the same motion presets drive any body shape.
+  Exposed as sliders in the Motion Studio and in the workflow step params:
+
+  ```bash
+  python workflow/tools/assetslab.py motion render walk --view front --stage arms \
+      --proportion-head-scale 1.4 --proportion-arm-length 1.3
+  ```
 - **Cross-motion blending**: `--blend run --blend-t 0.5` interpolates joints
   for a parameterized walk↔run transition.
 - **Web**: the workflow console `/workflow.html` gained a *Motion Studio*

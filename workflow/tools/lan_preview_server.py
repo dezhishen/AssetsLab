@@ -293,6 +293,11 @@ class PreviewHandler(SimpleHTTPRequestHandler):
         for key in ("stride", "pelvis_bob", "arm_swing"):
             if body.get(key) is not None:
                 overrides[key] = float(body[key])
+        proportions = {}
+        for name in ("arm_length", "leg_length", "torso_length",
+                     "shoulder_width", "head_scale", "height"):
+            if body.get(name) is not None:
+                proportions[name] = float(body[name])
         use_ik = bool(body.get("ik", False))
         blend_id = body.get("blend")
         blend_t = float(body.get("blend_t", 0.0) or 0.0)
@@ -300,15 +305,15 @@ class PreviewHandler(SimpleHTTPRequestHandler):
 
         frame_index = body.get("frame_index")
         if frame_index is not None:
-            img = motion_mod.render_frame(motion, view, stage, int(frame_index), overrides or None, use_ik)
+            img = motion_mod.render_frame(motion, view, stage, int(frame_index), overrides or None, use_ik, proportions or None)
             if blend is not None and blend_t > 0.0:
-                other = motion_mod.render_frame(blend, view, stage, int(frame_index), overrides or None, use_ik)
+                other = motion_mod.render_frame(blend, view, stage, int(frame_index), overrides or None, use_ik, proportions or None)
                 img = Image.blend(img, other, blend_t)
             buf = io.BytesIO()
             img.save(buf, format="PNG")
             return {"frame": "data:image/png;base64," + base64.b64encode(buf.getvalue()).decode()}
 
-        frames = motion_mod.render_motion(motion, view, stage, overrides or None, use_ik, blend, blend_t)
+        frames = motion_mod.render_motion(motion, view, stage, overrides or None, use_ik, blend, blend_t, proportions or None)
         enlarged = [f.resize((480, 300), Image.Resampling.NEAREST) for f in frames]
         buf = io.BytesIO()
         enlarged[0].save(buf, format="GIF", save_all=True, append_images=enlarged[1:],

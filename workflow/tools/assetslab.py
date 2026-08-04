@@ -452,6 +452,10 @@ def cmd_stage(args: argparse.Namespace) -> int:
             extra += ["--ik"]
         if args.fps:
             extra += ["--fps", str(args.fps)]
+        for name in ("arm_length", "leg_length", "torso_length", "shoulder_width", "head_scale", "height"):
+            value = getattr(args, f"proportion_{name}", None)
+            if value is not None:
+                extra += [f"--proportion-{name.replace('_', '-')}", str(value)]
         process = _run_python_tool(python, "render_skeleton_preview.py", extra)
         if process.stdout:
             print(process.stdout, end="")
@@ -632,6 +636,9 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--motion", help="Data-driven motion preset id (python renderer): walk/run/idle/jump.")
     p.add_argument("--ik", action="store_true", help="Apply two-bone IK leg solve (python renderer).")
     p.add_argument("--fps", type=int, help="GIF frame rate (python renderer).")
+    for name in ("arm_length", "leg_length", "torso_length", "shoulder_width", "head_scale", "height"):
+        p.add_argument(f"--proportion-{name.replace('_', '-')}", type=float,
+                       help=f"Body proportion {name} (1.0 = reference base).")
     add_tool_args(p)
 
     p = sub.add_parser("preview", help="Start the LAN preview server (lan_preview_server.py).")

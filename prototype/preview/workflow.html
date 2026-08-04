@@ -73,6 +73,7 @@
       <span id="mvStatus" class="muted"></span>
     </div>
     <div class="toolbar" id="mvParams"></div>
+    <div class="toolbar" id="mvProps"></div>
     <div class="toolbar">
       <label>混合 → <select id="mvBlend"><option value="">无</option></select></label>
       <label>比例 <input type="range" id="mvBlendT" min="0" max="1" step="0.05" value="0.5" style="width:110px"></label>
@@ -140,6 +141,17 @@ function urlFromPath(p) {
 
 let MOTIONS = [];
 const MV_PARAM_KEYS = ['stride', 'pelvis_bob', 'arm_swing'];
+const PROPORTION_KEYS = ['arm_length', 'leg_length', 'torso_length', 'shoulder_width', 'head_scale', 'height'];
+const PROPORTION_LABEL = { arm_length:'臂长', leg_length:'腿长', torso_length:'躯干长', shoulder_width:'肩宽', head_scale:'头大小', height:'身高' };
+
+function buildProportionParams() {
+  $('mvProps').innerHTML = '<span class="muted" style="font-size:12px">体型（1.0=基准）</span> ' + PROPORTION_KEYS.map(k =>
+    `<label>${PROPORTION_LABEL[k]} <input type="range" id="mvPr_${k}" data-key="${k}" min="0.6" max="1.6" step="0.05" value="1"> <span class="muted" id="mvPrv_${k}">1</span></label>`
+  ).join('');
+  document.querySelectorAll('#mvProps input[type=range]').forEach(r => {
+    r.oninput = () => { $('mvPrv_' + r.dataset.key).textContent = r.value; renderMotion(); };
+  });
+}
 
 async function loadMotions() {
   const res = await fetch('/api/motions');
@@ -149,6 +161,7 @@ async function loadMotions() {
   const opts = MOTIONS.map(m => `<option value="${m.id}">${m.id} — ${m.title}</option>`).join('');
   $('mvMotion').innerHTML = opts;
   $('mvBlend').innerHTML = '<option value="">无</option>' + MOTIONS.map(m => `<option value="${m.id}">${m.id}</option>`).join('');
+  buildProportionParams();
   buildMotionParams();
   renderMotion();
 }
@@ -183,6 +196,12 @@ async function renderMotion() {
     stride: parseFloat(($('mvP_stride') || {}).value ?? currentMotion().params?.stride?.default ?? 1),
     pelvis_bob: parseFloat(($('mvP_pelvis_bob') || {}).value ?? currentMotion().params?.pelvis_bob?.default ?? 1),
     arm_swing: parseFloat(($('mvP_arm_swing') || {}).value ?? currentMotion().params?.arm_swing?.default ?? 1),
+    arm_length: parseFloat(($('mvPr_arm_length') || {}).value ?? 1),
+    leg_length: parseFloat(($('mvPr_leg_length') || {}).value ?? 1),
+    torso_length: parseFloat(($('mvPr_torso_length') || {}).value ?? 1),
+    shoulder_width: parseFloat(($('mvPr_shoulder_width') || {}).value ?? 1),
+    head_scale: parseFloat(($('mvPr_head_scale') || {}).value ?? 1),
+    height: parseFloat(($('mvPr_height') || {}).value ?? 1),
     blend: $('mvBlend').value || undefined,
     blend_t: parseFloat($('mvBlendT').value),
   };
@@ -372,7 +391,6 @@ $('newBtn').onclick = async () => {
 };
 $('back').onclick = () => { $('detail').hidden = true; };
 
-(async () => { await loadMotions(); await loadDefs(); await loadTemplates(); await loadList(); })();
-</script>
+(async () => { await loadMotions(); await loadDefs(); await loadTemplates(); await loadList(); })();</script>
 </body>
 </html>

@@ -81,6 +81,109 @@ _BASE_JSON = json.loads((MOTIONS_ROOT / "base.json").read_text(encoding="utf-8")
 TORSO: dict[str, dict[str, float]] = _BASE_JSON.get("torso", {})
 ROOT_MIN_STAGE = "pelvis"  # root motion applies from the pelvis stage onward
 
+# ------------------------------------------------------------ proportions --
+
+# Tunable body proportions (industry character-customisation): each scales a
+# bone segment around its anchor joint on the static base, so the same motion
+# presets drive any body shape. Default 1.0 == the reference base.
+PROPORTION_NAMES = ("arm_length", "leg_length", "torso_length",
+                    "shoulder_width", "head_scale", "height")
+
+# Joints that ride up when the torso lengthens (neck/head/shoulders/arms).
+_UPPER_JOINTS = {
+    "front": ["head", "neck", "shoulder_left", "shoulder_right",
+              "elbow_left", "elbow_right", "hand_left", "hand_right",
+              "left_elbow", "right_elbow", "left_hand", "right_hand"],
+    "side": ["head", "neck", "rear_shoulder", "front_shoulder",
+             "rear_elbow", "front_elbow", "rear_hand", "front_hand"],
+    "back": ["head", "neck",
+             "rear_shoulder_left", "rear_shoulder_right", "front_shoulder_left", "front_shoulder_right",
+             "rear_elbow_left", "rear_elbow_right", "front_elbow_left", "front_elbow_right",
+             "rear_hand_left", "rear_hand_right", "front_hand_left", "front_hand_right"],
+}
+# shoulder -> [elbow, hand] chains (both base names and render aliases).
+_ARM_CHAINS = {
+    "front": {"shoulder_left": ["elbow_left", "hand_left", "left_elbow", "left_hand"],
+              "shoulder_right": ["elbow_right", "hand_right", "right_elbow", "right_hand"]},
+    "side": {"rear_shoulder": ["rear_elbow", "rear_hand"],
+             "front_shoulder": ["front_elbow", "front_hand"]},
+    "back": {"rear_shoulder_left": ["rear_elbow_left", "rear_hand_left"],
+             "rear_shoulder_right": ["rear_elbow_right", "rear_hand_right"],
+             "front_shoulder_left": ["front_elbow_left", "front_hand_left"],
+             "front_shoulder_right": ["front_elbow_right", "front_hand_right"]},
+}
+# hip -> [knee, foot] chains.
+_LEG_CHAINS = {
+    "front": {"hip_left": ["knee_left", "left_knee", "foot_left", "left_foot"],
+              "hip_right": ["knee_right", "right_knee", "foot_right", "right_foot"]},
+    "side": {"rear_hip": ["rear_knee", "rear_foot"],
+             "front_hip": ["front_knee", "front_foot"]},
+    "back": {"front_hip_left": ["front_knee_left", "left_knee", "front_foot_left", "left_foot"],
+             "front_hip_right": ["front_knee_right", "right_knee", "front_foot_right", "right_foot"]},
+}
+
+
+def apply_proportions(coords: dict, proportions: dict | None, view: str) -> None:
+    """Scale bone segments on the static base in place (all factors default 1.0)."""
+    p = {name: 1.0 for name in PROPORTION_NAMES}
+    for name, value in (proportions or {}).items():
+        if name in p and value is not None:
+            p[name] = float(value)
+
+    # 1. Overall height — scale all Y from the floor (feet stay planted).
+    if p["height"] != 1.0:
+        h = p["height"]
+        for pt in coords.values():
+            if isinstance(pt, list):
+                pt[1] = FLOOR_Y - (FLOOR_Y - pt[1]) * h
+    # 2. Torso length — neck/head/shoulders/arms ride up from the pelvis.
+    if p["torso_length"] != 1.0 and "neck" in coords and "pelvis" in coords:
+        dy = (coords["neck"][1] - coords["pelvis"][1]) * (p["torso_length"] - 1.0)
+        for name in _UPPER_JOINTS.get(view, []):
+            if name in coords:
+                coords[name][1] += dy
+    # 3. Head scale — move the head away from the neck.
+    if p["head_scale"] != 1.0 and "neck" in coords and "head" in coords:
+        nx, ny = coords["neck"]
+        hx, hy = coords["head"]
+        coords["head"] = [nx + (hx - nx) * p["head_scale"], ny + (hy - ny) * p["head_scale"]]
+    # 4. Shoulder width — spread shoulders around the spine centre; elbows/hands follow.
+    if p["shoulder_width"] != 1.0 and "pelvis" in coords:
+        cx = coords["pelvis"][0]
+        for sh, children in _ARM_CHAINS.get(view, {}).items():
+            if sh not in coords:
+                continue
+            old_x = coords[sh][0]
+            coords[sh][0] = cx + (old_x - cx) * p["shoulder_width"]
+            dx = coords[sh][0] - old_x
+            for child in children:
+                if child in coords:
+                    coords[child][0] += dx
+    # 5. Arm length — elbows/hands extend from the shoulders.
+    if p["arm_length"] != 1.0:
+        for sh, children in _ARM_CHAINS.get(view, {}).items():
+            if sh not in coords:
+                continue
+            sx, sy = coords[sh]
+            for child in children:
+                if child in coords:
+                    cx, cy = coords[child]
+                    coords[child] = [sx + (cx - sx) * p["arm_length"], sy + (cy - sy) * p["arm_length"]]
+    # 6. Leg length — knees extend from hips; feet stay planted on the floor.
+    if p["leg_length"] != 1.0:
+        for hip, chain in _LEG_CHAINS.get(view, {}).items():
+            if hip not in coords:
+                continue
+            hx, hy = coords[hip]
+            for name in chain:
+                if name not in coords:
+                    continue
+                cx, cy = coords[name]
+                if "foot" in name:
+                    coords[name] = [cx, FLOOR_Y]
+                else:
+                    coords[name] = [hx + (cx - hx) * p["leg_length"], hy + (cy - hy) * p["leg_length"]]
+
 
 # ------------------------------------------------------------ expressions --
 
@@ -172,11 +275,12 @@ def _selector_value(motion: dict, name: str, index: int):
 
 
 def pose(motion: dict, view: str, stage: str, index: int,
-         params: dict | None = None) -> dict:
+         params: dict | None = None, proportions: dict | None = None) -> dict:
     """Sample a full joint dict (name -> (x, y)) plus selectors for a frame.
 
     The cumulative STAGE_ORDER layers are applied on top of the static base,
-    matching the staged render (skeleton -> legs -> pelvis -> arms).
+    matching the staged render (skeleton -> legs -> pelvis -> arms).  Body
+    proportions are applied to the base first (default 1.0 = reference base).
     """
     if view not in BASE:
         raise MotionError(f"unknown view: {view}")
@@ -190,6 +294,7 @@ def pose(motion: dict, view: str, stage: str, index: int,
            "signals": signals}
 
     coords = {name: [x, y] for name, (x, y) in BASE[view].items()}
+    apply_proportions(coords, proportions, view)
     if stage != "skeleton":
         for layer in STAGE_ORDER:
             layer_offsets = motion.get("offsets", {}).get(view, {}).get(layer, {})
@@ -301,20 +406,23 @@ def apply_ik(motion: dict, view: str, stage: str, coords: dict,
 
 
 def render_frame(motion: dict, view: str, stage: str, index: int,
-                 params: dict | None = None, use_ik: bool = False):
+                 params: dict | None = None, use_ik: bool = False,
+                 proportions: dict | None = None):
     """Render one frame as a PIL image (same look as the Godot captures)."""
     base = BASE[view]
     image, draw = canvas()
     if stage == "skeleton":
+        # Static skeleton also honours proportions (body shape preview).
+        coords = pose(motion, view, "skeleton", 0, params, proportions)
         if view == "front":
-            render_front_skeleton(image, draw, base)
+            render_front_skeleton(image, draw, coords)
         elif view == "side":
-            render_side_base(image, draw, base)
+            render_side_base(image, draw, coords)
         else:
-            render_back_skeleton(image, draw, base)
+            render_back_skeleton(image, draw, coords)
         return image
 
-    coords = pose(motion, view, stage, index, params)
+    coords = pose(motion, view, stage, index, params, proportions)
     if use_ik:
         apply_ik(motion, view, stage, coords)
 
@@ -341,14 +449,15 @@ def render_frame(motion: dict, view: str, stage: str, index: int,
 
 def render_motion(motion: dict, view: str, stage: str,
                   params: dict | None = None, use_ik: bool = False,
-                  blend_motion: dict | None = None, blend_t: float = 0.0):
+                  blend_motion: dict | None = None, blend_t: float = 0.0,
+                  proportions: dict | None = None):
     """Return an ordered list of PIL frames for an entire cycle."""
     frame_count = int(motion.get("frame_count", FRAME_COUNT))
     frames = []
     for i in range(frame_count):
-        image = render_frame(motion, view, stage, i, params, use_ik)
+        image = render_frame(motion, view, stage, i, params, use_ik, proportions)
         if blend_motion is not None and blend_t > 0.0:
-            other = render_frame(blend_motion, view, stage, i, params, use_ik)
+            other = render_frame(blend_motion, view, stage, i, params, use_ik, proportions)
             image = Image.blend(image, other, blend_t)
         frames.append(image)
     return frames
@@ -357,11 +466,11 @@ def render_motion(motion: dict, view: str, stage: str,
 def render_to_output(motion: dict, view: str, stage: str, output: Path,
                      params: dict | None = None, use_ik: bool = False,
                      fps: int = 8, blend_motion: dict | None = None,
-                     blend_t: float = 0.0) -> None:
+                     blend_t: float = 0.0, proportions: dict | None = None) -> None:
     """Render a stage and write PNG/GIF with the same names as the pipeline."""
     output.mkdir(parents=True, exist_ok=True)
     motion_id = motion["motion_id"]
-    frames = render_motion(motion, view, stage, params, use_ik, blend_motion, blend_t)
+    frames = render_motion(motion, view, stage, params, use_ik, blend_motion, blend_t, proportions)
     if stage == "skeleton":
         out = output / f"{view}_base_{motion_id}.png"
         frames[0].save(out)
@@ -523,9 +632,15 @@ def cmd_render(args: argparse.Namespace) -> int:
         overrides["pelvis_bob"] = args.pelvis_bob
     if args.arm_swing is not None:
         overrides["arm_swing"] = args.arm_swing
+    proportions = {}
+    for name in PROPORTION_NAMES:
+        value = getattr(args, f"proportion_{name}", None)
+        if value is not None:
+            proportions[name] = value
     render_to_output(motion, args.view, args.stage, args.output,
                      params=overrides or None, use_ik=args.ik,
-                     fps=args.fps, blend_motion=blend_motion, blend_t=args.blend_t)
+                     fps=args.fps, blend_motion=blend_motion, blend_t=args.blend_t,
+                     proportions=proportions or None)
     return 0
 
 
@@ -546,6 +661,9 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--stride", type=float)
     p.add_argument("--pelvis-bob", type=float)
     p.add_argument("--arm-swing", type=float)
+    for name in PROPORTION_NAMES:
+        p.add_argument(f"--proportion-{name.replace('_', '-')}", type=float,
+                       help=f"Body proportion {name} (1.0 = reference base).")
     p.add_argument("--fps", type=int, default=8)
     p.add_argument("--ik", action="store_true", help="Apply two-bone IK leg solve if the preset declares groups.")
     p.add_argument("--blend", metavar="MOTION", help="Blend toward another motion by joint interpolation.")

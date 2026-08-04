@@ -238,6 +238,12 @@ python workflow/tools/assetslab.py stage side arms --renderer python --motion ru
 - **头部运动**：`head`/`neck` 以骨盆起伏的一半幅度跟随浮动，侧视图还有前后摆动——经典的「反向补偿」动画，头不再锁死（walk/run 上下浮动、idle 呼吸点头、jump 随身体升降）。
 - **骨骼层级（根驱动）**：关节构成刚性躯干链（pelvis → neck/head + shoulders/arms）。每个动作声明 `root`（骨盆平移：bob / 跳跃升降 / 前倾），躯干上的每个关节按各自系数继承它（`base.json` 的 `torso`）：肩/臂 1.0（刚性）、膝 0.5（衰减）、头 0.5（视线稳定）。跳跃时肩/臂随骨盆整体升降，无需逐关节补丁。
 - **双骨骼 IK**（`--ik`；预设内声明 `ik` 组）在大步幅下保持腿长恒定，并做「落地锁定」——脚目标超出可达半径时锁定回可达边界，用于 `run` / `jump`。
+- **体型比例参数**：静态基座本身也可调——`arm_length` / `leg_length` / `torso_length` / `shoulder_width` / `head_scale` / `height`（各 1.0 = 基准）。每个比例围绕锚点缩放骨骼段（如 `head_scale` 从颈部放大头、`leg_length` 在脚贴地下加长腿），因此**同一套动作预设可驱动任意体型**。在动作预览台与流程步骤参数中都以滑块暴露：
+
+  ```bash
+  python workflow/tools/assetslab.py motion render walk --view front --stage arms \
+      --proportion-head-scale 1.4 --proportion-arm-length 1.3
+  ```
 - **跨动作混合**：`--blend run --blend-t 0.5` 对关节做插值，实现 walk↔run 参数化过渡。
 - **Web**：工作流控制台 `/workflow.html` 新增 **动作预览台（Motion Studio）**——选动作/视角/阶段、拖动 stride/pelvis-bob/arm-swing 滑块、勾选 IK、跨动作混合，浏览器内通过 `POST /api/motions/<id>/render` 实时渲染循环。
 

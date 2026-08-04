@@ -479,6 +479,9 @@ def main() -> int:
                         help="Data-driven motion preset id (walk/run/idle/jump/...). When set, the pose math is driven by workflow/motions/<id>.json instead of the built-in functions.")
     parser.add_argument("--ik", action="store_true", help="Apply two-bone IK leg solve (motion engine only).")
     parser.add_argument("--fps", type=int, default=8, help="GIF frame rate (motion engine only).")
+    for name in ("arm_length", "leg_length", "torso_length", "shoulder_width", "head_scale", "height"):
+        parser.add_argument(f"--proportion-{name.replace('_', '-')}", type=float,
+                            help=f"Body proportion {name} (1.0 = reference base).")
     args = parser.parse_args()
 
     if args.view == "back" and args.stage in ("pelvis", "arms"):
@@ -490,7 +493,7 @@ def main() -> int:
     if args.motion:
         # Data-driven pose library: same canvas + draw routines, joint motion
         # defined in workflow/motions/<id>.json (industry pose-library pattern).
-        from motion import MotionError, load_motion, render_to_output
+        from motion import MotionError, PROPORTION_NAMES, load_motion, render_to_output
         motion = load_motion(args.motion)
         overrides = {}
         if args.stride != 1.0:
@@ -499,9 +502,15 @@ def main() -> int:
             overrides["pelvis_bob"] = args.pelvis_bob
         if args.arm_swing != 1.0:
             overrides["arm_swing"] = args.arm_swing
+        proportions = {}
+        for name in PROPORTION_NAMES:
+            value = getattr(args, f"proportion_{name}", None)
+            if value is not None:
+                proportions[name] = value
         try:
             render_to_output(motion, args.view, args.stage, output,
-                             params=overrides or None, use_ik=args.ik, fps=args.fps)
+                             params=overrides or None, use_ik=args.ik, fps=args.fps,
+                             proportions=proportions or None)
         except MotionError as error:
             raise SystemExit(f"motion render failed: {error}")
         return 0
