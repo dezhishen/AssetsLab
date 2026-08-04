@@ -139,5 +139,15 @@
       "rotate": false
     }
   },
-  "anchors": {}
+  "anchors": {},
+  "body": {
+    "head_scale": 0.95,
+    "neck_length": 1.0,
+    "torso_length": 1.0,
+    "shoulder_width": 0.9,
+    "upper_arm_length": 1.2,
+    "forearm_length": 1.2,
+    "thigh_length": 1.3,
+    "shin_length": 1.3
+  }
 }

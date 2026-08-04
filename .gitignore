@@ -25,6 +25,8 @@ prototype/test_output/
 run/
 dist/
 build/
+# 皮肤包预览（skin.py render 输出，可随时重新生成；展示/--skin-mode 前按需生成）
+skins/*/preview/
 
 # --- Third-party reference assets (downloaded on demand, never committed) ---
 third_party/rgs_modular_animated_characters/
