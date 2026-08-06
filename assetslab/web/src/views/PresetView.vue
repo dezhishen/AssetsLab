@@ -93,20 +93,19 @@
           <!-- 动作 -->
           <el-tab-pane label="🎬 动作" name="motions">
             <div class="section">
-              <div class="section-head"><h4>选择动作（{{ allMotions.length }}）</h4></div>
+              <div class="section-head"><h4>选择动作（{{ motions3d.length }}）</h4></div>
               <div class="motion-grid">
-                <div v-for="m in allMotions" :key="m.motion_id || m.id" class="motion-card"
-                     :class="{ active: selectedMotion===(m.motion_id||m.id) }" @click="selectAndRenderMotion(m.motion_id || m.id)">
-                  <div class="motion-name">🎬 {{ m.title || m.id }}
-                    <el-tag v-if="m.is3d" size="small" type="success" effect="plain" style="margin-left:4px">3D</el-tag>
-                    <el-tag v-else size="small" type="info" effect="plain" style="margin-left:4px">2D</el-tag>
+                <div v-for="m in motions3d" :key="m.motion_id" class="motion-card"
+                     :class="{ active: selectedMotion===m.motion_id }" @click="selectAndRenderMotion(m.motion_id)">
+                  <div class="motion-name">🎬 {{ m.title || m.motion_id }}
+                    <el-tag size="small" type="success" effect="plain" style="margin-left:4px">3D</el-tag>
                   </div>
                   <div class="motion-meta">
-                    <span class="motion-id">{{ m.motion_id || m.id }}</span>
+                    <span class="motion-id">{{ m.motion_id }}</span>
                     <span v-if="m.params && Object.keys(m.params).length" class="motion-params">{{ Object.keys(m.params).length }} 参数</span>
                   </div>
                 </div>
-                <div v-if="allMotions.length===0" class="empty-inline">该物种暂无动作定义</div>
+                <div v-if="motions3d.length===0" class="empty-inline">该物种暂无 3D 动作定义</div>
               </div>
 
               <!-- 动作参数调节 -->
@@ -138,34 +137,13 @@
           <!-- 3D -->
           <el-tab-pane label="🧊 3D" name="preview3d">
             <div class="section">
-              <div class="section-head"><h4>相机控制</h4></div>
-              <div class="cam-grid">
-                <div class="cam-item">
-                  <div class="cam-label">水平角 yaw <span class="cam-key">{{ cam.yaw }}°</span></div>
-                  <el-slider :min="0" :max="360" v-model="cam.yaw" size="small" />
-                </div>
-                <div class="cam-item">
-                  <div class="cam-label">俯仰 pitch <span class="cam-key">{{ cam.pitch }}°</span></div>
-                  <el-slider :min="-60" :max="60" v-model="cam.pitch" size="small" />
-                </div>
-                <div class="cam-item">
-                  <div class="cam-label">距离 distance <span class="cam-key">{{ cam.dist }}</span></div>
-                  <el-slider :min="200" :max="1500" :step="20" v-model="cam.dist" size="small" />
-                </div>
-                <div class="cam-item">
-                  <div class="cam-label">缩放 zoom <span class="cam-key">{{ cam.zoom.toFixed(1) }}</span></div>
-                  <el-slider :min="0.5" :max="2" :step="0.1" v-model="cam.zoom" size="small" />
-                </div>
-                <div class="cam-item">
-                  <div class="cam-label">水平平移 panX <span class="cam-key">{{ cam.panX }}</span></div>
-                  <el-slider :min="-300" :max="300" :step="10" v-model="cam.panX" size="small" />
-                </div>
-                <div class="cam-item">
-                  <div class="cam-label">垂直平移 panY <span class="cam-key">{{ cam.panY }}</span></div>
-                  <el-slider :min="-200" :max="200" :step="10" v-model="cam.panY" size="small" />
-                </div>
-              </div>
-              <div class="coord-hint">💡 调节角度/距离/平移实时预览：yaw 绕 Y 旋转、pitch 俯仰、distance 透视近大远小、pan 移动相机位置。</div>
+              <div class="section-head"><h4>视角与相机</h4></div>
+              <CameraControls v-model="cam" />
+              <div class="section-head" style="margin-top:14px"><h4>3D 动作</h4></div>
+              <el-select v-model="selectedMotion" size="small" style="width:100%">
+                <el-option v-for="m in motions3d" :key="m.motion_id" :label="m.title" :value="m.motion_id" />
+              </el-select>
+              <div class="coord-hint" style="margin-top:8px">💡 预设视角一键切换；yaw 绕 Y 旋转、pitch 俯仰、distance 透视近大远小、pan 移动相机位置。</div>
             </div>
           </el-tab-pane>
             </el-tabs>
@@ -176,23 +154,8 @@
             <div class="canvas-head">
               <h4>{{ canvasTitle }}</h4>
               <div class="preview-controls" v-if="activeTab==='motions'">
-                <template v-if="is3dMotion(selectedMotion)">
-                  <span class="cam-mini">yaw <el-input-number v-model="cam.yaw" :min="0" :max="360" :step="5" size="small" controls-position="right" style="width:90px"/></span>
-                  <span class="cam-mini">pitch <el-input-number v-model="cam.pitch" :min="-60" :max="60" :step="5" size="small" controls-position="right" style="width:90px"/></span>
-                  <span class="cam-mini">dist <el-input-number v-model="cam.dist" :min="200" :max="1500" :step="50" size="small" controls-position="right" style="width:90px"/></span>
-                  <span class="cam-mini">zoom <el-input-number v-model="cam.zoom" :min="0.5" :max="2" :step="0.1" size="small" controls-position="right" style="width:90px"/></span>
-                </template>
-                <el-radio-group v-else v-model="motionView" size="small">
-                  <el-radio-button value="front">正面</el-radio-button>
-                  <el-radio-button value="side">侧面</el-radio-button>
-                  <el-radio-button value="back">背面</el-radio-button>
-                </el-radio-group>
+                <CameraControls v-model="cam" compact />
                 <el-button size="small" @click="renderMotion" :loading="motionLoading" icon="Refresh">重新渲染</el-button>
-              </div>
-              <div class="preview-controls" v-if="activeTab==='preview3d'">
-                <el-select v-model="selectedMotion3d" size="small" style="width:150px">
-                  <el-option v-for="m in motions3d" :key="m.motion_id" :label="m.title" :value="m.motion_id" />
-                </el-select>
               </div>
               <div class="preview-controls" v-if="activeTab==='params'">
                 <el-button size="small" @click="renderAllViews" :loading="previewLoading" icon="Refresh">渲染三视图</el-button>
@@ -279,6 +242,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { api } from '../api.js'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import CameraControls from '../components/CameraControls.vue'
 
 const loading = ref(true)
 const presets = ref([])
@@ -292,20 +256,12 @@ const saving = ref(false)
 const previews = ref({})
 const previewLoading = ref(false)
 const body = ref({})
-const motions = ref([])
-const selectedMotion = ref(null)
+// 动作预览：统一使用 3D 动作（actions3d/）+ 3D 相机渲染
+const selectedMotion = ref('walk3d')
 const selectedMotionParams = ref({})
 const motionParams = ref({})
-const motionView = ref('front')
 const motionPreview = ref(null)
 const motionLoading = ref(false)
-
-// 动作预览：2D(actions/) + 3D(actions3d/) 合并，3D 动作用 3D 相机渲染
-const allMotions = computed(() => [
-  ...(motions.value || []).map(m => ({ ...m, is3d: false })),
-  ...(motions3d.value || []).map(m => ({ ...m, motion_id: m.motion_id, is3d: true })),
-])
-const is3dMotion = (mid) => allMotions.value.some(m => (m.motion_id || m.id) === mid && m.is3d)
 
 const hasAnyPreview = () => Object.values(previews.value).some(Boolean)
 
@@ -407,16 +363,9 @@ async function selectPreset(p) {
     for (const [name, spec] of Object.entries(presetDetail.value.params || {})) {
       body.value[name] = presetDetail.value.body?.[name] ?? spec.default
     }
-    motions.value = []
-    selectedMotion.value = null
+    selectedMotion.value = 'walk3d'
     motionParams.value = {}
     selectedMotionParams.value = {}
-    if (p.species) {
-      try {
-        const spDetail = await api.speciesDetail(p.species)
-        motions.value = spDetail.actions || []
-      } catch(e) {}
-    }
   } catch(e) { ElMessage.error(e.message) }
 }
 
@@ -464,16 +413,18 @@ async function renderAllViews() {
   previewLoading.value = false
 }
 
-async function selectAndRenderMotion(mid) {
-  selectedMotion.value = mid
-  motionView.value = 'front'
-  // 从动作定义初始化参数（默认值；2D 或 3D 动作）
-  const m = allMotions.value.find(x => (x.motion_id || x.id) === mid)
+function initMotionParams(mid) {
+  const m = motions3d.value.find(x => x.motion_id === mid)
   selectedMotionParams.value = m?.params || {}
   motionParams.value = {}
   for (const [name, spec] of Object.entries(selectedMotionParams.value)) {
     motionParams.value[name] = spec.default ?? 1.0
   }
+}
+
+async function selectAndRenderMotion(mid) {
+  selectedMotion.value = mid
+  initMotionParams(mid)
   await renderMotion()
 }
 
@@ -489,23 +440,12 @@ async function renderMotion() {
   if (!selectedMotion.value) return
   motionLoading.value = true
   try {
-    if (is3dMotion(selectedMotion.value)) {
-      // 3D 动作：3D 相机渲染（角度/距离/平移 + GIF）
-      const r = await api.renderMotion3d(selectedMotion.value, camQS() + '&gif=1' + paramQS())
-      motionPreview.value = r.gif || r.data_url
-    } else {
-      // 2D 动作：三视图渲染（带体型参数覆盖，实时反映体形变化）
-      const r = await api.renderMotion(selectedMotion.value, {
-        view: motionView.value, stage: 'arms', skeleton: selectedPreset.value.id,
-        gif: true, ...motionParams.value, ...bodyOverrides(),
-      })
-      motionPreview.value = r.gif || r.frame || r.data_url
-    }
+    // 动作统一用 3D 相机渲染（任意角度 + 参数）
+    const r = await api.renderMotion3d(selectedMotion.value, camQS() + '&gif=1' + paramQS())
+    motionPreview.value = r.gif || r.data_url
   } catch(e) { ElMessage.error(e.message) }
   motionLoading.value = false
 }
-
-watch(motionView, () => { if (motionPreview.value) renderMotion() })
 
 // 滑块调节 → 防抖自动重新渲染动画（实时预览生效）
 let motionParamTimer = null
@@ -527,7 +467,6 @@ watch(body, () => {
 const cam = ref({ yaw: 30, pitch: 12, dist: 600, zoom: 1, panX: 0, panY: 0 })
 const preview3d = ref({ skeleton: null, motion: null })
 const motions3d = ref([])
-const selectedMotion3d = ref('walk3d')
 const camQS = () => `yaw=${cam.value.yaw}&pitch=${cam.value.pitch}&dist=${cam.value.dist}&zoom=${cam.value.zoom}&pan_x=${cam.value.panX}&pan_y=${cam.value.panY}`
 const paramQS = () => Object.entries(motionParams.value).map(([k, v]) => `${k}=${v}`).join('&')
 
@@ -540,21 +479,24 @@ async function render3d() {
   try {
     const sk = await api.renderSkeleton3d(selectedPreset.value.id, camQS())
     preview3d.value.skeleton = sk.data_url
-    const mo = await api.renderMotion3d(selectedMotion3d.value, camQS() + '&gif=1')
+    const mo = await api.renderMotion3d(selectedMotion.value, camQS() + '&gif=1')
     preview3d.value.motion = mo.gif || mo.data_url
   } catch (e) { /* 3D 预览失败静默 */ }
 }
 
-watch(selectedMotion3d, () => { if (preview3d.value.motion) render3d() })
+watch(selectedMotion, () => {
+  initMotionParams(selectedMotion.value)
+  if (preview3d.value.motion) render3d()
+  else if (motionPreview.value) renderMotion()
+})
 
 let camTimer = null
 watch(cam, () => {
   clearTimeout(camTimer)
   camTimer = setTimeout(() => {
-    // 3D 预览 tab 刷新骨架/动作
-    if (selectedPreset.value) render3d()
-    // 3D 动作预览中 → 同步刷新动作帧
-    if (selectedMotion.value && is3dMotion(selectedMotion.value) && motionPreview.value) renderMotion()
+    // 动作预览 tab → 刷新动作帧；否则刷新 3D 骨架/动作
+    if (activeTab.value === 'motions' && motionPreview.value) renderMotion()
+    else if (selectedPreset.value) render3d()
   }, 300)
 }, { deep: true })
 
