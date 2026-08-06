@@ -107,8 +107,6 @@ class AssetsLabHandler(SimpleHTTPRequestHandler):
             return self._motion3d_get()
         if p.startswith("/api/skeleton3d/"):
             return self._skeleton3d_get()
-        if p.startswith("/api/motions"):
-            return self._motions_get()
         return self._serve_static()
 
     def do_POST(self) -> None:
@@ -117,8 +115,6 @@ class AssetsLabHandler(SimpleHTTPRequestHandler):
             return self._species_post()
         if p == "/api/skeletons" or p.startswith("/api/skeletons/"):
             return self._skeletons_post()
-        if p.startswith("/api/motions/"):
-            return self._motions_post()
         self.send_error(404)
 
     def do_PUT(self) -> None:
@@ -213,7 +209,11 @@ class AssetsLabHandler(SimpleHTTPRequestHandler):
             if path is None:
                 return self._json({"ok": False, "error": f"3D action not found: {parts[0]}"}, 404)
             m3d = json.load(open(path))
-            skel3d = build_skeleton_3d("standard", species_id)
+            # 预设由请求指定，缺省取第一个可用预设（数据驱动，不硬编码）
+            preset_id = qs.get("preset", [None])[0] or self._default_preset()
+            if preset_id is None:
+                return self._json({"ok": False, "error": "no preset available"}, 500)
+            skel3d = build_skeleton_3d(preset_id, species_id)
             center = tuple(skel3d.get("center", (480.0, 300.0, 0.0)))
             if gif:
                 from PIL import Image
@@ -232,6 +232,20 @@ class AssetsLabHandler(SimpleHTTPRequestHandler):
             return self._json({"ok": False, "error": str(e)}, 500)
 
     # -- static files --------------------------------------------------
+
+    def _default_preset(self) -> str | None:
+        """数据驱动默认预设：presets 目录第一个可用（不硬编码具体 id）。"""
+        pdir = _PKG_ROOT / "presets"
+        if not pdir.is_dir():
+            return None
+        for p in sorted(pdir.glob("*.json")):
+            try:
+                d = json.load(open(p))
+                if d.get("preset_id"):
+                    return d["preset_id"]
+            except Exception:
+                continue
+        return None
 
     def _serve_static(self) -> None:
         """Serve the Vue SPA: try WEB_DIST, fallback to index.html."""
@@ -421,72 +435,6 @@ class AssetsLabHandler(SimpleHTTPRequestHandler):
         return self._json({"ok": True, "saved": saved})
 
     # -- motions API ---------------------------------------------------
-
-    def _motions_get(self) -> None:
-        """GET /api/motions — list all motions from species/<id>/actions/."""
-        return self._json({"motions": self.species.list_actions_all()})
-
-    def _motions_post(self) -> None:
-        """POST /api/motions/<id>/render — render a motion frame."""
-        parts = _path_parts(self.path, "/api/motions")
-        if len(parts) != 2 or parts[1] != "render":
-            self.send_error(404)
-            return
-        motion_id = parts[0]
-        try:
-            body = self._read_body()
-        except Exception as e:
-            return self._json({"ok": False, "error": str(e)}, 400)
-        try:
-            # 动态获取该动作的全部参数名，允许前端传任意动作参数（含 intensity）
-            motion_def = self.species.find_action(motion_id)
-            motion_param_names = tuple(motion_def[1].get("params", {}).keys()) if motion_def else ("intensity", "stride", "pelvis_bob", "arm_swing")
-            overrides = _float_map(body, motion_param_names)
-            proportions = _float_map(body, (
-                "head_scale", "neck_length", "torso_length",
-                "shoulder_width", "upper_arm_length", "forearm_length",
-                "thigh_length", "shin_length",
-            ))
-
-            # 动画循环预览（GIF）——参数变化在此可见；单帧只在显式传 frame_index 时返回
-            if body.get("gif") or body.get("frame_index") is None:
-                gif_url = self._render_motion_gif(
-                    motion_id, view=str(body.get("view", "front")),
-                    stage=str(body.get("stage", "arms")),
-                    skeleton=str(body.get("skeleton", "standard")),
-                    overrides=overrides, proportions=proportions,
-                )
-                return self._json({"ok": True, "gif": gif_url})
-
-            img = self.render.motion_frame(
-                motion_id,
-                view=str(body.get("view", "front")),
-                stage=str(body.get("stage", "arms")),
-                skeleton=str(body.get("skeleton", "standard")),
-                frame_index=int(body.get("frame_index", 0)),
-                overrides=overrides,
-                proportions=proportions,
-            )
-            return self._json({"ok": True, "frame": _image_to_data_url(img)})
-        except Exception as e:
-            return self._json({"ok": False, "error": str(e)}, 500)
-
-    def _render_motion_gif(self, motion_id: str, *, view: str, stage: str,
-                           skeleton: str, overrides: dict | None, proportions: dict | None) -> str:
-        """渲染完整动作循环为 GIF 数据 URL（参数变化可见）。"""
-        from PIL import Image
-
-        motion = motion_mod.load_motion(motion_id)
-        motion_mod.set_skeleton(skeleton)
-        # 动作定义了 IK 就启用（腿长恒定，hip/knee/foot 联动）
-        use_ik = bool(motion.get("ik"))
-        frames = motion_mod.render_motion(motion, view, stage, overrides or None, use_ik, None, 0.0, proportions or None)
-        # 缩放到合理大小
-        scaled = [f.resize((480, 300), Image.Resampling.NEAREST) for f in frames]
-        buf = io.BytesIO()
-        scaled[0].save(buf, format="GIF", save_all=True, append_images=scaled[1:],
-                       duration=125, loop=0, disposal=2)
-        return "data:image/gif;base64," + base64.b64encode(buf.getvalue()).decode()
 
     # -- helpers -------------------------------------------------------
 

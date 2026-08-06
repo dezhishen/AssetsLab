@@ -1,0 +1,754 @@
+{
+  "preset_id": "model_female",
+  "schema": "assetslab_preset_v3",
+  "species": "human",
+  "head_radius": 23.0,
+  "canvas": {
+    "width": 960,
+    "height": 600,
+    "floor_y": 470.0
+  },
+  "params": {
+    "head_scale": {
+      "label": "头大小",
+      "default": 1.0,
+      "min": 0.6,
+      "max": 1.6,
+      "step": 0.05
+    },
+    "neck_length": {
+      "label": "脖子长度",
+      "default": 1.0,
+      "min": 0.5,
+      "max": 1.5,
+      "step": 0.05
+    },
+    "upper_torso_length": {
+      "label": "上躯干长",
+      "default": 1.0,
+      "min": 0.6,
+      "max": 1.6,
+      "step": 0.05
+    },
+    "lower_torso_length": {
+      "label": "下躯干长",
+      "default": 1.0,
+      "min": 0.6,
+      "max": 1.6,
+      "step": 0.05
+    },
+    "shoulder_width": {
+      "label": "肩宽",
+      "default": 1.0,
+      "min": 0.6,
+      "max": 1.6,
+      "step": 0.05
+    },
+    "hip_width": {
+      "label": "髋宽",
+      "default": 1.0,
+      "min": 0.6,
+      "max": 1.6,
+      "step": 0.05
+    },
+    "upper_arm_length": {
+      "label": "上臂长",
+      "default": 1.0,
+      "min": 0.6,
+      "max": 1.6,
+      "step": 0.05
+    },
+    "forearm_length": {
+      "label": "前臂长",
+      "default": 1.0,
+      "min": 0.6,
+      "max": 1.6,
+      "step": 0.05
+    },
+    "thigh_length": {
+      "label": "大腿长",
+      "default": 1.0,
+      "min": 0.6,
+      "max": 1.6,
+      "step": 0.05
+    },
+    "shin_length": {
+      "label": "小腿长",
+      "default": 1.0,
+      "min": 0.6,
+      "max": 1.6,
+      "step": 0.05
+    },
+    "overall_height": {
+      "label": "整体身高",
+      "default": 1.0,
+      "min": 0.8,
+      "max": 1.2,
+      "step": 0.05
+    }
+  },
+  "body": {
+    "head_scale": 1.0,
+    "neck_length": 1.0,
+    "upper_torso_length": 1.0,
+    "lower_torso_length": 1.0,
+    "shoulder_width": 1.0,
+    "hip_width": 1.0,
+    "upper_arm_length": 1.0,
+    "forearm_length": 1.0,
+    "thigh_length": 1.0,
+    "shin_length": 1.0,
+    "overall_height": 1.0
+  },
+  "positions": {
+    "front": {
+      "head": [
+        480.0,
+        127.3
+      ],
+      "jaw": [
+        480.0,
+        150.3
+      ],
+      "neck": [
+        480.0,
+        164.1
+      ],
+      "upper_chest": [
+        480.0,
+        177.9
+      ],
+      "chest": [
+        480.0,
+        196.3
+      ],
+      "sternum": [
+        480.0,
+        205.5
+      ],
+      "waist": [
+        480.0,
+        223.9
+      ],
+      "abdomen": [
+        480.0,
+        237.7
+      ],
+      "pelvis": [
+        480.0,
+        251.5
+      ],
+      "clavicle_left": [
+        460.5,
+        173.3
+      ],
+      "shoulder_left": [
+        441.0,
+        175.6
+      ],
+      "elbow_left": [
+        446.0,
+        204.1
+      ],
+      "wrist_left": [
+        448.0,
+        230.8
+      ],
+      "palm_left": [
+        450.0,
+        239.1
+      ],
+      "finger_left": [
+        450.0,
+        243.7
+      ],
+      "clavicle_right": [
+        499.5,
+        173.3
+      ],
+      "shoulder_right": [
+        519.0,
+        175.6
+      ],
+      "elbow_right": [
+        514.0,
+        204.1
+      ],
+      "wrist_right": [
+        512.0,
+        230.8
+      ],
+      "palm_right": [
+        510.0,
+        239.1
+      ],
+      "finger_right": [
+        510.0,
+        243.7
+      ],
+      "rib_upper_left": [
+        463.62,
+        196.3
+      ],
+      "rib_lower_left": [
+        465.18,
+        210.1
+      ],
+      "rib_upper_right": [
+        496.38,
+        196.3
+      ],
+      "rib_lower_right": [
+        494.82,
+        210.1
+      ],
+      "iliac_left": [
+        454.8,
+        266.2
+      ],
+      "hip_left": [
+        444.0,
+        267.6
+      ],
+      "knee_left": [
+        446.0,
+        341.2
+      ],
+      "ankle_left": [
+        447.0,
+        444.7
+      ],
+      "heel_left": [
+        447.0,
+        460.8
+      ],
+      "foot_left": [
+        447.0,
+        470.0
+      ],
+      "toe_left": [
+        447.0,
+        470.0
+      ],
+      "iliac_right": [
+        505.2,
+        266.2
+      ],
+      "hip_right": [
+        516.0,
+        267.6
+      ],
+      "knee_right": [
+        514.0,
+        341.2
+      ],
+      "ankle_right": [
+        513.0,
+        444.7
+      ],
+      "heel_right": [
+        513.0,
+        460.8
+      ],
+      "foot_right": [
+        513.0,
+        470.0
+      ],
+      "toe_right": [
+        513.0,
+        470.0
+      ]
+    },
+    "side": {
+      "head": [
+        -0.0,
+        127.3
+      ],
+      "jaw": [
+        -0.0,
+        150.3
+      ],
+      "neck": [
+        -1.6,
+        164.1
+      ],
+      "upper_chest": [
+        -1.6,
+        177.9
+      ],
+      "chest": [
+        -4.8,
+        196.3
+      ],
+      "sternum": [
+        -4.8,
+        205.5
+      ],
+      "waist": [
+        -0.0,
+        223.9
+      ],
+      "abdomen": [
+        -0.0,
+        237.7
+      ],
+      "pelvis": [
+        -0.0,
+        251.5
+      ],
+      "clavicle_rear": [
+        -7.6,
+        173.3
+      ],
+      "rear_shoulder": [
+        -16.4,
+        175.6
+      ],
+      "rear_elbow": [
+        -16.0,
+        204.1
+      ],
+      "rear_wrist": [
+        -16,
+        230.8
+      ],
+      "rear_palm": [
+        -18,
+        239.1
+      ],
+      "rear_finger": [
+        -18,
+        243.7
+      ],
+      "clavicle_front": [
+        4.4,
+        173.3
+      ],
+      "front_shoulder": [
+        11.6,
+        175.6
+      ],
+      "front_elbow": [
+        16.0,
+        204.1
+      ],
+      "front_wrist": [
+        16,
+        230.8
+      ],
+      "front_palm": [
+        18,
+        239.1
+      ],
+      "front_finger": [
+        18,
+        243.7
+      ],
+      "rib_rear": [
+        -5.4,
+        196.3
+      ],
+      "rib_front": [
+        0.6,
+        196.3
+      ],
+      "rear_hip": [
+        -10,
+        267.6
+      ],
+      "rear_knee": [
+        -10,
+        341.2
+      ],
+      "rear_ankle": [
+        -12,
+        444.7
+      ],
+      "rear_heel": [
+        -16,
+        460.8
+      ],
+      "rear_foot": [
+        -20,
+        470.0
+      ],
+      "rear_toe": [
+        -24,
+        470.0
+      ],
+      "front_hip": [
+        10,
+        267.6
+      ],
+      "front_knee": [
+        10,
+        341.2
+      ],
+      "front_ankle": [
+        12,
+        444.7
+      ],
+      "front_heel": [
+        16,
+        460.8
+      ],
+      "front_foot": [
+        20,
+        470.0
+      ],
+      "front_toe": [
+        24,
+        470.0
+      ]
+    },
+    "back": {
+      "head": [
+        480.0,
+        127.3
+      ],
+      "jaw": [
+        480.0,
+        150.3
+      ],
+      "neck": [
+        480.0,
+        164.1
+      ],
+      "upper_chest": [
+        480.0,
+        177.9
+      ],
+      "chest": [
+        480.0,
+        196.3
+      ],
+      "sternum": [
+        480.0,
+        205.5
+      ],
+      "waist": [
+        480.0,
+        223.9
+      ],
+      "abdomen": [
+        480.0,
+        237.7
+      ],
+      "pelvis": [
+        480.0,
+        251.5
+      ],
+      "clavicle_left": [
+        499.5,
+        173.3
+      ],
+      "rear_shoulder_right": [
+        519.0,
+        175.6
+      ],
+      "rear_elbow_right": [
+        514.0,
+        204.1
+      ],
+      "rear_wrist_right": [
+        512.0,
+        230.8
+      ],
+      "rear_palm_right": [
+        510.0,
+        239.1
+      ],
+      "rear_finger_right": [
+        510.0,
+        243.7
+      ],
+      "clavicle_right": [
+        460.5,
+        173.3
+      ],
+      "rear_shoulder_left": [
+        441.0,
+        175.6
+      ],
+      "rear_elbow_left": [
+        446.0,
+        204.1
+      ],
+      "rear_wrist_left": [
+        448.0,
+        230.8
+      ],
+      "rear_palm_left": [
+        450.0,
+        239.1
+      ],
+      "rear_finger_left": [
+        450.0,
+        243.7
+      ],
+      "rib_upper_left": [
+        496.38,
+        196.3
+      ],
+      "rib_lower_left": [
+        494.82,
+        210.1
+      ],
+      "rib_upper_right": [
+        463.62,
+        196.3
+      ],
+      "rib_lower_right": [
+        465.18,
+        210.1
+      ],
+      "rear_hip_right": [
+        516.0,
+        267.6
+      ],
+      "rear_knee_right": [
+        514.0,
+        341.2
+      ],
+      "rear_ankle_right": [
+        513.0,
+        444.7
+      ],
+      "rear_heel_right": [
+        513.0,
+        460.8
+      ],
+      "rear_foot_right": [
+        513.0,
+        470.0
+      ],
+      "rear_toe_right": [
+        513.0,
+        470.0
+      ],
+      "rear_hip_left": [
+        444.0,
+        267.6
+      ],
+      "rear_knee_left": [
+        446.0,
+        341.2
+      ],
+      "rear_ankle_left": [
+        447.0,
+        444.7
+      ],
+      "rear_heel_left": [
+        447.0,
+        460.8
+      ],
+      "rear_foot_left": [
+        447.0,
+        470.0
+      ],
+      "rear_toe_left": [
+        447.0,
+        470.0
+      ]
+    }
+  },
+  "positions_3d": {
+    "head": [
+      480.0,
+      127.3,
+      0.0
+    ],
+    "jaw": [
+      480.0,
+      150.3,
+      0.0
+    ],
+    "neck": [
+      480.0,
+      164.1,
+      1.6
+    ],
+    "upper_chest": [
+      480.0,
+      177.9,
+      1.6
+    ],
+    "chest": [
+      480.0,
+      196.3,
+      4.8
+    ],
+    "sternum": [
+      480.0,
+      205.5,
+      4.8
+    ],
+    "waist": [
+      480.0,
+      223.9,
+      0.0
+    ],
+    "abdomen": [
+      480.0,
+      237.7,
+      0.0
+    ],
+    "pelvis": [
+      480.0,
+      251.5,
+      0.0
+    ],
+    "clavicle_left": [
+      460.5,
+      173.3,
+      7.6
+    ],
+    "shoulder_left": [
+      441.0,
+      175.6,
+      16.4
+    ],
+    "elbow_left": [
+      446.0,
+      204.1,
+      16.0
+    ],
+    "wrist_left": [
+      448.0,
+      230.8,
+      16
+    ],
+    "palm_left": [
+      450.0,
+      239.1,
+      18
+    ],
+    "finger_left": [
+      450.0,
+      243.7,
+      18
+    ],
+    "clavicle_right": [
+      499.5,
+      173.3,
+      -4.4
+    ],
+    "shoulder_right": [
+      519.0,
+      175.6,
+      -11.6
+    ],
+    "elbow_right": [
+      514.0,
+      204.1,
+      -16.0
+    ],
+    "wrist_right": [
+      512.0,
+      230.8,
+      -16
+    ],
+    "palm_right": [
+      510.0,
+      239.1,
+      -18
+    ],
+    "finger_right": [
+      510.0,
+      243.7,
+      -18
+    ],
+    "rib_upper_left": [
+      463.62,
+      196.3,
+      5.4
+    ],
+    "rib_lower_left": [
+      465.18,
+      210.1,
+      5.4
+    ],
+    "rib_upper_right": [
+      496.38,
+      196.3,
+      -0.6
+    ],
+    "rib_lower_right": [
+      494.82,
+      210.1,
+      -0.6
+    ],
+    "iliac_left": [
+      454.8,
+      266.2,
+      8
+    ],
+    "hip_left": [
+      444.0,
+      267.6,
+      10
+    ],
+    "knee_left": [
+      446.0,
+      341.2,
+      10
+    ],
+    "ankle_left": [
+      447.0,
+      444.7,
+      12
+    ],
+    "heel_left": [
+      447.0,
+      460.8,
+      16
+    ],
+    "foot_left": [
+      447.0,
+      470.0,
+      20
+    ],
+    "toe_left": [
+      447.0,
+      470.0,
+      24
+    ],
+    "iliac_right": [
+      505.2,
+      266.2,
+      -8
+    ],
+    "hip_right": [
+      516.0,
+      267.6,
+      -10
+    ],
+    "knee_right": [
+      514.0,
+      341.2,
+      -10
+    ],
+    "ankle_right": [
+      513.0,
+      444.7,
+      -12
+    ],
+    "heel_right": [
+      513.0,
+      460.8,
+      -16
+    ],
+    "foot_right": [
+      513.0,
+      470.0,
+      -20
+    ],
+    "toe_right": [
+      513.0,
+      470.0,
+      -24
+    ]
+  },
+  "title": "模特成年女性",
+  "description": "female · adult，模特身材（解剖学比例）。头径 46px，肩宽 78px，髋宽 72px。"
+}

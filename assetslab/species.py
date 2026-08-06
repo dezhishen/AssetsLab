@@ -1,12 +1,12 @@
 # =========================================================================
 # AssetsLab — 物种模块
 # =========================================================================
-# 独立的领域模块：负责物种（骨骼拓扑）及其动作（actions）的读写。
+# 独立的领域模块：负责物种（3D 骨骼拓扑）及其 3D 动作（actions3d）的读写。
 # 自包含：自己管理 species/<id>/ 目录下的文件，不依赖其他模块。
 #
 # 目录结构：
-#   species/<id>/skeleton.json       — 骨骼拓扑
-#   species/<id>/actions/<id>.json   — 动作定义
+#   species/<id>/skeleton.json        — 3D 骨骼拓扑（含 preset_schema 自描述）
+#   species/<id>/actions3d/<id>.json  — 3D 动作定义
 # =========================================================================
 
 from __future__ import annotations
@@ -26,7 +26,7 @@ from .models import (
 
 
 class SpeciesService:
-    """物种模块：管理骨骼拓扑与所属动作。"""
+    """物种模块：管理 3D 骨骼拓扑与 3D 动作。"""
 
     def __init__(self, root: Path) -> None:
         self._root = root
@@ -37,7 +37,7 @@ class SpeciesService:
         return self._root / species_id / "skeleton.json"
 
     def _actions_dir(self, species_id: str) -> Path:
-        return self._root / species_id / "actions"
+        return self._root / species_id / "actions3d"
 
     def _action_path(self, species_id: str, action_id: str) -> Path:
         return self._actions_dir(species_id) / f"{action_id}.json"
@@ -111,7 +111,7 @@ class SpeciesService:
         if sp_dir.exists():
             raise FileExistsError(f"species already exists: {sp_id}")
         sp_dir.mkdir(parents=True, exist_ok=True)
-        (sp_dir / "actions").mkdir(exist_ok=True)
+        (sp_dir / "actions3d").mkdir(exist_ok=True)
         data.setdefault("schema", "assetslab_species_v1")
         self._save_json(self._skeleton_path(sp_id), data)
         return sp_id
@@ -120,7 +120,7 @@ class SpeciesService:
         """更新 skeleton.json。"""
         sp_dir = self._root / species_id
         sp_dir.mkdir(parents=True, exist_ok=True)
-        (sp_dir / "actions").mkdir(exist_ok=True)
+        (sp_dir / "actions3d").mkdir(exist_ok=True)
         self._save_json(self._skeleton_path(species_id), data)
         return species_id
 
@@ -141,8 +141,6 @@ class SpeciesService:
         if not actions_dir.is_dir():
             return actions
         for af in sorted(actions_dir.glob("*.json")):
-            if af.name == "base.json":
-                continue
             try:
                 ad = json.loads(af.read_text(encoding="utf-8"))
                 actions.append({
@@ -162,7 +160,7 @@ class SpeciesService:
         return json.loads(path.read_text(encoding="utf-8"))
 
     def save_action(self, species_id: str, action_id: str, data: Motion) -> str:
-        """保存动作到 species/<id>/actions/<action_id>.json。"""
+        """保存动作到 species/<id>/actions3d/<action_id>.json。"""
         self._actions_dir(species_id).mkdir(parents=True, exist_ok=True)
         self._save_json(self._action_path(species_id, action_id), data)
         return action_id
@@ -182,13 +180,13 @@ class SpeciesService:
         for sp_dir in sorted(self._root.iterdir()):
             if not sp_dir.is_dir():
                 continue
-            p = sp_dir / "actions" / f"{action_id}.json"
+            p = sp_dir / "actions3d" / f"{action_id}.json"
             if p.is_file():
                 return sp_dir.name, json.loads(p.read_text(encoding="utf-8"))
         return None
 
     def list_actions_all(self) -> list[dict]:
-        """跨物种列出全部动作（含所属物种信息）。"""
+        """跨物种列出全部 3D 动作（含所属物种信息）。"""
         items: list[dict] = []
         if not self._root.is_dir():
             return items
@@ -196,12 +194,10 @@ class SpeciesService:
             if not sp_dir.is_dir():
                 continue
             species_id = sp_dir.name
-            actions_dir = sp_dir / "actions"
+            actions_dir = sp_dir / "actions3d"
             if not actions_dir.is_dir():
                 continue
             for af in sorted(actions_dir.glob("*.json")):
-                if af.name == "base.json":
-                    continue
                 try:
                     d: Motion = json.loads(af.read_text(encoding="utf-8"))
                 except Exception:
@@ -212,6 +208,6 @@ class SpeciesService:
                     "description": d.get("description", ""),
                     "species": species_id,
                     "params": d.get("params", {}),
-                    "has_ik": bool(d.get("ik")),
+                    "has_ik": bool(d.get("ik3d")),
                 })
         return items

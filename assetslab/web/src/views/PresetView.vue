@@ -437,8 +437,8 @@ async function renderMotion() {
   if (!selectedMotion.value) return
   motionLoading.value = true
   try {
-    // 动作统一用 3D 相机渲染（任意角度 + 参数）
-    const r = await api.renderMotion3d(selectedMotion.value, camQS() + '&gif=1' + paramQS())
+    // 动作统一用 3D 相机渲染（任意角度 + 参数 + 当前预设）
+    const r = await api.renderMotion3d(selectedMotion.value, `preset=${selectedPreset.value.id}&` + camQS() + '&gif=1' + paramQS())
     motionPreview.value = r.gif || r.data_url
   } catch(e) { ElMessage.error(e.message) }
   motionLoading.value = false
@@ -476,7 +476,7 @@ async function render3d() {
   try {
     const sk = await api.renderSkeleton3d(selectedPreset.value.id, camQS())
     preview3d.value.skeleton = sk.data_url
-    const mo = await api.renderMotion3d(selectedMotion.value, camQS() + '&gif=1')
+    const mo = await api.renderMotion3d(selectedMotion.value, `preset=${selectedPreset.value.id}&` + camQS() + '&gif=1')
     preview3d.value.motion = mo.gif || mo.data_url
   } catch (e) { /* 3D 预览失败静默 */ }
 }

@@ -109,11 +109,7 @@
           <div class="section-head">
             <h4>动作预览</h4>
             <div class="preview-controls">
-              <el-radio-group v-model="previewView" size="small">
-                <el-radio-button value="front">正面</el-radio-button>
-                <el-radio-button value="side">侧面</el-radio-button>
-                <el-radio-button value="back">背面</el-radio-button>
-              </el-radio-group>
+              <CameraControls v-model="cam" compact />
               <el-button size="small" type="primary" @click="renderAction" :loading="motionRenderLoading" icon="Refresh">渲染</el-button>
             </div>
           </div>
@@ -174,7 +170,7 @@
           <el-tab-pane :label="`🎬 动作管理 (${(speciesDetail?.actions||[]).length})`" name="actions">
             <div class="section">
               <div class="section-head">
-                <h4>物种动作（存放于 species/{{ selectedSpecies.id }}/actions/）</h4>
+                <h4>3D 动作（存放于 species/{{ selectedSpecies.id }}/actions3d/）</h4>
                 <el-button size="small" type="primary" @click="startCreateAction" icon="Plus">新建动作</el-button>
               </div>
               <el-table :data="speciesDetail?.actions||[]" size="small" border>
@@ -237,6 +233,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { api } from '../api.js'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import CameraControls from '../components/CameraControls.vue'
 
 const loading = ref(true)
 const speciesList = ref([])
@@ -253,7 +250,8 @@ const actionEditor = ref(null)
 const actionJson = ref('')
 const motionPreview = ref(null)
 const motionRenderLoading = ref(false)
-const previewView = ref('front')
+const cam = ref({ yaw: 30, pitch: 12, dist: 600, zoom: 1, panX: 0, panY: 0 })
+const camQS = () => `yaw=${cam.value.yaw}&pitch=${cam.value.pitch}&dist=${cam.value.dist}&zoom=${cam.value.zoom}&pan_x=${cam.value.panX}&pan_y=${cam.value.panY}`
 
 const editForm = ref({ species_id:'', title:'', description:'', jointsStr:'', bonesStr:'', chainsStr:'', paramChainsStr:'' })
 const hasAnyPreview = () => Object.values(previews.value).some(Boolean)
@@ -300,7 +298,7 @@ async function openAction(sp, actionId) {
 }
 
 function startCreateAction() {
-  actionEditor.value = { schema:'assetslab_motion_v1', motion_id:'', title:'', description:'', species:selectedSpecies.value.id, frame_count:8, params:{}, signals:{}, root:{dx:{phase:true},dy:{phase:true}}, offsets:{}, selectors:{} }
+  actionEditor.value = { schema:'assetslab_motion3d_v1', motion_id:'', title:'', description:'', species:selectedSpecies.value.id, frame_count:8, params:{}, root3d:{dy:{phase:true}}, offsets3d:{}, ik3d:{} }
   actionJson.value = JSON.stringify(actionEditor.value, null, 2)
   motionPreview.value = null
 }
@@ -345,8 +343,12 @@ async function renderAllViews() {
   if (!selectedSpecies.value) return
   previewLoading.value = true
   try {
+    // 用第一个可用预设渲染（数据驱动，不硬编码预设 id）
+    const pl = await api.presets()
+    const pid = (pl.skeletons || [])[0]?.id
+    if (!pid) { ElMessage.warning('暂无预设，先创建预设'); return }
     for (const view of ['front','side','back']) {
-      const r = await api.renderSkeleton('standard', { view })
+      const r = await api.renderSkeleton(pid, { view })
       previews.value[view] = r.data_url
     }
   } catch(e) { ElMessage.error(e.message) }
@@ -357,8 +359,9 @@ async function renderAction() {
   if (!actionEditor.value?.motion_id) { ElMessage.warning('请先填写 motion_id'); return }
   motionRenderLoading.value = true
   try {
-    const r = await api.renderMotion(actionEditor.value.motion_id, { view: previewView.value, stage:'arms', skeleton:'standard', gif: true })
-    motionPreview.value = r.gif || r.frame || r.data_url
+    // 3D 动作：3D 相机渲染
+    const r = await api.renderMotion3d(actionEditor.value.motion_id, camQS() + '&gif=1')
+    motionPreview.value = r.gif || r.data_url
   } catch(e) { ElMessage.error(e.message) }
   motionRenderLoading.value = false
 }

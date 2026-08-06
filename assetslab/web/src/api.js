@@ -99,12 +99,4 @@ export const api = {
 
   /** 3D 动作：任意角度 + 距离 单帧渲染 PNG */
   renderMotion3d: (id, qs) => raw(`/api/motion3d/${encodeURIComponent(id)}?${qs}`),
-
-  // -- 动作 Motion --
-
-  /** 动作列表 @returns {Promise<{motions: import('../../models').MotionListItem[]}>} */
-  motions: () => raw('/api/motions'),
-
-  /** 动作帧渲染 */
-  renderMotion: (id, body) => raw(`/api/motions/${encodeURIComponent(id)}/render`, json(body)),
 }

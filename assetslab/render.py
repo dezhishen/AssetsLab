@@ -186,6 +186,15 @@ _SKELETON: dict | None = None
 _SKELETON_ID: str = "standard"
 
 
+def _first_preset() -> str:
+    """数据驱动默认预设：presets 目录第一个可用（不硬编码具体 id）。"""
+    if PRESETS_ROOT.is_dir():
+        for p in sorted(PRESETS_ROOT.glob("*.json")):
+            if p.name.endswith(".json"):
+                return p.stem
+    return "standard"
+
+
 def _find_skeleton_file(skeleton_id: str) -> Path | None:
     """Find a preset or species skeleton file.
     Presets: presets/<id>.json
@@ -210,7 +219,7 @@ def load_skeleton_json(skeleton_id: str = "standard") -> dict:
     Handles v3 preset format (references species template) and v2/v3 full format."""
     path = _find_skeleton_file(skeleton_id)
     if path is None:
-        raise SystemExit(f"Skeleton not found: {skeleton_id}")
+        raise FileNotFoundError(f"Skeleton not found: {skeleton_id}")
     
     import json
     data = json.loads(path.read_text(encoding="utf-8"))
@@ -221,7 +230,7 @@ def load_skeleton_json(skeleton_id: str = "standard") -> dict:
         template_id = species_ref
         template_path = _find_skeleton_file(template_id)
         if template_path is None:
-            raise SystemExit(f"Species template not found: {template_id}")
+            raise FileNotFoundError(f"Species template not found: {template_id}")
         template = json.loads(template_path.read_text(encoding="utf-8"))
         
         views = data["positions"]
@@ -294,13 +303,19 @@ def skeleton_views() -> dict:
     """Return {view: {joint_name: (x, y)}} for the active skeleton."""
     global _SKELETON
     if _SKELETON is None:
-        _SKELETON = load_skeleton_json("standard")
+        try:
+            _SKELETON = load_skeleton_json(_first_preset())
+        except Exception:
+            return {}
     return {view: {name: (float(x), float(y)) for name, (x, y) in joints.items()}
             for view, joints in _SKELETON.get("views", {}).items()}
 
 
-# Initialize default skeleton
-set_skeleton("standard")
+# Initialize with first available preset (data-driven; engine defers actual load if none)
+try:
+    set_skeleton(_first_preset())
+except Exception:
+    _SKELETON = None
 
 
 def front_base() -> dict:
@@ -468,7 +483,10 @@ def _get_active_skeleton():
     """Return the currently loaded skeleton dict (with bones, views, etc)."""
     global _SKELETON
     if _SKELETON is None:
-        _SKELETON = load_skeleton_json("standard")
+        try:
+            _SKELETON = load_skeleton_json(_first_preset())
+        except Exception:
+            return {}
     return _SKELETON
 
 

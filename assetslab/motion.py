@@ -80,6 +80,15 @@ def set_species_module(module) -> None:
     _species_module = module
 
 
+def _first_preset() -> str:
+    """数据驱动默认预设：presets 目录第一个可用（不硬编码具体 id）。"""
+    if PRESETS_ROOT.is_dir():
+        for p in sorted(PRESETS_ROOT.glob("*.json")):
+            if p.name.endswith(".json"):
+                return p.stem
+    return "standard"
+
+
 def _find_skeleton_file(skeleton_id: str) -> Path | None:
     """Find a preset or species skeleton file.
     Presets: presets/<id>.json
@@ -392,8 +401,11 @@ def set_skeleton(skeleton_id: str = "standard") -> dict:
     return _BASE_SKELETON
 
 
-# Initialize with default skeleton
-set_skeleton("standard")
+# Initialize with first available preset (data-driven; engine defers actual load if none)
+try:
+    set_skeleton(_first_preset())
+except Exception:
+    _BASE_SKELETON = None
 
 
 # Legacy compatibility

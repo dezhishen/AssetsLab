@@ -161,10 +161,13 @@ def verify(preset_id: str, motion3d: dict, params: dict | None = None) -> list[d
 
 def main() -> None:
     ap = argparse.ArgumentParser(description="3D 动作验证")
-    ap.add_argument("--preset", default="standard")
+    ap.add_argument("--preset", default=None, help="预设 id；缺省取 presets 目录第一个可用")
     ap.add_argument("--action", default="all", help="动作 id；默认 all 扫描该物种所有 3D 动作")
     ap.add_argument("--species", default="human")
     args = ap.parse_args()
+    if not args.preset:
+        pdir = ROOT / "assetslab" / "presets"
+        args.preset = next((p.stem for p in sorted(pdir.glob("*.json"))), "standard")
 
     actions_dir = ROOT / "assetslab" / "species" / args.species / "actions3d"
     if args.action == "all":
