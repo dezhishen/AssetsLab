@@ -63,18 +63,13 @@
                 <h4>体型参数</h4>
                 <el-button size="small" text @click="resetAllParams">重置全部</el-button>
               </div>
-              <div class="param-grid">
-                <div v-for="(spec, name) in presetDetail.params" :key="name" class="param-card">
-                  <div class="param-head">
-                    <span class="param-label">{{ spec.label || name }}</span>
-                    <span class="param-key">{{ name }}</span>
-                    <el-button size="small" text circle @click="body[name]=spec.default" title="重置">
-                      <span class="reset-icon">↺</span>
-                    </el-button>
-                  </div>
-                  <div class="param-val">{{ (body[name] ?? spec.default).toFixed(2) }}</div>
-                  <el-slider :min="spec.min" :max="spec.max" :step="spec.step" v-model="body[name]" :format-tooltip="v=>v.toFixed(2)" size="small" />
-                  <div class="param-range"><span>{{ spec.min }}</span><span>{{ spec.max }}</span></div>
+              <div class="param-list">
+                <div v-for="(spec, name) in presetDetail.params" :key="name" class="param-row">
+                  <span class="p-label" :title="spec.label || name">{{ spec.label || name }}</span>
+                  <span class="p-key">{{ name }}</span>
+                  <el-slider :min="spec.min" :max="spec.max" :step="spec.step" v-model="body[name]" :format-tooltip="v=>v.toFixed(2)" size="small" class="p-slider" />
+                  <span class="p-val">{{ (body[name] ?? spec.default).toFixed(2) }}</span>
+                  <el-button size="small" text circle @click="body[name]=spec.default" title="重置" class="p-reset"><span class="reset-icon">↺</span></el-button>
                 </div>
               </div>
             </div>
@@ -117,16 +112,14 @@
                     <el-button size="small" type="primary" @click="renderMotion" :loading="motionLoading" icon="Refresh">应用并渲染</el-button>
                   </div>
                 </div>
-                <div class="param-grid">
-                  <div v-for="(val, name) in motionParams" :key="name" class="param-card">
-                    <div class="param-head">
-                      <span class="param-label" :class="{ 'master': name==='intensity' }">{{ (selectedMotionParams[name]?.label) || name }}</span>
-                      <span class="param-key">{{ name }}</span>
-                    </div>
-                    <div class="param-val">{{ val.toFixed(2) }}</div>
+                <div class="param-list">
+                  <div v-for="(val, name) in motionParams" :key="name" class="param-row">
+                    <span class="p-label" :class="{ 'master': name==='intensity' }" :title="name">{{ (selectedMotionParams[name]?.label) || name }}</span>
+                    <span class="p-key">{{ name }}</span>
                     <el-slider :min="selectedMotionParams[name]?.min ?? 0" :max="selectedMotionParams[name]?.max ?? 2"
                                :step="selectedMotionParams[name]?.step ?? 0.05" v-model="motionParams[name]"
-                               :format-tooltip="v=>v.toFixed(2)" size="small" />
+                               :format-tooltip="v=>v.toFixed(2)" size="small" class="p-slider" />
+                    <span class="p-val">{{ val.toFixed(2) }}</span>
                   </div>
                 </div>
                 <div class="coord-hint" v-if="selectedMotionParams?.intensity">💡 「力度协调」为主参数：调节它会同步改变步幅 / 起伏 / 摆臂的整体强度。</div>
@@ -163,17 +156,20 @@
             </div>
 
             <div class="canvas-body" :class="canvasBodyClass">
-              <!-- 体型 → 三视图骨架 -->
+              <!-- 体型 → 主大图 + 三视图缩略切换 -->
               <template v-if="activeTab==='params'">
                 <template v-if="hasAnyPreview">
-                  <div class="preview-cell" v-for="v in ['front','side','back']" :key="v">
-                    <template v-if="previews[v]">
-                      <div class="preview-title">{{ {front:'正面',side:'侧面',back:'背面'}[v] }}</div>
+                  <div class="canvas-main">
+                    <img :src="previews[bodyView]" class="fit-img" />
+                  </div>
+                  <div class="canvas-thumbs">
+                    <div v-for="v in ['front','side','back']" :key="v" class="thumb" :class="{ active: bodyView===v }" @click="bodyView=v">
                       <img :src="previews[v]" />
-                    </template>
+                      <span>{{ {front:'正面',side:'侧面',back:'背面'}[v] }}</span>
+                    </div>
                   </div>
                 </template>
-                <div v-else class="canvas-empty"><p>在左侧调节体型参数，右侧实时查看体形三视图</p></div>
+                <div v-else class="canvas-empty"><p>在左侧调节体型参数，右侧实时查看体形</p></div>
               </template>
 
               <!-- 动作 → 动作帧大图 -->
@@ -262,6 +258,7 @@ const selectedMotionParams = ref({})
 const motionParams = ref({})
 const motionPreview = ref(null)
 const motionLoading = ref(false)
+const bodyView = ref('front')
 
 const hasAnyPreview = () => Object.values(previews.value).some(Boolean)
 
@@ -544,20 +541,30 @@ function resetPreview3d() {
 
 /* 工作区：左侧控制面板 + 右侧大画布 */
 .workspace { display: flex; gap: 18px; flex: 1; min-height: 0; }
-.control-panel { width: 380px; flex-shrink: 0; overflow-y: auto; padding-right: 12px; }
+.control-panel { width: 420px; flex-shrink: 0; overflow-y: auto; padding-right: 12px; }
 .canvas { flex: 1; min-width: 0; display: flex; flex-direction: column; background: #111827; border: 1px solid #111827; border-radius: 10px; padding: 14px 16px; min-height: calc(100vh - 320px); }
 .canvas-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
 .canvas-head h4 { margin: 0; color: #e5e7eb; font-size: .95rem; }
 .canvas .cam-mini { color: #d1d5db; }
 .canvas-body { flex: 1; display: flex; gap: 12px; min-height: 0; }
-.canvas-body.grid-3 .preview-cell,
+.canvas-body.grid-3 { flex-direction: column; }
 .canvas-body.grid-2 .preview-cell { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .canvas-body.single { align-items: center; justify-content: center; }
 .canvas-body .preview-title { color: #9ca3af; font-size: .78rem; margin-bottom: 6px; text-align: center; }
 .canvas-body img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 6px; background: #1f2937; }
-.canvas-body.grid-3 img, .canvas-body.grid-2 img { width: 100%; }
+.canvas-body.grid-2 img { width: 100%; }
 .canvas-empty { display: flex; align-items: center; justify-content: center; color: #6b7280; flex: 1; padding: 30px; text-align: center; }
 .canvas-empty p { margin: 0; font-size: .85rem; }
+
+/* 体型主图 + 三视图缩略切换 */
+.canvas-main { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; }
+.canvas-main .fit-img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.canvas-thumbs { flex-shrink: 0; display: flex; justify-content: center; gap: 10px; padding-top: 8px; }
+.thumb { cursor: pointer; border: 2px solid transparent; border-radius: 6px; padding: 2px 4px; opacity: .65; transition: all .15s; text-align: center; }
+.thumb:hover { opacity: 1; }
+.thumb.active { border-color: #409eff; opacity: 1; background: rgba(64,158,255,.12); }
+.thumb img { height: 54px; width: auto; border-radius: 4px; background: #1f2937; display: block; }
+.thumb span { font-size: .68rem; color: #9ca3af; display: block; margin-top: 2px; }
 
 /* 统计卡片 */
 .stat-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
@@ -570,19 +577,20 @@ function resetPreview3d() {
 .section-head { display: flex; justify-content: space-between; align-items: center; margin: 0 0 12px; }
 .section-head h4 { margin: 0; font-size: .95rem; color: #606266; }
 
-/* 参数卡片网格 */
-.param-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
-.param-card { border: 1px solid #ebeef5; border-radius: 8px; padding: 12px 14px 6px; background: #fafbfc; }
-.param-head { display: flex; align-items: center; gap: 8px; }
-.param-label { font-weight: 600; font-size: .85rem; }
-.param-key { color: #909399; font-family: monospace; font-size: .72rem; flex: 1; }
-.reset-icon { color: #c0c4cc; font-size: .9rem; }
-.param-val { text-align: right; font-family: monospace; font-size: .85rem; color: #409eff; font-weight: 600; margin: 2px 0; }
-.param-range { display: flex; justify-content: space-between; font-size: .68rem; color: #c0c4cc; padding: 0 2px; }
+/* 紧凑参数行 */
+.param-list { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 14px; }
+.param-row { display: flex; align-items: center; gap: 6px; padding: 5px 8px; border: 1px solid #f0f2f5; border-radius: 6px; background: #fafbfc; }
+.param-row .p-label { width: 62px; flex-shrink: 0; font-size: .76rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.param-row .p-key { color: #c0c4cc; font-family: monospace; font-size: .62rem; flex-shrink: 0; }
+.param-row .p-slider { flex: 1; min-width: 0; }
+.param-row .p-val { width: 34px; text-align: right; font-family: monospace; font-size: .75rem; color: #409eff; font-weight: 600; flex-shrink: 0; }
+.param-row .p-reset { flex-shrink: 0; margin-left: -4px; }
+.reset-icon { color: #c0c4cc; font-size: .85rem; }
+.p-label.master { color: #67c23a; }
 
 /* 画布 */
-.canvas-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
-.canvas-item { display: flex; justify-content: space-between; align-items: center; border: 1px solid #ebeef5; border-radius: 8px; padding: 8px 12px; background: #fafbfc; font-size: .85rem; }
+.canvas-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 10px; }
+.canvas-item { display: flex; justify-content: space-between; align-items: center; border: 1px solid #ebeef5; border-radius: 6px; padding: 5px 10px; background: #fafbfc; font-size: .75rem; }
 
 /* 预览 */
 .preview-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
@@ -619,5 +627,4 @@ function resetPreview3d() {
 
 .form-hint { font-size: .72rem; color: #909399; margin-top: 4px; width: 100%; }
 .coord-hint { margin-top: 8px; padding: 8px 12px; background: #f0f9eb; border: 1px solid #e1f3d8; border-radius: 6px; font-size: .75rem; color: #67c23a; }
-.param-label.master { color: #67c23a; }
 </style>
