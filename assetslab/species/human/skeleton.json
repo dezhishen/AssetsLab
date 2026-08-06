@@ -1055,10 +1055,6 @@
       "shoulder_right"
     ],
     [
-      "shoulder_left",
-      "shoulder_right"
-    ],
-    [
       "chest",
       "rib_upper_left"
     ],
@@ -1120,10 +1116,6 @@
     ],
     [
       "iliac_right",
-      "hip_right"
-    ],
-    [
-      "hip_left",
       "hip_right"
     ],
     [
