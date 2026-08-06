@@ -285,6 +285,12 @@ class AssetsLabHandler(SimpleHTTPRequestHandler):
             return self._json({"species": self.species.list()})
 
         sp_id = parts[0]
+        # 预设 schema：GET /api/species/<id>/preset_schema
+        if len(parts) >= 2 and parts[1] == "preset_schema":
+            schema = self.species.get_preset_schema(sp_id)
+            if schema is None:
+                return self._json({"ok": False, "error": f"preset_schema not found: {sp_id}"}, 404)
+            return self._json(schema)
         # 动作详情：GET /api/species/<id>/actions/<action_id>
         if len(parts) >= 3 and parts[1] == "actions":
             action_id = parts[2]

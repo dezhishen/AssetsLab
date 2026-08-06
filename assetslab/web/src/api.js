@@ -46,6 +46,9 @@ export const api = {
   /** 物种详情（含动作） @returns {Promise<import('../../models').SpeciesDetail>} */
   speciesDetail: (id) => raw(`/api/species/${encodeURIComponent(id)}`),
 
+  /** 物种预设 schema（随物种自动派生，创建预设的清单） @returns {Promise<object>} */
+  presetSchema: (id) => raw(`/api/species/${encodeURIComponent(id)}/preset_schema`),
+
   /** 创建物种 */
   createSpecies: (data) => raw('/api/species', json(data)),
 

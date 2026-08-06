@@ -309,23 +309,15 @@ async function createPreset() {
   if (!createForm.value.preset_id.trim()) { ElMessage.warning('请输入预设 ID'); return }
   saving.value = true
   try {
-    const sp = await api.speciesDetail(createForm.value.species)
+    // 基于物种的 preset_schema（随骨架自动派生）初始化预设，数据驱动
+    const schema = await api.presetSchema(createForm.value.species)
+    const params = schema?.params || {}
+    const positions3d = {}
+    for (const j of (schema?.joints_3d || [])) positions3d[j] = [480, 300, 0]
     const positions = {}
-    const params = {}
-    const bodyVals = {}
-    for (const [key, chain] of Object.entries(sp.param_chains || {})) {
-      if (!params[chain.param]) {
-        params[chain.param] = { default: 1.0, min: 0.5, max: 1.6, step: 0.05, label: PARAM_LABELS[chain.param] || chain.param, desc: '' }
-        bodyVals[chain.param] = 1.0
-      }
-    }
-    const allJoints = new Set()
-    for (const grp of Object.values(sp.joints || {})) {
-      if (Array.isArray(grp)) grp.forEach(j => allJoints.add(j))
-    }
-    for (const view of ['front','side','back']) {
+    for (const [view, joints] of Object.entries(schema?.views_2d || {})) {
       positions[view] = {}
-      for (const j of allJoints) positions[view][j] = [480, 300]
+      for (const j of joints) positions[view][j] = [480, 300]
     }
     const data = {
       preset_id: createForm.value.preset_id.trim(),
@@ -333,9 +325,9 @@ async function createPreset() {
       title: createForm.value.title.trim() || createForm.value.preset_id.trim(),
       description: createForm.value.description.trim(),
       species: createForm.value.species,
-      head_radius: 24,
-      canvas: { width: 960, height: 600, floor_y: 470 },
-      params, body: bodyVals, positions,
+      head_radius: schema?.head_radius ?? 24,
+      canvas: schema?.canvas ?? { width: 960, height: 600, floor_y: 470 },
+      params, body: { ...(schema?.body_default || {}) }, positions, positions_3d: positions3d,
     }
     await api.createPreset(data)
     ElMessage.success('预设创建成功')

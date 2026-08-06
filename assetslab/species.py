@@ -5,7 +5,8 @@
 # 自包含：自己管理 species/<id>/ 目录下的文件，不依赖其他模块。
 #
 # 目录结构：
-#   species/<id>/skeleton.json        — 3D 骨骼拓扑（含 preset_schema 自描述）
+#   species/<id>/skeleton.json        — 3D 骨骼拓扑（纯骨架，无预设信息）
+#   species/<id>/preset_schema.json   — 预设 schema（随骨架自动派生：创建预设只需按此清单填充）
 #   species/<id>/actions3d/<id>.json  — 3D 动作定义
 # =========================================================================
 
@@ -26,7 +27,7 @@ from .models import (
 
 
 class SpeciesService:
-    """物种模块：管理 3D 骨骼拓扑与 3D 动作。"""
+    """物种模块：管理 3D 骨骼拓扑、预设 schema 与 3D 动作。"""
 
     def __init__(self, root: Path) -> None:
         self._root = root
@@ -35,6 +36,9 @@ class SpeciesService:
 
     def _skeleton_path(self, species_id: str) -> Path:
         return self._root / species_id / "skeleton.json"
+
+    def _preset_schema_path(self, species_id: str) -> Path:
+        return self._root / species_id / "preset_schema.json"
 
     def _actions_dir(self, species_id: str) -> Path:
         return self._root / species_id / "actions3d"
@@ -49,6 +53,70 @@ class SpeciesService:
     @staticmethod
     def _save_json(path: Path, data: dict) -> None:
         path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    # -- 预设 schema（派生，随物种自动生成/更新） --
+
+    @staticmethod
+    def build_preset_schema(skel: dict, existing_params: dict | None = None) -> dict:
+        """从骨架拓扑派生预设 schema（数据驱动，不硬编码关节/参数名）。
+
+        - joints_3d 从 bones_3d 收集
+        - views_2d 从 bones(front/side/back) 收集
+        - params 从 param_chains 派生（保留 existing_params 中人工定义的 label/min/max 等）
+        """
+        def _collect(bones):
+            out, seen = [], set()
+            for a, b in bones:
+                for j in (a, b):
+                    if j not in seen:
+                        seen.add(j)
+                        out.append(j)
+            return out
+
+        joints_3d = _collect(skel.get("bones_3d", []))
+        views_2d = {v: _collect(skel.get("bones", {}).get(v, [])) for v in ("front", "side", "back")}
+        old = existing_params or {}
+        params: dict = {}
+        for chain in skel.get("param_chains", {}).values():
+            pname = chain.get("param")
+            if not pname or pname in params:
+                continue
+            base = {"default": 1.0, "min": 0.6, "max": 1.6, "step": 0.05, "label": pname}
+            base.update(old.get(pname, {}))
+            params[pname] = base
+        return {
+            "schema": "assetslab_preset_schema_v1",
+            "species": skel.get("species_id"),
+            "description": "预设 schema（随物种骨架自动派生）：创建预设只需按此清单填充（positions_3d 为主；positions 2D 可由 3D 投影派生）。",
+            "required_fields": [
+                "preset_id", "schema", "title", "description", "species",
+                "positions_3d", "positions", "params", "body", "canvas", "head_radius",
+            ],
+            "joints_3d": joints_3d,
+            "views_2d": views_2d,
+            "params": params,
+            "canvas": {"width": 960, "height": 600, "floor_y": 470},
+            "head_radius": 24,
+            "body_default": {k: 1.0 for k in params},
+        }
+
+    def _write_preset_schema(self, species_id: str, skel: dict) -> None:
+        """派生并写 species/<id>/preset_schema.json（保留已有 params 的人工数值定义）。"""
+        path = self._preset_schema_path(species_id)
+        old: dict = {}
+        if path.is_file():
+            try:
+                old = json.loads(path.read_text(encoding="utf-8")).get("params", {})
+            except Exception:
+                old = {}
+        self._save_json(path, self.build_preset_schema(skel, old))
+
+    def get_preset_schema(self, species_id: str) -> dict | None:
+        """读取 species/<id>/preset_schema.json（不存在返回 None）。"""
+        path = self._preset_schema_path(species_id)
+        if not path.is_file():
+            return None
+        return json.loads(path.read_text(encoding="utf-8"))
 
     # -- 物种 CRUD --
 
@@ -103,7 +171,7 @@ class SpeciesService:
         return data
 
     def create(self, data: SpeciesSkeleton) -> str:
-        """创建物种文件夹 + skeleton.json + actions/。"""
+        """创建物种文件夹 + skeleton.json + preset_schema.json + actions3d/。"""
         sp_id = data.get("species_id", "").strip()
         if not sp_id:
             raise ValueError("species_id required")
@@ -114,14 +182,16 @@ class SpeciesService:
         (sp_dir / "actions3d").mkdir(exist_ok=True)
         data.setdefault("schema", "assetslab_species_v1")
         self._save_json(self._skeleton_path(sp_id), data)
+        self._write_preset_schema(sp_id, data)
         return sp_id
 
     def update(self, species_id: str, data: SpeciesSkeleton) -> str:
-        """更新 skeleton.json。"""
+        """更新 skeleton.json，并同步重派生 preset_schema.json。"""
         sp_dir = self._root / species_id
         sp_dir.mkdir(parents=True, exist_ok=True)
         (sp_dir / "actions3d").mkdir(exist_ok=True)
         self._save_json(self._skeleton_path(species_id), data)
+        self._write_preset_schema(species_id, data)
         return species_id
 
     def delete(self, species_id: str) -> str:

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""数据驱动生成预设：只读 species/human/skeleton.json 的 preset_schema + 解剖比例。
+"""数据驱动生成预设：只读 species/<id>/preset_schema.json（随物种自动派生）+ 解剖比例。
 
-骨架拓扑（关节/骨骼/参数链/约束）全部来自 skeleton.json（预设_schema 自描述）；
-本脚本只补充"人设解剖比例表"（男女 × 儿童/成年/老年，模特身材），
+预设 schema（关节清单/参数/画布）来自 species/<id>/preset_schema.json（由 species 模块
+随骨架自动生成/更新）；本脚本只补充“人设解剖比例表”（男女 × 儿童/成年/老年，模特身材），
 为每个 3D 关节填充解剖学合理坐标，并自动从 3D 投影派生 2D 视图坐标。
 
 用法:
@@ -19,28 +19,11 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-SPECIES_JSON = ROOT / "assetslab" / "species" / "human" / "skeleton.json"
+PRESET_SCHEMA_JSON = ROOT / "assetslab" / "species" / "human" / "preset_schema.json"
 PRESETS_DIR = ROOT / "assetslab" / "presets"
 
 CX = 480.0  # 画布水平中线（坐标系原点）
 FLOOR_Y = 470.0  # 地面线（脚底贴合）
-
-# =========================================================================
-# 1. 体型参数定义（写入 skeleton.json 的 params）
-# =========================================================================
-PARAMS: dict = {
-    "head_scale":       {"label": "头大小",     "default": 1.0, "min": 0.6, "max": 1.6, "step": 0.05},
-    "neck_length":      {"label": "脖子长度",   "default": 1.0, "min": 0.5, "max": 1.5, "step": 0.05},
-    "upper_torso_length": {"label": "上躯干长", "default": 1.0, "min": 0.6, "max": 1.6, "step": 0.05},
-    "lower_torso_length": {"label": "下躯干长", "default": 1.0, "min": 0.6, "max": 1.6, "step": 0.05},
-    "shoulder_width":   {"label": "肩宽",       "default": 1.0, "min": 0.6, "max": 1.6, "step": 0.05},
-    "hip_width":        {"label": "髋宽",       "default": 1.0, "min": 0.6, "max": 1.6, "step": 0.05},
-    "upper_arm_length": {"label": "上臂长",     "default": 1.0, "min": 0.6, "max": 1.6, "step": 0.05},
-    "forearm_length":   {"label": "前臂长",     "default": 1.0, "min": 0.6, "max": 1.6, "step": 0.05},
-    "thigh_length":     {"label": "大腿长",     "default": 1.0, "min": 0.6, "max": 1.6, "step": 0.05},
-    "shin_length":      {"label": "小腿长",     "default": 1.0, "min": 0.6, "max": 1.6, "step": 0.05},
-    "overall_height":   {"label": "整体身高",   "default": 1.0, "min": 0.8, "max": 1.2, "step": 0.05},
-}
 
 
 # =========================================================================
@@ -75,25 +58,25 @@ PRESET_SPECS = {
         "title": "男孩儿童", "gender": "male", "age": "child",
         "head_radius": 26.0, "shoulder": 56.0, "hip": 40.0, "chest_depth": 0.0, "waist_ratio": 0.85,
         "y": {"torso_hip": 3.2, "thigh": 1.3, "shin": 1.2, "foot": 0.3},
-        "slouch": 0, "body": {"head_scale": 1.2, "overall_height": 0.82},
+        "slouch": 0, "body": {"head_scale": 1.2},
     },
     "girl_child": {
         "title": "女孩儿童", "gender": "female", "age": "child",
         "head_radius": 25.0, "shoulder": 52.0, "hip": 44.0, "chest_depth": 2.0, "waist_ratio": 0.82,
         "y": {"torso_hip": 3.2, "thigh": 1.35, "shin": 1.2, "foot": 0.28},
-        "slouch": 0, "body": {"head_scale": 1.2, "overall_height": 0.8},
+        "slouch": 0, "body": {"head_scale": 1.2},
     },
     "male_elder": {
         "title": "老年男性", "gender": "male", "age": "elder",
         "head_radius": 23.0, "shoulder": 84.0, "hip": 62.0, "chest_depth": 0.0, "waist_ratio": 0.88,
         "y": {"torso_hip": 3.3, "thigh": 1.5, "shin": 1.9, "foot": 0.6},
-        "slouch": 8, "body": {"overall_height": 0.92, "shoulder_width": 0.9},
+        "slouch": 8, "body": {"shoulder_width": 0.9},
     },
     "female_elder": {
         "title": "老年女性", "gender": "female", "age": "elder",
         "head_radius": 22.0, "shoulder": 70.0, "hip": 74.0, "chest_depth": 6.0, "waist_ratio": 0.8,
         "y": {"torso_hip": 3.3, "thigh": 1.55, "shin": 1.9, "foot": 0.55},
-        "slouch": 8, "body": {"overall_height": 0.9, "shoulder_width": 0.92},
+        "slouch": 8, "body": {"shoulder_width": 0.92},
     },
 }
 
@@ -258,65 +241,31 @@ def derive_views_2d(j3: dict[str, list[float]]) -> dict[str, dict[str, list[floa
 
 
 # =========================================================================
-# 5. 写入 skeleton.json 的 params + preset_schema
+# 5. 读取物种预设 schema（由 species 模块随骨架自动派生）
 # =========================================================================
-def patch_skeleton() -> dict:
-    skel = json.loads(SPECIES_JSON.read_text(encoding="utf-8"))
-
-    def collect(bones):
-        out, seen = [], set()
-        for a, b in bones:
-            for j in (a, b):
-                if j not in seen:
-                    seen.add(j)
-                    out.append(j)
-        return out
-
-    joints_3d = collect(skel["bones_3d"])
-    views_2d = {v: collect(skel["bones"][v]) for v in ("front", "side", "back")}
-
-    preset_schema = {
-        "schema": "assetslab_preset_schema_v1",
-        "description": "预设自描述：创建预设只需按此清单填充（positions_3d 为主；positions 2D 可由 3D 投影派生）。",
-        "required_fields": [
-            "preset_id", "schema", "title", "description", "species",
-            "positions_3d", "positions", "params", "body", "canvas", "head_radius",
-        ],
-        "joints_3d": joints_3d,
-        "views_2d": views_2d,
-        "canvas": {"width": 960, "height": 600, "floor_y": 470},
-        "head_radius": 24,
-        "body_default": {k: 1.0 for k in PARAMS},
-    }
-
-    changed = False
-    if "params" not in skel:
-        skel["params"] = PARAMS
-        changed = True
-    if "preset_schema" not in skel:
-        skel["preset_schema"] = preset_schema
-        changed = True
-    if changed:
-        SPECIES_JSON.write_text(json.dumps(skel, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-        print(f"patched skeleton.json: +params, +preset_schema ({len(joints_3d)} joints_3d, views_2d { {k: len(v) for k, v in views_2d.items()} })")
-    return skel
+def load_schema() -> dict:
+    """读 species/<id>/preset_schema.json。"""
+    if not PRESET_SCHEMA_JSON.is_file():
+        raise SystemExit(f"preset_schema not found: {PRESET_SCHEMA_JSON}（先创建/更新物种以派生 schema）")
+    return json.loads(PRESET_SCHEMA_JSON.read_text(encoding="utf-8"))
 
 
-def build_preset(spec: dict) -> dict:
+def build_preset(spec: dict, schema: dict) -> dict:
     j3 = gen_joints3d(spec)
     views = derive_views_2d(j3)
-    body = {"head_scale": 1.0, "neck_length": 1.0, "upper_torso_length": 1.0,
-            "lower_torso_length": 1.0, "shoulder_width": 1.0, "hip_width": 1.0,
-            "upper_arm_length": 1.0, "forearm_length": 1.0, "thigh_length": 1.0,
-            "shin_length": 1.0, "overall_height": 1.0}
+    params = schema.get("params", {})
+    body = dict(schema.get("body_default", {}))
     body.update(spec.get("body", {}))
+    # 只保留 schema 定义的参数（防止混入非骨架参数）
+    body = {k: v for k, v in body.items() if k in params}
+    canvas = dict(schema.get("canvas", {"width": 960, "height": 600, "floor_y": FLOOR_Y}))
     return {
         "preset_id": None,  # 由调用方填充
         "schema": "assetslab_preset_v3",
-        "species": "human",
-        "head_radius": spec["head_radius"],
-        "canvas": {"width": 960, "height": 600, "floor_y": FLOOR_Y},
-        "params": PARAMS,
+        "species": schema.get("species") or "human",
+        "head_radius": spec.get("head_radius", schema.get("head_radius", 24)),
+        "canvas": canvas,
+        "params": params,
         "body": body,
         "positions": views,
         "positions_3d": j3,
@@ -325,16 +274,17 @@ def build_preset(spec: dict) -> dict:
 
 def main() -> None:
     targets = sys.argv[1:] or list(PRESET_SPECS.keys())
-    skel = patch_skeleton()
-    print("skeleton params:", len(skel.get("params", {})), "params;",
-          "preset_schema:", "joints_3d=", len(skel["preset_schema"]["joints_3d"]))
+    schema = load_schema()
+    print(f"preset_schema: {len(schema.get('joints_3d', []))} joints_3d, "
+          f"{len(schema.get('params', {}))} params, "
+          f"views_2d { {k: len(v) for k, v in schema.get('views_2d', {}).items()} }")
     PRESETS_DIR.mkdir(parents=True, exist_ok=True)
     for pid in targets:
         if pid not in PRESET_SPECS:
             print(f"unknown preset: {pid} (available: {list(PRESET_SPECS)})")
             continue
         spec = PRESET_SPECS[pid]
-        data = build_preset(spec)
+        data = build_preset(spec, schema)
         data["preset_id"] = pid
         data["title"] = spec["title"]
         data["description"] = (f"{spec['gender']} · {spec['age']}，模特身材（解剖学比例）。"

@@ -6,85 +6,78 @@
   "canvas": {
     "width": 960,
     "height": 600,
-    "floor_y": 470.0
+    "floor_y": 470
   },
   "params": {
     "head_scale": {
-      "label": "头大小",
       "default": 1.0,
       "min": 0.6,
       "max": 1.6,
-      "step": 0.05
+      "step": 0.05,
+      "label": "头大小"
     },
     "neck_length": {
-      "label": "脖子长度",
       "default": 1.0,
       "min": 0.5,
       "max": 1.5,
-      "step": 0.05
+      "step": 0.05,
+      "label": "脖子长度"
     },
     "upper_torso_length": {
-      "label": "上躯干长",
       "default": 1.0,
       "min": 0.6,
       "max": 1.6,
-      "step": 0.05
+      "step": 0.05,
+      "label": "上躯干长"
     },
     "lower_torso_length": {
-      "label": "下躯干长",
       "default": 1.0,
       "min": 0.6,
       "max": 1.6,
-      "step": 0.05
+      "step": 0.05,
+      "label": "下躯干长"
     },
     "shoulder_width": {
-      "label": "肩宽",
       "default": 1.0,
       "min": 0.6,
       "max": 1.6,
-      "step": 0.05
+      "step": 0.05,
+      "label": "肩宽"
     },
     "hip_width": {
-      "label": "髋宽",
       "default": 1.0,
       "min": 0.6,
       "max": 1.6,
-      "step": 0.05
+      "step": 0.05,
+      "label": "髋宽"
     },
     "upper_arm_length": {
-      "label": "上臂长",
       "default": 1.0,
       "min": 0.6,
       "max": 1.6,
-      "step": 0.05
+      "step": 0.05,
+      "label": "上臂长"
     },
     "forearm_length": {
-      "label": "前臂长",
       "default": 1.0,
       "min": 0.6,
       "max": 1.6,
-      "step": 0.05
+      "step": 0.05,
+      "label": "前臂长"
     },
     "thigh_length": {
-      "label": "大腿长",
       "default": 1.0,
       "min": 0.6,
       "max": 1.6,
-      "step": 0.05
+      "step": 0.05,
+      "label": "大腿长"
     },
     "shin_length": {
-      "label": "小腿长",
       "default": 1.0,
       "min": 0.6,
       "max": 1.6,
-      "step": 0.05
-    },
-    "overall_height": {
-      "label": "整体身高",
-      "default": 1.0,
-      "min": 0.8,
-      "max": 1.2,
-      "step": 0.05
+      "step": 0.05,
+      "label": "小腿长"
     }
   },
   "body": {
@@ -97,8 +90,7 @@
     "upper_arm_length": 1.0,
     "forearm_length": 1.0,
     "thigh_length": 1.0,
-    "shin_length": 1.0,
-    "overall_height": 0.92
+    "shin_length": 1.0
   },
   "positions": {
     "front": {
