@@ -1,0 +1,1170 @@
+{
+  "species_id": "human",
+  "schema": "assetslab_species_v1",
+  "title": "人类骨骼拓扑",
+  "description": "人类骨骼拓扑：定义关节名、骨骼连接、关节链。体型参数和关节坐标在预设中定义。",
+  "param_chains": {
+    "head": {
+      "joints": [
+        "head"
+      ],
+      "param": "head_scale",
+      "anchor": "bottom"
+    },
+    "neck": {
+      "joints": [
+        "head"
+      ],
+      "param": "neck_length",
+      "anchor": "neck"
+    },
+    "upper_torso": {
+      "joints": [
+        "neck",
+        "upper_chest",
+        "chest",
+        "sternum",
+        "waist"
+      ],
+      "param": "upper_torso_length",
+      "anchor": "waist"
+    },
+    "lower_torso": {
+      "joints": [
+        "waist",
+        "abdomen",
+        "pelvis"
+      ],
+      "param": "lower_torso_length",
+      "anchor": "pelvis"
+    },
+    "shoulders": {
+      "joints": [
+        "shoulder_left",
+        "shoulder_right",
+        "clavicle_left",
+        "clavicle_right"
+      ],
+      "param": "shoulder_width",
+      "anchor": "center"
+    },
+    "hips": {
+      "joints": [
+        "hip_left",
+        "hip_right",
+        "iliac_left",
+        "iliac_right"
+      ],
+      "param": "hip_width",
+      "anchor": "center"
+    },
+    "arm_left": {
+      "joints": [
+        "elbow_left",
+        "wrist_left",
+        "palm_left",
+        "finger_left"
+      ],
+      "param": "upper_arm_length",
+      "anchor": "shoulder_left"
+    },
+    "forearm_left": {
+      "joints": [
+        "wrist_left",
+        "palm_left",
+        "finger_left"
+      ],
+      "param": "forearm_length",
+      "anchor": "elbow_left"
+    },
+    "arm_right": {
+      "joints": [
+        "elbow_right",
+        "wrist_right",
+        "palm_right",
+        "finger_right"
+      ],
+      "param": "upper_arm_length",
+      "anchor": "shoulder_right"
+    },
+    "forearm_right": {
+      "joints": [
+        "wrist_right",
+        "palm_right",
+        "finger_right"
+      ],
+      "param": "forearm_length",
+      "anchor": "elbow_right"
+    },
+    "thigh_left": {
+      "joints": [
+        "knee_left",
+        "ankle_left",
+        "heel_left",
+        "foot_left",
+        "toe_left"
+      ],
+      "param": "thigh_length",
+      "anchor": "hip_left"
+    },
+    "shin_left": {
+      "joints": [
+        "ankle_left",
+        "heel_left",
+        "foot_left",
+        "toe_left"
+      ],
+      "param": "shin_length",
+      "anchor": "knee_left"
+    },
+    "thigh_right": {
+      "joints": [
+        "knee_right",
+        "ankle_right",
+        "heel_right",
+        "foot_right",
+        "toe_right"
+      ],
+      "param": "thigh_length",
+      "anchor": "hip_right"
+    },
+    "shin_right": {
+      "joints": [
+        "ankle_right",
+        "heel_right",
+        "foot_right",
+        "toe_right"
+      ],
+      "param": "shin_length",
+      "anchor": "knee_right"
+    }
+  },
+  "joints": {
+    "centerline": [
+      "head",
+      "jaw",
+      "neck",
+      "upper_chest",
+      "chest",
+      "sternum",
+      "waist",
+      "abdomen",
+      "pelvis"
+    ],
+    "left_arm": [
+      "shoulder_left",
+      "elbow_left",
+      "wrist_left",
+      "palm_left",
+      "finger_left"
+    ],
+    "right_arm": [
+      "shoulder_right",
+      "elbow_right",
+      "wrist_right",
+      "palm_right",
+      "finger_right"
+    ],
+    "left_leg": [
+      "iliac_left",
+      "hip_left",
+      "knee_left",
+      "ankle_left",
+      "heel_left",
+      "foot_left",
+      "toe_left"
+    ],
+    "right_leg": [
+      "iliac_right",
+      "hip_right",
+      "knee_right",
+      "ankle_right",
+      "heel_right",
+      "foot_right",
+      "toe_right"
+    ],
+    "clavicles": [
+      "clavicle_left",
+      "clavicle_right"
+    ],
+    "ribs": [
+      "rib_upper_left",
+      "rib_upper_right",
+      "rib_lower_left",
+      "rib_lower_right"
+    ],
+    "aliases": {
+      "left_elbow": "elbow_left",
+      "right_elbow": "elbow_right",
+      "left_hand": "palm_left",
+      "right_hand": "palm_right",
+      "hand_left": "palm_left",
+      "hand_right": "palm_right",
+      "left_hip": "hip_left",
+      "right_hip": "hip_right",
+      "left_knee": "knee_left",
+      "right_knee": "knee_right",
+      "left_foot": "foot_left",
+      "right_foot": "foot_right"
+    }
+  },
+  "bones": {
+    "front": [
+      [
+        "head",
+        "jaw"
+      ],
+      [
+        "jaw",
+        "neck"
+      ],
+      [
+        "neck",
+        "upper_chest"
+      ],
+      [
+        "upper_chest",
+        "chest"
+      ],
+      [
+        "chest",
+        "sternum"
+      ],
+      [
+        "sternum",
+        "waist"
+      ],
+      [
+        "waist",
+        "abdomen"
+      ],
+      [
+        "abdomen",
+        "pelvis"
+      ],
+      [
+        "sternum",
+        "clavicle_left"
+      ],
+      [
+        "clavicle_left",
+        "shoulder_left"
+      ],
+      [
+        "sternum",
+        "clavicle_right"
+      ],
+      [
+        "clavicle_right",
+        "shoulder_right"
+      ],
+      [
+        "shoulder_left",
+        "shoulder_right"
+      ],
+      [
+        "chest",
+        "rib_upper_left"
+      ],
+      [
+        "chest",
+        "rib_upper_right"
+      ],
+      [
+        "sternum",
+        "rib_lower_left"
+      ],
+      [
+        "sternum",
+        "rib_lower_right"
+      ],
+      [
+        "shoulder_left",
+        "elbow_left"
+      ],
+      [
+        "elbow_left",
+        "wrist_left"
+      ],
+      [
+        "wrist_left",
+        "palm_left"
+      ],
+      [
+        "palm_left",
+        "finger_left"
+      ],
+      [
+        "shoulder_right",
+        "elbow_right"
+      ],
+      [
+        "elbow_right",
+        "wrist_right"
+      ],
+      [
+        "wrist_right",
+        "palm_right"
+      ],
+      [
+        "palm_right",
+        "finger_right"
+      ],
+      [
+        "pelvis",
+        "iliac_left"
+      ],
+      [
+        "pelvis",
+        "iliac_right"
+      ],
+      [
+        "iliac_left",
+        "hip_left"
+      ],
+      [
+        "iliac_right",
+        "hip_right"
+      ],
+      [
+        "hip_left",
+        "hip_right"
+      ],
+      [
+        "hip_left",
+        "knee_left"
+      ],
+      [
+        "knee_left",
+        "ankle_left"
+      ],
+      [
+        "ankle_left",
+        "heel_left"
+      ],
+      [
+        "heel_left",
+        "foot_left"
+      ],
+      [
+        "foot_left",
+        "toe_left"
+      ],
+      [
+        "hip_right",
+        "knee_right"
+      ],
+      [
+        "knee_right",
+        "ankle_right"
+      ],
+      [
+        "ankle_right",
+        "heel_right"
+      ],
+      [
+        "heel_right",
+        "foot_right"
+      ],
+      [
+        "foot_right",
+        "toe_right"
+      ]
+    ],
+    "side": [
+      [
+        "head",
+        "jaw"
+      ],
+      [
+        "jaw",
+        "neck"
+      ],
+      [
+        "neck",
+        "upper_chest"
+      ],
+      [
+        "upper_chest",
+        "chest"
+      ],
+      [
+        "chest",
+        "sternum"
+      ],
+      [
+        "sternum",
+        "waist"
+      ],
+      [
+        "waist",
+        "abdomen"
+      ],
+      [
+        "abdomen",
+        "pelvis"
+      ],
+      [
+        "sternum",
+        "clavicle_front"
+      ],
+      [
+        "clavicle_front",
+        "front_shoulder"
+      ],
+      [
+        "sternum",
+        "clavicle_rear"
+      ],
+      [
+        "clavicle_rear",
+        "rear_shoulder"
+      ],
+      [
+        "chest",
+        "rib_front"
+      ],
+      [
+        "chest",
+        "rib_rear"
+      ],
+      [
+        "front_shoulder",
+        "front_elbow"
+      ],
+      [
+        "front_elbow",
+        "front_wrist"
+      ],
+      [
+        "front_wrist",
+        "front_palm"
+      ],
+      [
+        "front_palm",
+        "front_finger"
+      ],
+      [
+        "rear_shoulder",
+        "rear_elbow"
+      ],
+      [
+        "rear_elbow",
+        "rear_wrist"
+      ],
+      [
+        "rear_wrist",
+        "rear_palm"
+      ],
+      [
+        "rear_palm",
+        "rear_finger"
+      ],
+      [
+        "rear_hip",
+        "rear_knee"
+      ],
+      [
+        "rear_knee",
+        "rear_ankle"
+      ],
+      [
+        "rear_ankle",
+        "rear_heel"
+      ],
+      [
+        "rear_heel",
+        "rear_foot"
+      ],
+      [
+        "rear_foot",
+        "rear_toe"
+      ],
+      [
+        "front_hip",
+        "front_knee"
+      ],
+      [
+        "front_knee",
+        "front_ankle"
+      ],
+      [
+        "front_ankle",
+        "front_heel"
+      ],
+      [
+        "front_heel",
+        "front_foot"
+      ],
+      [
+        "front_foot",
+        "front_toe"
+      ],
+      [
+        "pelvis",
+        "rear_hip"
+      ],
+      [
+        "pelvis",
+        "front_hip"
+      ]
+    ],
+    "back": [
+      [
+        "head",
+        "jaw"
+      ],
+      [
+        "jaw",
+        "neck"
+      ],
+      [
+        "neck",
+        "upper_chest"
+      ],
+      [
+        "upper_chest",
+        "chest"
+      ],
+      [
+        "chest",
+        "sternum"
+      ],
+      [
+        "sternum",
+        "waist"
+      ],
+      [
+        "waist",
+        "abdomen"
+      ],
+      [
+        "abdomen",
+        "pelvis"
+      ],
+      [
+        "sternum",
+        "clavicle_left"
+      ],
+      [
+        "clavicle_left",
+        "rear_shoulder_left"
+      ],
+      [
+        "sternum",
+        "clavicle_right"
+      ],
+      [
+        "clavicle_right",
+        "rear_shoulder_right"
+      ],
+      [
+        "chest",
+        "rib_upper_left"
+      ],
+      [
+        "chest",
+        "rib_upper_right"
+      ],
+      [
+        "sternum",
+        "rib_lower_left"
+      ],
+      [
+        "sternum",
+        "rib_lower_right"
+      ],
+      [
+        "rear_shoulder_left",
+        "rear_elbow_left"
+      ],
+      [
+        "rear_elbow_left",
+        "rear_wrist_left"
+      ],
+      [
+        "rear_wrist_left",
+        "rear_palm_left"
+      ],
+      [
+        "rear_shoulder_right",
+        "rear_elbow_right"
+      ],
+      [
+        "rear_elbow_right",
+        "rear_wrist_right"
+      ],
+      [
+        "rear_wrist_right",
+        "rear_palm_right"
+      ],
+      [
+        "rear_hip_left",
+        "rear_knee_left"
+      ],
+      [
+        "rear_knee_left",
+        "rear_ankle_left"
+      ],
+      [
+        "rear_ankle_left",
+        "rear_heel_left"
+      ],
+      [
+        "rear_heel_left",
+        "rear_foot_left"
+      ],
+      [
+        "rear_foot_left",
+        "rear_toe_left"
+      ],
+      [
+        "rear_hip_right",
+        "rear_knee_right"
+      ],
+      [
+        "rear_knee_right",
+        "rear_ankle_right"
+      ],
+      [
+        "rear_ankle_right",
+        "rear_heel_right"
+      ],
+      [
+        "rear_heel_right",
+        "rear_foot_right"
+      ],
+      [
+        "rear_foot_right",
+        "rear_toe_right"
+      ],
+      [
+        "pelvis",
+        "rear_hip_left"
+      ],
+      [
+        "pelvis",
+        "rear_hip_right"
+      ]
+    ]
+  },
+  "chains": {
+    "spine": [
+      "jaw",
+      "neck",
+      "upper_chest",
+      "chest",
+      "sternum",
+      "waist",
+      "abdomen",
+      "pelvis"
+    ],
+    "arm_left": [
+      "shoulder_left",
+      "elbow_left",
+      "wrist_left",
+      "palm_left",
+      "finger_left"
+    ],
+    "arm_right": [
+      "shoulder_right",
+      "elbow_right",
+      "wrist_right",
+      "palm_right",
+      "finger_right"
+    ],
+    "leg_left": [
+      "hip_left",
+      "knee_left",
+      "ankle_left",
+      "heel_left",
+      "foot_left",
+      "toe_left"
+    ],
+    "leg_right": [
+      "hip_right",
+      "knee_right",
+      "ankle_right",
+      "heel_right",
+      "foot_right",
+      "toe_right"
+    ]
+  },
+  "torso_joints": [
+    "jaw",
+    "neck",
+    "upper_chest",
+    "chest",
+    "sternum",
+    "waist",
+    "abdomen",
+    "pelvis",
+    "clavicle_left",
+    "clavicle_right",
+    "shoulder_left",
+    "shoulder_right",
+    "elbow_left",
+    "elbow_right",
+    "wrist_left",
+    "wrist_right",
+    "palm_left",
+    "palm_right",
+    "finger_left",
+    "finger_right",
+    "iliac_left",
+    "iliac_right",
+    "hip_left",
+    "hip_right",
+    "left_elbow",
+    "right_elbow",
+    "left_hand",
+    "right_hand",
+    "hand_left",
+    "hand_right",
+    "left_hip",
+    "right_hip"
+  ],
+  "upper_joints": [
+    "head",
+    "jaw",
+    "neck",
+    "upper_chest",
+    "chest",
+    "sternum",
+    "waist",
+    "abdomen",
+    "clavicle_left",
+    "clavicle_right",
+    "rib_upper_left",
+    "rib_upper_right",
+    "rib_lower_left",
+    "rib_lower_right",
+    "shoulder_left",
+    "shoulder_right",
+    "elbow_left",
+    "elbow_right",
+    "wrist_left",
+    "wrist_right",
+    "palm_left",
+    "palm_right",
+    "finger_left",
+    "finger_right",
+    "left_elbow",
+    "right_elbow",
+    "left_hand",
+    "right_hand",
+    "hand_left",
+    "hand_right"
+  ],
+  "constraints": {
+    "schema": "assetslab_constraints_v1",
+    "description": "人类骨骼的物理/解剖学硬约束，随物种骨骼模型同步定义。验证工具第二步据此强制判断（创建物种时同步创建）。",
+    "bone_length": {
+      "tolerance": 0.05
+    },
+    "smoothness": {
+      "max_frame_disp": 60.0
+    },
+    "ground_contact": {
+      "feet": {
+        "front": [
+          "foot_left",
+          "foot_right"
+        ],
+        "side": [
+          "rear_foot",
+          "front_foot"
+        ],
+        "back": [
+          "rear_foot_left",
+          "rear_foot_right"
+        ]
+      },
+      "floor_y": 470.0,
+      "walk": {
+        "mode": "one_planted",
+        "tol": 12.0
+      },
+      "run": {
+        "mode": "flight_limited",
+        "max_flight": 4,
+        "tol": 12.0
+      },
+      "idle": {
+        "mode": "all_planted",
+        "tol": 8.0
+      },
+      "jump": {
+        "mode": "flight_allowed"
+      }
+    },
+    "symmetry": {
+      "views": [
+        "front",
+        "back"
+      ],
+      "tolerance": 8.0,
+      "pairs": {
+        "front": [
+          [
+            "foot_left",
+            "foot_right"
+          ],
+          [
+            "knee_left",
+            "knee_right"
+          ]
+        ],
+        "back": [
+          [
+            "rear_foot_left",
+            "rear_foot_right"
+          ],
+          [
+            "rear_knee_left",
+            "rear_knee_right"
+          ]
+        ]
+      },
+      "skip_motions": [
+        "jump",
+        "idle"
+      ]
+    },
+    "elbow_articulation": {
+      "min_spread_deg": 6.0,
+      "skip_motions": [
+        "jump",
+        "idle"
+      ],
+      "chains": {
+        "front": [
+          [
+            "elbow_left",
+            "wrist_left",
+            "palm_left"
+          ],
+          [
+            "elbow_right",
+            "wrist_right",
+            "palm_right"
+          ]
+        ],
+        "side": [
+          [
+            "front_elbow",
+            "front_wrist",
+            "front_palm"
+          ],
+          [
+            "rear_elbow",
+            "rear_wrist",
+            "rear_palm"
+          ]
+        ],
+        "back": [
+          [
+            "rear_elbow_left",
+            "rear_wrist_left",
+            "rear_palm_left"
+          ],
+          [
+            "rear_elbow_right",
+            "rear_wrist_right",
+            "rear_palm_right"
+          ]
+        ]
+      }
+    },
+    "joint_direction": [
+      {
+        "id": "knee_side_rear",
+        "view": "side",
+        "root": "rear_hip",
+        "mid": "rear_knee",
+        "tip": "rear_ankle",
+        "bend": "forward",
+        "tol": 3.0
+      },
+      {
+        "id": "knee_side_front",
+        "view": "side",
+        "root": "front_hip",
+        "mid": "front_knee",
+        "tip": "front_ankle",
+        "bend": "forward",
+        "tol": 3.0
+      },
+      {
+        "id": "elbow_side_front",
+        "view": "side",
+        "root": "front_shoulder",
+        "mid": "front_elbow",
+        "tip": "front_wrist",
+        "bend": "backward",
+        "tol": 3.0
+      },
+      {
+        "id": "elbow_side_rear",
+        "view": "side",
+        "root": "rear_shoulder",
+        "mid": "rear_elbow",
+        "tip": "rear_wrist",
+        "bend": "backward",
+        "tol": 3.0
+      },
+      {
+        "id": "elbow_front_left",
+        "view": "front",
+        "root": "shoulder_left",
+        "mid": "elbow_left",
+        "tip": "wrist_left",
+        "bend": "outward",
+        "tol": 3.0
+      },
+      {
+        "id": "elbow_front_right",
+        "view": "front",
+        "root": "shoulder_right",
+        "mid": "elbow_right",
+        "tip": "wrist_right",
+        "bend": "outward",
+        "tol": 3.0
+      }
+    ],
+    "arm_bend_factor": 0.99,
+    "coordination": {
+      "description": "对侧协调（顺拐检查）：同侧腿前迈时同侧臂应后摆（摆动反相）",
+      "axis": "z",
+      "pairs": [
+        [
+          "ankle_left",
+          "wrist_left"
+        ],
+        [
+          "ankle_right",
+          "wrist_right"
+        ]
+      ]
+    },
+    "rigid_chains": {
+      "description": "刚性链：驱动关节移动时跟随关节保持相对位置（脚掌/手掌板不撕裂）",
+      "chains": [
+        {
+          "driver": "ankle_left",
+          "follow": [
+            "heel_left",
+            "foot_left",
+            "toe_left"
+          ]
+        },
+        {
+          "driver": "ankle_right",
+          "follow": [
+            "heel_right",
+            "foot_right",
+            "toe_right"
+          ]
+        },
+        {
+          "driver": "wrist_left",
+          "follow": [
+            "palm_left",
+            "finger_left"
+          ]
+        },
+        {
+          "driver": "wrist_right",
+          "follow": [
+            "palm_right",
+            "finger_right"
+          ]
+        }
+      ]
+    },
+    "symmetry3d": {
+      "description": "3D 左右对称检查：半周期镜像，左右腿/臂偏移应相同",
+      "tolerance": 8.0,
+      "pairs": [
+        [
+          "ankle_left",
+          "ankle_right"
+        ],
+        [
+          "knee_left",
+          "knee_right"
+        ],
+        [
+          "shoulder_left",
+          "shoulder_right"
+        ],
+        [
+          "wrist_left",
+          "wrist_right"
+        ]
+      ]
+    }
+  },
+  "bones_3d": [
+    [
+      "head",
+      "jaw"
+    ],
+    [
+      "jaw",
+      "neck"
+    ],
+    [
+      "neck",
+      "upper_chest"
+    ],
+    [
+      "upper_chest",
+      "chest"
+    ],
+    [
+      "chest",
+      "sternum"
+    ],
+    [
+      "sternum",
+      "waist"
+    ],
+    [
+      "waist",
+      "abdomen"
+    ],
+    [
+      "abdomen",
+      "pelvis"
+    ],
+    [
+      "sternum",
+      "clavicle_left"
+    ],
+    [
+      "clavicle_left",
+      "shoulder_left"
+    ],
+    [
+      "sternum",
+      "clavicle_right"
+    ],
+    [
+      "clavicle_right",
+      "shoulder_right"
+    ],
+    [
+      "shoulder_left",
+      "shoulder_right"
+    ],
+    [
+      "chest",
+      "rib_upper_left"
+    ],
+    [
+      "chest",
+      "rib_upper_right"
+    ],
+    [
+      "sternum",
+      "rib_lower_left"
+    ],
+    [
+      "sternum",
+      "rib_lower_right"
+    ],
+    [
+      "shoulder_left",
+      "elbow_left"
+    ],
+    [
+      "elbow_left",
+      "wrist_left"
+    ],
+    [
+      "wrist_left",
+      "palm_left"
+    ],
+    [
+      "palm_left",
+      "finger_left"
+    ],
+    [
+      "shoulder_right",
+      "elbow_right"
+    ],
+    [
+      "elbow_right",
+      "wrist_right"
+    ],
+    [
+      "wrist_right",
+      "palm_right"
+    ],
+    [
+      "palm_right",
+      "finger_right"
+    ],
+    [
+      "pelvis",
+      "iliac_left"
+    ],
+    [
+      "pelvis",
+      "iliac_right"
+    ],
+    [
+      "iliac_left",
+      "hip_left"
+    ],
+    [
+      "iliac_right",
+      "hip_right"
+    ],
+    [
+      "hip_left",
+      "hip_right"
+    ],
+    [
+      "hip_left",
+      "knee_left"
+    ],
+    [
+      "knee_left",
+      "ankle_left"
+    ],
+    [
+      "ankle_left",
+      "heel_left"
+    ],
+    [
+      "heel_left",
+      "foot_left"
+    ],
+    [
+      "foot_left",
+      "toe_left"
+    ],
+    [
+      "hip_right",
+      "knee_right"
+    ],
+    [
+      "knee_right",
+      "ankle_right"
+    ],
+    [
+      "ankle_right",
+      "heel_right"
+    ],
+    [
+      "heel_right",
+      "foot_right"
+    ],
+    [
+      "foot_right",
+      "toe_right"
+    ]
+  ]
+}

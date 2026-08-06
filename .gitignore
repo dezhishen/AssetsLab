@@ -8,7 +8,6 @@
 .tools/
 .venv/
 .venv*/
-
 # --- Python caches ---
 __pycache__/
 *.pyc
@@ -25,6 +24,7 @@ prototype/test_output/
 run/
 dist/
 build/
+node_modules/
 # 皮肤包预览（skin.py render 输出，可随时重新生成；展示/--skin-mode 前按需生成）
 skins/*/preview/
 
@@ -33,7 +33,6 @@ third_party/rgs_modular_animated_characters/
 
 # --- Godot import metadata ---
 *.import
-
 # --- OS junk ---
 .DS_Store
 Thumbs.db

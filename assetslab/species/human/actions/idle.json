@@ -1,0 +1,610 @@
+{
+  "schema": "assetslab_motion_v1",
+  "motion_id": "idle",
+  "title": "Idle — 待机呼吸",
+  "description": "呼吸待机：胸腔开合、耸肩、骨盆微沉、重心轻微偏移、手臂自然轻摆。",
+  "frame_count": 8,
+  "params": {
+    "intensity": {
+      "default": 1.0,
+      "min": 0.0,
+      "max": 1.5,
+      "step": 0.05,
+      "label": "力度协调",
+      "desc": "主参数：协调呼吸/胸廓/耸肩等整体强度"
+    },
+    "breath": {
+      "default": 1.0,
+      "min": 0.0,
+      "max": 2.0,
+      "step": 0.05,
+      "label": "呼吸",
+      "desc": "呼吸起伏（骨盆微沉、头肩微动）"
+    },
+    "chest_expand": {
+      "default": 1.0,
+      "min": 0.0,
+      "max": 2.0,
+      "step": 0.05,
+      "label": "胸廓",
+      "desc": "肋骨外扩、胸腔开合幅度"
+    },
+    "shoulder_rise": {
+      "default": 1.0,
+      "min": 0.0,
+      "max": 2.0,
+      "step": 0.05,
+      "label": "耸肩",
+      "desc": "随呼吸的肩部起伏幅度"
+    },
+    "weight_shift": {
+      "default": 1.0,
+      "min": 0.0,
+      "max": 2.0,
+      "step": 0.05,
+      "label": "重心",
+      "desc": "轻微左右重心偏移"
+    },
+    "arm_sway": {
+      "default": 1.0,
+      "min": 0.0,
+      "max": 2.0,
+      "step": 0.05,
+      "label": "手臂",
+      "desc": "手臂自然轻摆幅度"
+    }
+  },
+  "signals": {
+    "phase": {
+      "phase": true
+    },
+    "breath": {
+      "mul": [
+        {
+          "sin": {
+            "phase": true
+          }
+        },
+        {
+          "param": "breath"
+        },
+        {
+          "param": "intensity"
+        }
+      ]
+    },
+    "chest": {
+      "mul": [
+        {
+          "sin": {
+            "phase": true
+          }
+        },
+        {
+          "param": "chest_expand"
+        },
+        {
+          "param": "intensity"
+        }
+      ]
+    },
+    "shoulder": {
+      "mul": [
+        {
+          "sin": {
+            "phase": true
+          }
+        },
+        {
+          "param": "shoulder_rise"
+        },
+        {
+          "param": "intensity"
+        }
+      ]
+    },
+    "sway": {
+      "mul": [
+        {
+          "sin": {
+            "phase": true
+          }
+        },
+        {
+          "param": "weight_shift"
+        },
+        {
+          "param": "intensity"
+        }
+      ]
+    },
+    "arm": {
+      "mul": [
+        {
+          "sin": {
+            "phase": true
+          }
+        },
+        {
+          "param": "arm_sway"
+        },
+        {
+          "param": "intensity"
+        }
+      ]
+    },
+    "arm_r": {
+      "neg": {
+        "signal": "arm"
+      }
+    }
+  },
+  "root": {
+    "dx": {
+      "mul": [
+        {
+          "signal": "sway"
+        },
+        1.5
+      ]
+    },
+    "dy": {
+      "mul": [
+        {
+          "signal": "breath"
+        },
+        -1.2
+      ]
+    }
+  },
+  "offsets": {
+    "front": {
+      "pelvis": {
+        "rib_upper_left": {
+          "x": {
+            "mul": [
+              {
+                "signal": "chest"
+              },
+              -1.2
+            ]
+          }
+        },
+        "rib_upper_right": {
+          "x": {
+            "mul": [
+              {
+                "signal": "chest"
+              },
+              1.2
+            ]
+          }
+        },
+        "rib_lower_left": {
+          "x": {
+            "mul": [
+              {
+                "signal": "chest"
+              },
+              -0.9
+            ]
+          }
+        },
+        "rib_lower_right": {
+          "x": {
+            "mul": [
+              {
+                "signal": "chest"
+              },
+              0.9
+            ]
+          }
+        },
+        "shoulder_left": {
+          "y": {
+            "mul": [
+              {
+                "signal": "shoulder"
+              },
+              -1.2
+            ]
+          }
+        },
+        "shoulder_right": {
+          "y": {
+            "mul": [
+              {
+                "signal": "shoulder"
+              },
+              -1.2
+            ]
+          }
+        },
+        "clavicle_left": {
+          "y": {
+            "mul": [
+              {
+                "signal": "shoulder"
+              },
+              -1.2
+            ]
+          }
+        },
+        "clavicle_right": {
+          "y": {
+            "mul": [
+              {
+                "signal": "shoulder"
+              },
+              -1.2
+            ]
+          }
+        },
+        "pelvis": {
+          "x": {
+            "mul": [
+              {
+                "signal": "sway"
+              },
+              1.2
+            ]
+          }
+        },
+        "hip_left": {
+          "x": {
+            "mul": [
+              {
+                "signal": "sway"
+              },
+              1.2
+            ]
+          }
+        },
+        "hip_right": {
+          "x": {
+            "mul": [
+              {
+                "signal": "sway"
+              },
+              1.2
+            ]
+          }
+        },
+        "iliac_left": {
+          "x": {
+            "mul": [
+              {
+                "signal": "sway"
+              },
+              1.2
+            ]
+          }
+        },
+        "iliac_right": {
+          "x": {
+            "mul": [
+              {
+                "signal": "sway"
+              },
+              1.2
+            ]
+          }
+        }
+      },
+      "arms": {
+        "wrist_left": {
+          "x": {
+            "mul": [
+              {
+                "signal": "arm_r"
+              },
+              3
+            ]
+          },
+          "y": {
+            "mul": [
+              {
+                "signal": "arm_r"
+              },
+              4
+            ]
+          }
+        },
+        "wrist_right": {
+          "x": {
+            "mul": [
+              {
+                "signal": "arm"
+              },
+              3
+            ]
+          },
+          "y": {
+            "mul": [
+              {
+                "signal": "arm"
+              },
+              4
+            ]
+          }
+        }
+      }
+    },
+    "side": {
+      "pelvis": {
+        "rib_front": {
+          "y": {
+            "mul": [
+              {
+                "signal": "chest"
+              },
+              0.8
+            ]
+          }
+        },
+        "rib_rear": {
+          "y": {
+            "mul": [
+              {
+                "signal": "chest"
+              },
+              0.6
+            ]
+          }
+        },
+        "front_shoulder": {
+          "y": {
+            "mul": [
+              {
+                "signal": "shoulder"
+              },
+              -1.2
+            ]
+          }
+        },
+        "rear_shoulder": {
+          "y": {
+            "mul": [
+              {
+                "signal": "shoulder"
+              },
+              -1.0
+            ]
+          }
+        },
+        "clavicle_front": {
+          "y": {
+            "mul": [
+              {
+                "signal": "shoulder"
+              },
+              -1.2
+            ]
+          }
+        },
+        "clavicle_rear": {
+          "y": {
+            "mul": [
+              {
+                "signal": "shoulder"
+              },
+              -1.0
+            ]
+          }
+        }
+      },
+      "arms": {
+        "front_wrist": {
+          "x": {
+            "mul": [
+              {
+                "signal": "arm"
+              },
+              3
+            ]
+          },
+          "y": {
+            "mul": [
+              {
+                "signal": "arm"
+              },
+              2.5
+            ]
+          }
+        },
+        "rear_wrist": {
+          "x": {
+            "mul": [
+              {
+                "signal": "arm_r"
+              },
+              3
+            ]
+          },
+          "y": {
+            "mul": [
+              {
+                "signal": "arm_r"
+              },
+              2.5
+            ]
+          }
+        }
+      }
+    },
+    "back": {
+      "pelvis": {
+        "rib_upper_left": {
+          "x": {
+            "mul": [
+              {
+                "signal": "chest"
+              },
+              -1.2
+            ]
+          }
+        },
+        "rib_upper_right": {
+          "x": {
+            "mul": [
+              {
+                "signal": "chest"
+              },
+              1.2
+            ]
+          }
+        },
+        "rear_shoulder_left": {
+          "y": {
+            "mul": [
+              {
+                "signal": "shoulder"
+              },
+              -1.2
+            ]
+          }
+        },
+        "rear_shoulder_right": {
+          "y": {
+            "mul": [
+              {
+                "signal": "shoulder"
+              },
+              -1.2
+            ]
+          }
+        }
+      },
+      "arms": {
+        "rear_wrist_left": {
+          "x": {
+            "mul": [
+              {
+                "signal": "arm_r"
+              },
+              3
+            ]
+          },
+          "y": {
+            "mul": [
+              {
+                "signal": "arm_r"
+              },
+              4
+            ]
+          }
+        },
+        "rear_wrist_right": {
+          "x": {
+            "mul": [
+              {
+                "signal": "arm"
+              },
+              3
+            ]
+          },
+          "y": {
+            "mul": [
+              {
+                "signal": "arm"
+              },
+              4
+            ]
+          }
+        }
+      }
+    }
+  },
+  "selectors": {
+    "front_leg": {
+      "const": "left"
+    },
+    "foreground_leg": {
+      "const": "front"
+    },
+    "foreground": {
+      "const": "left"
+    }
+  },
+  "ik": {
+    "front": {
+      "legs": {
+        "left": {
+          "hip": "hip_left",
+          "knee": "knee_left",
+          "foot": "ankle_left"
+        },
+        "right": {
+          "hip": "hip_right",
+          "knee": "knee_right",
+          "foot": "ankle_right"
+        }
+      },
+      "arms": {
+        "left": {
+          "shoulder": "shoulder_left",
+          "elbow": "elbow_left",
+          "hand": "wrist_left"
+        },
+        "right": {
+          "shoulder": "shoulder_right",
+          "elbow": "elbow_right",
+          "hand": "wrist_right"
+        }
+      }
+    },
+    "side": {
+      "legs": {
+        "rear": {
+          "hip": "rear_hip",
+          "knee": "rear_knee",
+          "foot": "rear_ankle"
+        },
+        "front": {
+          "hip": "front_hip",
+          "knee": "front_knee",
+          "foot": "front_ankle"
+        }
+      },
+      "arms": {
+        "front": {
+          "shoulder": "front_shoulder",
+          "elbow": "front_elbow",
+          "hand": "front_wrist"
+        },
+        "rear": {
+          "shoulder": "rear_shoulder",
+          "elbow": "rear_elbow",
+          "hand": "rear_wrist"
+        }
+      }
+    },
+    "back": {
+      "legs": {
+        "left": {
+          "hip": "rear_hip_left",
+          "knee": "rear_knee_left",
+          "foot": "rear_ankle_left"
+        },
+        "right": {
+          "hip": "rear_hip_right",
+          "knee": "rear_knee_right",
+          "foot": "rear_ankle_right"
+        }
+      },
+      "arms": {
+        "left": {
+          "shoulder": "rear_shoulder_left",
+          "elbow": "rear_elbow_left",
+          "hand": "rear_wrist_left"
+        },
+        "right": {
+          "shoulder": "rear_shoulder_right",
+          "elbow": "rear_elbow_right",
+          "hand": "rear_wrist_right"
+        }
+      }
+    }
+  },
+  "species": "human"
+}

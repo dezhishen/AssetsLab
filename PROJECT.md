@@ -1,472 +1,112 @@
-# AssetsLab Project
-
-## Working Directory
-
-`D:\Apps\CodeXApp\Tests\AssetsLab`
-
-All project work and project files must be kept within this directory.
-
-## File Naming Convention
-
-Use English names for all files.
-
-## Preview Access Principle
-
-When a developer or reviewer needs to see a generated preview, publish it
-through the Tailscale address of the local preview server. Do not rely on a
-local file link, `localhost`, or a temporary chat attachment as the only
-preview channel. Whenever Tailscale is used, proactively provide the complete
-preview URL in the response. If preview review is not requested or needed, do
-not spend time generating or publishing an additional preview; silent
-headless tests remain sufficient.
-
-## Development Status
-
-Last updated: 2026-07-31.
-
-### Current Production Candidate
-
-- Runtime animation uses synchronized per-frame `Sprite2D` layers in Godot 4.7.
-- The first production experiment remains four directions: front, right, back, left.
-- The verified CC0 RGS modular character is integrated only as an eight-frame
-  right-facing motion reference under `prototype/assets/characters/open_source/`.
-- The next art task is to redraw our own QQTang-style body against the same eight
-  pose phases. The RGS pixels are not the final art style.
-- Hair and clothing remain deferred until the body cycle and anchors are stable.
-- A front/back vertical-walk strip has been generated as a review candidate;
-  it is not wired into the runtime until its motion and head registration pass
-  visual review.
-- Skin-tone variants are produced by deterministic palette remapping. The
-  remapper preserves frame dimensions, alpha, and every occupied coordinate;
-  it changes color only and is currently preview-pipeline-only.
-- The `ai-pixel-art-image-generation` skill is installed from the external
-  GitHub repository and has been used for local pixelization and QA of a new
-  clothed four-direction character experiment. Its online generator remains
-  unavailable in this environment because no provider credentials are set.
-
-### Failed Candidates Retired From Runtime
-
-- `WalkReadyRight` baked training sample: retired because it was a single
-  generated direction and did not provide a coherent four-direction base.
-- Walk-motion proxy and full-walk generated samples: no longer part of the
-  runtime, test runner, or published preview.
-- The first style-update body strip was rejected: its generated frames did not
-  alternate both arms and both legs, so it repeated a same-side motion and was
-  archived without entering the body pipeline.
-- The reusable lesson from these candidates is pose timing and contact-frame
-  structure, not their generated pixels.
-
-### Current TODO and Incomplete Reasons
-
-- **Fix the recommended horizontal base leg depth.** The seventh frame still
-  had the wrong leg above the other after the first correction. The current
-  candidate keeps the same depth through frames 4-7 and returns to the other
-  leg on frame 8. The later
-  `female_adventurer_reference_mannequin_v1_adapted` output is a redraw based on
-  that base, so it inherits the same conceptual error and is not an acceptable
-  replacement. A new `recommended_base_horizontal_layer_fix_v1` candidate now
-  records the alternating front-leg policy, but it remains a visual candidate
-  until the user confirms the overlap at small size.
-- **Review and finalize the vertical front/back body.** The old horizontal
-  adapter offsets `[3,2]` and `[5,3]` caused the vertical candidate head to
-  drift; the runtime now uses `[0,0]` for this normalized candidate, but the
-  body is still visually small and remains a candidate. It cannot be finalized
-  until the new preview is visually reviewed and the body proportion is
-  accepted.
-- **Replace the normal runtime body with the vertical candidate.** Blocked by
-  the item above; technical loading and hidden capture already work.
-- **Add diagonal directions.** Deferred because the four-direction test base,
-  head anchors, and body proportions must stabilize before adding a second
-  direction-registration contract.
-- **Complete online pixel-art skill generation.** The skill is installed and
-  local pixelization/QA works, but its online generator cannot run in this
-  environment until an OpenAI, Azure, or fal.ai provider credential and the
-  corresponding Python client are configured.
-- **Add clothing and hair randomization.** Deferred until the body cycle and
-  vertical/head alignment are accepted; otherwise clothing would hide or
-  amplify unresolved registration errors.
-
-### Skeleton-First Walk Pipeline
-
-The existing generated and redraw body candidates are retained only as
-comparison material. New animation work restarts from a separately verified
-Godot skeleton pipeline at
-`prototype/assets/characters/generated/skeleton_walk_pipeline_v1/`.
-
-Each stage must have its own headless capture and validation gate before the
-next stage begins:
-
-1. front-view static base skeleton: symmetry and shared foot baseline;
-2. front-view eight-frame leg loop: alternating contact/passing poses;
-3. pelvis vertical bob over the accepted leg loop;
-4. opposite arm swing over the accepted pelvis/leg loop;
-5. side-view skeleton and side walk loop;
-6. back-view skeleton and back walk loop;
-7. body blocks, then head and modular character art.
-
-Stages 1–4 passed with `python workflow/tools/assetslab.py stage front skeleton`,
-`python workflow/tools/assetslab.py stage front legs`, and
-`python workflow/tools/assetslab.py stage front pelvis`,
-`python workflow/tools/assetslab.py stage front arms`,
-`python workflow/tools/assetslab.py stage side skeleton`,
-`python workflow/tools/assetslab.py stage side legs`,
-`python workflow/tools/assetslab.py stage side pelvis`, and
-`python workflow/tools/assetslab.py stage side arms`,
-`python workflow/tools/assetslab.py stage back skeleton`, and
-`python workflow/tools/assetslab.py stage back legs`.
+# AssetsLab — 数据驱动角色素材管线
+## 类型声明
+
+`assetslab/models.py` — 完整 Python TypedDict 类型声明，面向人类和 AI 的可读文档。
+定义了 Species → Preset → Motion 三层数据模型及所有 API 响应类型。
+
+## 存储结构
+
+```
+assetslab/
+  species/                    ← 物种（文件夹式，细颗粒度管理）
+    human/                    ← 每个物种一个文件夹
+      skeleton.json           ← 骨骼拓扑：关节、骨骼、链、参数链
+      actions/                ← 动作定义（每动作一个文件）
+        walk.json
+        run.json
+        idle.json
+        jump.json
+        base.json
+  presets/                    ← 体型预设（引用物种）
+    standard.json
+    female.json
+  motions/                    ← [兼容] 旧版动作目录
+```
+
+## API
+
+| 端点 | 说明 |
+|---|---|
+| `GET /api/species` | 扫描 species/ 下所有含 skeleton.json 的文件夹，自动发现 actions/ |
+| `GET /api/species/<id>` | 返回 skeleton.json + actions/ 下所有动作 |
+| `POST /api/species` | 创建物种文件夹 + skeleton.json + actions/ |
+| `PUT /api/species/<id>` | 更新 skeleton.json |
+| `DELETE /api/species/<id>` | 删除整个物种文件夹 |
+| `GET /api/skeletons` | 预设列表 |
+| `GET /api/skeletons/<id>` | 预设详情（自动合并物种骨骼数据） |
+| `POST /api/skeletons/<id>/render` | 骨架预览 |
+| `GET /api/motions` | 从所有物种的 actions/ 扫描动作列表 |
+| `POST /api/motions/<id>/render` | 动作预览 |
+| `GET /api/skeleton3d/<preset_id>?yaw=45` | **3D 骨架**任意视角 PNG（支持 `yaw`/`pitch`/`dist`/`zoom`） |
+| `GET /api/motion3d/<action_id>?yaw=45&gif=1` | **3D 动作**任意视角 PNG/GIF（支持 `yaw`/`pitch`/`dist`/`zoom`/`frame`） |
+
+**3D 相机参数**（角度 + 距离，透视投影）：
+- `yaw` 水平角（0-360，绕 Y 旋转：0=front，90=side，180=back）
+- `pitch` 俯仰角（-60~60，绕 X 旋转，俯视/仰视）
+- `dist` 相机距离（200-1500，透视近大远小）
+- `zoom` 缩放倍率（0.5-2）
+
+前端「🧊 3D 预览」标签页提供 4 个滑块实时调节并自动渲染。
+
+## 3D 架构（阶段 1/2 — 3D 坐标 + 投影）
+
+原 2D 多视图架构（每视图独立坐标/偏移）有冗余与不一致问题。
+新架构引入 **3D 坐标系 + 正交投影**，一套坐标、任意视角。
+
+```
+数据层（3D）
+  species/human/actions3d/*.json   ← 3D 动作（offsets3d 用 x/y/z 轴）
+  presets/*.json（front/side 坐标） ← 自动合成 3D 坐标
+        ↓ build_skeleton_3d()       （x/y 取 front，z 取 side 前后深度）
+3D 骨架 {joint: [x,y,z]}
+        ↓ pose_3d()                 3D 空间应用 offsets3d + 3D IK
+3D 姿势
+        ↓ project()                 绕 Y 轴旋转 + 正交投影（yaw 任意角度）
+2D 屏幕坐标 → render_pose() → PNG/GIF
+```
+
+- `assetslab/skeleton3d.py`：3D 骨架构建、投影、3D 动作引擎（pose_3d）、3D 两骨 IK（pole 定弯曲）
+- 3D 动作：`offsets3d[关节] = {x/y/z 偏移表达式}`，信号 DSL 与 2D 引擎共用（`motion._eval`）
+- 3D IK：`ik3d` 保持骨长，pole 默认 +z（膝朝前）/ -z（肘朝后），超长自动 clamp 脚微离地
+- **任意视角**：yaw=0→front，90→side，180→back，任意角度→斜视角
+- 2D 引擎（`motion.py`）保持零改动，现有动作/验证管线不受影响
+
+阶段 2 已验证：`walk3d` 演示动作在任意视角下前后迈步、抬脚、摆臂协调。
+阶段 3（计划）：3D 动作完全替换 2D（offsets_3d 全面化 + 前端任意视角 UI）。
+
+## 启动
+
+```bash
+cd assetslab/web && npm install && npm run build
+python assetslab/server.py --port 8765
+```
+
+## 架构约束（强制 — 禁止硬编码，数据驱动）
+
+> 本约定为强制约束。任何代码新增/修改都必须遵守，违者视为架构违规。
+
+**核心原则：数据在 JSON，逻辑在引擎，参数化渲染。**
+- 动作 / 骨架 / 体型 / 约束 / 相机 **全部由 JSON 定义**，程序只负责读取并渲染，**禁止在代码中硬编码**任何：
+  - 具体关节名（如 `ankle_left`、`heel_left`、`wrist_left`）—— 关节/链/对一律从骨架 JSON 的 `constraints` 读取
+  - 解剖方向 / 肢体逻辑（如"膝盖朝前"、"脚掌跟踝"）—— 一律数据化为 `constraints.joint_direction` / `rigid_chains` 等
+  - 物种 / 动作路径（如 `human`、`actions3d`）—— 从 `species/` 扫描
+  - 数值常量（画布中心、地面 Y、相机默认值）—— 从 preset 的 `canvas` 读取
+
+**JSON 多层（数据归属）**
+| 层 | 数据 | 存放 |
+|----|------|------|
+| 物种 skeleton.json | 拓扑、`bones_3d`、约束（`rigid_chains`/`symmetry3d`/`coordination`/`joint_direction`/...） | `species/<id>/skeleton.json` |
+| 体型 preset | `positions_3d`（3D 坐标）、`canvas`（画布/地面/中心） | `presets/<id>.json` |
+| 动作 action | `offsets3d`、`root3d`、`ik3d`、`signals`、`params` | `species/<id>/actions3d/<id>.json` |
+
+**引擎只读数据 + 参数**
+- 渲染 = 读取（骨架 JSON + 动作 JSON + 动作参数 + 体型参数 + 相机参数 `yaw/pitch/dist/zoom`）→ 计算 → 输出
+- 引擎不产生新数据语义；若 JSON 缺字段，应回退/报错，**不得在代码里补默认人类值**
 
-Current pause point: front and right-facing side cycles are complete through
-arms; the back view is complete through its eight-frame leg loop. Remaining:
-back pelvis/arms, verified left mirror, four-direction anchor review, neutral
-body blocks, calibrated head attachment, male/female variants, and modular
-random face/hair/clothing layers before BomboAdvanture integration.
+**验证也数据驱动**
+- `verify_motions3d.py` 的检查项（对称对、顺拐对、刚性跟随、脚着地）全部从骨架 `constraints` 读取，禁止硬编码关节名
 
-### Resource Cleanup 2026-07-31
+**已知技术债（待清理，不得新增）**
+- `render.py` 的 `torso_outline_*`（2D 遗留的人类躯干轮廓）与旧 `front_*_pose` 死代码 —— 属旧 2D 层，3D 渲染（`skeleton3d.py`）不使用；后续应删除或数据化
 
-The branch `history0731` contains the rejected AI body/head experiments, the
-external female-adventurer reference package, the intermediate head splits,
-and the Skeleton2D feasibility experiment. They remain available for audit but
-are not part of the active main-line asset set.
 
-The main line retains the calibrated `rebuild_atlas_v1_runtime/male` head, the
-recommended base walk reference, the latest redraw adapter as a comparison
-fixture, the milestone pose contract, and the default runtime regression
-fixture.
-
-The HTML preview pipeline was removed: `prototype/` is now a pure Godot demo
-that reuses the exported artifact package (`dist/<workflow_id>/`) produced by
-the workflow's final 「导出 Godot 制品」 step. Run it with
-`godot --path prototype -- --artifacts dist/<workflow_id>`.
-
-### Recommended Body Resource
-
-The recommended base for new horizontal walk work is the original neutral
-walk reference, not the later redraw adapter:
-
-`prototype/assets/characters/walk_base/walk-base-4way-male-4frame-sheet.png`
-
-For the current eight-frame horizontal experiment, the corrected candidate is:
-
-`prototype/assets/characters/generated/recommended_base_horizontal_layer_fix_v1/`
-
-Its fourth/fifth transition frames explicitly switch the nearer leg to the
-front layer. The layer rule is also recorded in
-`prototype/assets/characters/limb_puzzle.json`. The old eight-frame redraw
-reference remains available here for comparison only:
-
-`prototype/assets/characters/generated/female_adventurer_reference_mannequin_v1/`
-
-It is not the recommended base and must not be promoted until the horizontal
-leg-depth issue is resolved.
-
-The first adapter output is generated under
-`prototype/assets/characters/generated/female_adventurer_reference_mannequin_v1_adapted/`.
-It removes the provisional generated head below `body_cut_y: 30`, then uses
-the calibrated head layers unchanged. Validate it with
-`python workflow/tools/assetslab.py test --rebuild-head` and
-`python workflow/tools/assetslab.py capture-walk --rebuild-head --latest-generated-body` before replacing
-the normal layered runtime.
-
-### Vertical Motion Candidate
-
-The missing front/back vertical motion is staged under:
-
-`prototype/assets/characters/generated/body_vertical_update_v1/`
-
-Its `front_source.png` and `back_source.png` are the generated 8-frame strips;
-`runtime/front_frames/` and `runtime/back_frames/` are normalized 64 x 64
-candidate frames with a shared foot baseline at y=60. They are intentionally
-separate from the authoritative body adapter. Build or rebuild them with:
-
-`python workflow/tools/build_body_vertical_update.py`
-
-The candidate can be tested headlessly with
-`python workflow/tools/assetslab.py test --rebuild-head --vertical-candidate`, or captured as
-an isolated front/back loop with
-`python workflow/tools/assetslab.py capture-walk --rebuild-head --vertical-candidate --vertical-only`.
-
-The front/back free reference inputs used for timing are retained at
-`third_party/female_adventurer_free_reference/The Female Adventurer - Free/Walk/`.
-The complete reference package, including diagonal strips, remains available
-on `history0731` for later evaluation. The first production target remains
-four directions, so diagonals do not introduce a second registration contract
-before the current cycle is stable.
-
-### Structure-Preserving Skin Palettes
-
-`workflow/tools/recolor_body_palettes.py` creates `light`, `warm`, and `deep` preview
-variants below:
-
-`prototype/assets/characters/generated/female_adventurer_reference_mannequin_v1_adapted/skin_palette_variants_v1/`
-
-The input is the authoritative 32-frame body adapter. The tool performs a
-semantic tone lookup only; it does not resize, crop, mirror, or redraw frames.
-It fails if the alpha mask changes, which keeps future clothing and attachment
-anchors independent of skin color. Run it with:
-
-`python workflow/tools/recolor_body_palettes.py`
-
-These variants are not yet selected by Godot because appearance selection and
-the eventual clothing layer contract are still undecided.
-
-All earlier body resources are marked problematic and must not be used as
-production-art inputs: the default `chibi`/`chibi_compact` body, the
-`rebuild_body_v2`, `rebuild_body_v5_rgs`, and `rebuild_body_v6_bombo`
-candidates, the older outline/body candidates, and the archived v3/v4 body
-experiments. They may remain temporarily for regression comparison only.
-
-`prototype/assets/characters/limb_puzzle.json` remains the motion and layer
-ordering contract; it is not an alternative body artwork source.
-
-### Verification Progress
-
-- Random appearance package: passed with deterministic seed validation.
-- Godot 4.7 import and smoke tests: passed.
-- RGS reference loading: passed with eight runtime frames.
-- Hidden W/A/S/D capture: passed with 36 frames and GIF conversion.
-- GitHub synchronization: `main` and `history0731` are synchronized with GitHub.
-
-## Art Experiment Workflow
-
-### Current Direction Decision
-
-Use four directions for the first production experiment: front, right, back, and left. This keeps directional alignment, collision footprint, and modular attachment points easier to control. Expand to eight directions only after the four-direction base is validated.
-
-### Character Architecture
-
-Build one shared modular geometry standard with two presentation variants:
-
-- Male-presenting base: shared head/body proportions with masculine styling layers.
-- Female-presenting base: the same canvas, scale, baseline, collision footprint, and attachment points, with subtle feminine proportion cues.
-
-Keep gender presentation out of the neutral mannequin wherever possible. Treat blush as an independent female face-layer marker that can be enabled or replaced later.
-
-### Completed Steps
-
-1. Created front-facing visual anchors for the male-presenting and female-presenting variants.
-2. Created four-direction neutral mannequin sheets for both variants. Each sheet includes full-body turns plus separate head-only and body-only turn rows.
-
-The neutral base has no hair, ears, eyes, nose, mouth, clothing, underwear, accessories, or anatomical detail. The head is intentionally oversized in the QQTang/Q-style proportion, with a compact body beneath it. The front-facing anchors may include eyes and clothing for visual design reference, but no nose or mouth.
-
-### Generated Assets
-
-- `references/front-character-anchor.png` - male-presenting front design anchor.
-- `references/front-character-anchor-female.png` - female-presenting front design anchor with detachable blush marker.
-- `references/base-mannequin-4way-sheet.png` - male-presenting neutral four-direction base sheet.
-- `references/base-mannequin-4way-female-sheet.png` - female-presenting neutral four-direction base sheet.
-- `prototype/assets/characters/walk_base/walk-base-4way-male-4frame-sheet.png` - male-presenting neutral four-direction walk-cycle reference.
-- `prototype/assets/characters/walk_base/walk-base-4way-female-4frame-sheet.png` - female-presenting neutral four-direction walk-cycle reference.
-- `prototype/assets/characters/generated/character_turnaround_v1_male.png` - first male-presenting four-direction character turnaround generated from the male front anchor.
-- `prototype/assets/characters/generated/character_head_rebuild_v1_male.png` - clean head-only four-direction reference used to begin component reconstruction.
-- `prototype/assets/characters/generated/recommended_base_horizontal_layer_fix_v1/` - current horizontal leg-occlusion correction candidate derived from the recommended base.
-- `prototype/assets/characters/generated/female_adventurer_reference_mannequin_v1/` - older eight-frame redraw reference retained for comparison only.
-- `prototype/assets/characters/generated/skill_pixel_art_experiment_v1/` - isolated four-direction clothed character style experiment; not runtime art.
-- `prototype/assets/characters/generated/neutral_face_base_rebuild_v1_male.png` - independently generated featureless four-direction face base.
-- `prototype/assets/characters/generated/facial_feature_atlas_rebuild_v1_male.png` - independently generated eyes, eyebrows, and ears atlas.
-- `prototype/assets/characters/generated/hair_atlas_rebuild_v1_male.png` - independently generated hair atlas, currently provisional because its fit still needs anchor correction.
-- `prototype/assets/characters/rebuild_atlas_v1/` - fixed-frame components produced from the independent base and feature atlases.
-- `prototype/assets/characters/rebuild_atlas_v1_runtime/male/` - 64 x 64 runtime sheets used by the silent `--rebuild-head` Godot test; hair is intentionally excluded until its fit is approved.
-
-The head rebuild separates the problem from body and clothing occlusion. The
-current preferred direction is independent reconstruction: the neutral face
-base, facial feature atlas, and hair atlas are generated as separate inputs.
-All component layers use one union frame per direction; they must not be
-scaled independently. `rebuild_atlas_v1` remains a reference reconstruction
-until the component edges and attachment anchors receive manual art review.
-
-The Godot smoke test can load the reconstructed face layers with
-`python workflow/tools/assetslab.py test --rebuild-head`. It reuses the existing body and
-walk animation, repeats the static reconstructed face across eight body frames,
-and leaves hair disabled while its coverage is being corrected.
-
-### Anchor-Based Component Registration
-
-Runtime component placement now uses `head_contour_anchors_v1` in
-`rebuild_atlas_v1_runtime/male/runtime_manifest.json`. The neutral head alpha
-provides the direction-specific contour, center, top, neck, and side-edge
-anchors. Face and ear layers declare their target anchors in the same 64 x 64
-runtime space, and the builder computes the required registration shift from
-the component alpha center. Front and rear ears use separate left/right
-anchors; side views use one visible-ear anchor. This is the intended contract
-for future hair and clothing layers.
-
-The reconstructed runtime keeps the Godot movement rows explicit: row 1 is the
-right-facing base and row 3 is the left-facing base. The detachable side face
-and ear sources are exchanged 2/4 at build time without an additional
-horizontal mirror, because the generated source atlas had those side features
-reversed.
-
-### Appearance Pipeline Status
-
-The first deterministic appearance pass is now implemented after reviewing the
-`test_gen_human` branch of the BomboAdvanture reference project. AssetsLab
-adopts its useful ideas—stable seeds, component manifests, and direction-aware
-draw layers—while keeping the current 64 x 64, 4 x 8 runtime format.
-
-- `ears` and `eyes/optional_blush` are independent runtime layers.
-- Eight face/ear combinations are generated offline and indexed by one
-  `appearance_seed`.
-- The first pass places these overlays on the front direction only. Side and
-  rear views remain transparent until direction-specific ear/face art is ready.
-- Nose and mouth are explicitly excluded from the manifest and generated
-  layers.
-- Hair and clothing remain deferred; clothing will be introduced as complete
-  outfit kits first, then split into replacement slots after alignment is
-  proven.
-
-The image generation step is offline. Godot only selects already processed
-assets at runtime, so gameplay remains deterministic and does not depend on an
-AI service.
-
-## Walking Base Execution Plan
-
-### Authoritative Limb-Puzzle Contract
-
-The user-authored rectangle pose contract is the source of truth for the
-right-facing body redraw. It exists to prevent image generation from guessing
-which projected arm or leg is visible, and to make the intended occlusion
-explicit before any final pixels are drawn.
-
-- Source: `prototype/assets/characters/limb_puzzle.json`
-- Schema: `limb_puzzle_v1`; 64 x 64 cells, eight walk frames in the order
-  `contact_a`, `down_a`, `passing_a`, `up_a`, `contact_b`, `down_b`,
-  `passing_b`, `up_b`.
-- Every frame stores `left_hand`, `right_hand`, `left_foot`, and `right_foot`
-  as independent rectangles with `x`, `y`, `w`, `h`, `angle`, and `z_order`.
-- The current approved occlusion relationship is fixed: `left_hand` and
-  `left_foot` use `z_order: 9` (behind torso), torso uses `z_order: 10`, and
-  `right_hand` and `right_foot` use `z_order: 11` (in front of torso).
-- The rectangle positions and layer order are mandatory pose input. A body
-  generation must render all four limbs from this contract; it must not hide a
-  rear limb merely because the body is right-facing. Pixel-level registration
-  may be refined, but the front/back relationship must not be inferred anew.
-
-`workflow/tools/render_limb_puzzle_guide.py` renders this contract as a 2 x 4 layout
-guide.
-
-### Animation Specification
-
-- Direction set: front, right, back, left.
-- First cycle: eight frames per direction.
-- Frame order: left contact, passing, right contact, passing.
-- Motion: small readable leg stride, opposite arm swing, restrained body bob, and a stable head anchor.
-- Layout: one 4 x 8 sheet per presentation variant; rows are directions and columns are frames.
-- Base content: no hair, ears, eyes, nose, mouth, clothing, underwear, accessories, or anatomical detail.
-- Runtime composition: shared `Torso`, `Arms`, `LowerBody`, and `Feet` layers, plus a male or female blank-head layer. Female blush remains a separate optional face overlay.
-
-### Execution Steps
-
-1. Use the verified RGS eight-frame cycle as a pose and timing reference.
-2. Redraw a male-presenting QQTang-style body for the eight phases while preserving shared frame bounds, baseline, head anchor, and collision footprint.
-3. Validate the right-facing body in hidden Godot capture before creating the mirrored left-facing body.
-4. Draw front and back cycles separately, then attach the existing head/ear anchors and validate the complete four-direction loop.
-5. Only after the base cycle is accepted should hair, clothing, and randomization consume its slots.
-
-### Acceptance Criteria
-
-The walk must read clearly at small size, loop without a visible pop, keep the head from drifting, avoid foot sliding at contact poses, and remain visually compatible with the standing mannequin sheets.
-
-### Generation Tool
-
-The current raster assets were generated with the built-in `image_gen` workflow and copied into this project directory for reuse.
-
-## Godot Integration Notes
-
-### Target Engine
-
-The target runtime is Godot 4.7. The reference checkout at `../BomboAdvantureRef` currently declares Godot 4.7 in its `project.godot`, so engine-version compatibility must be verified before importing these assets into the game project. Do not upgrade the project implicitly during asset work.
-
-### Recommended Runtime Structure
-
-Use one gameplay root and one synchronized visual stack:
-
-- `CharacterBody2D` or the project's existing character root handles movement and collision.
-- A `CharacterVisual` child owns the visual layers.
-- Each layer is a `Sprite2D` using the same cell size, origin, 4-column frame grid, and 4-row direction grid.
-- Suggested layers: `Feet`, `LowerBody`, `Arms`, `Torso`, `Ear`, `Head`, `Face`, `Hair`, `Clothing`, and optional `Accessory`.
-- The reference BomboAdvanture assets use per-component walk textures. The prototype keeps eight stronger keyframes and applies one synchronized frame index to every layer.
-- Head motion currently uses a fixed shared anchor; source-frame registration must be stable before adding any bob or clothing offsets.
-- One controller stores `direction` and `walk_frame`, then applies the same `frame_coords` to every layer. This prevents random layers from drifting out of sync.
-- Use `AnimatedSprite2D` with `SpriteFrames` when a character is already flattened into a single composite animation.
-
-This layered `Sprite2D` approach is preferred for the planned random face, hair, and clothing system. Godot 4.7 supports sprite-sheet regions and frame coordinates on `Sprite2D`, while `AnimatedSprite2D` is better suited to a preassembled frame list.
-
-### Asset Handoff Rule
-
-The source walk sheets are reference sheets, not runtime-ready atlases: they contain a neutral background and guide grid. The processor isolates each cell, removes the guide/background, preserves one fixed registration box per direction, and exports layer-specific sheets before Godot import.
-
-Recommended animation names are `idle_front`, `idle_right`, `idle_back`, `idle_left`, `walk_front`, `walk_right`, `walk_back`, and `walk_left`. The current runtime walk cycle uses eight frames per `walk_*` animation. The RGS reference is loaded only with `--rgs-walk-reference` in the silent test/capture pipeline.
-
-## Minimal Prototype Status
-
-The current runtime processing pass is complete for the QQTang-style neutral layers:
-
-- The generated 4 x 8 sheets are split into 64 x 64 runtime cells with a 52-pixel subject envelope and a shared foot baseline.
-- Magenta background was removed with local image processing; adjacent neutral layers overlap slightly at seams to prevent gaps.
-- Transparent `Torso`, `Arms`, `LowerBody`, `Feet`, male-head, and female-head atlases, individual frames, and a JSON manifest were created under `prototype/assets/characters/chibi/`.
-- The generated `chibi_compact` variant is kept beside the default assets for comparison; it is selected only with the `--compact` test argument.
-- `prototype/` contains a UI-free Godot test project with movement, collision walls, eight-frame four-direction walk animation, and a simplified bomb fuse/blast feedback.
-- The same prototype can select the female base with the `--female` command-line argument.
-
-### Silent Verification
-
-The Godot 4.7 console executable can be selected from `--godot`, the `GODOT_BIN`/`GODOT_PATH` environment variable, `godot`/`godot4` on `PATH`, or the legacy sibling directory `Godot-4.7`. The resolver accepts only a `_console.exe` binary for automated work; when no unambiguous console sibling exists it fails rather than falling back to a GUI executable. Automated capture also uses `--headless` and hidden process windows, so preview generation must not open the editor or game UI.
-
-Verified commands:
-
-- headless project import: passed;
-- male smoke test: `SMOKE_TEST_PASS`;
-- female smoke test: `SMOKE_TEST_PASS`;
-- two-second headless main-scene launch: passed.
-
-The current prototype validates the movement and modular asset handoff path,
-the deterministic face/ear layer, and the isolated RGS walk reference. It is not
-yet the production character system and does not include random hair or clothing.
-
-### Prototype Iteration 1 Fixes
-
-- Corrected the generated side-view row mapping so left and right movement face the expected direction.
-- Switched runtime playback to isolated 64 x 64 frame PNGs, preventing adjacent-frame bleed and the stray head fragment visible when moving upward.
-- Replaced the small-head source with a QQTang-style oversized head, removed ears from every directional view, and split the runtime into four neutral body slots plus male/female head layers.
-- Confirmed that the walk timer advances the actual texture frame while movement continues.
-- Reprocessed transparent frames with edge-color extrusion to reduce filtered halos and particle-like edge noise.
-
-### Prototype Iteration 2 Registration Pass
-
-- Replaced per-frame foreground cropping and resizing with one fixed union registration box per direction, shared by every visual layer.
-- Tightened magenta removal so dark-magenta background pixels cannot become one-frame foreground noise.
-- Removed runtime head bob until the source poses and seam anchors are stable.
-- Preserved the current walk phase when movement stops, preventing a visible reset to frame zero.
-- Added `workflow/tools/validate_chibi_frames.py` to check 64 x 64 frame size, layer seams, and foot baseline before headless tests; it validates 192 frames across six layers.
-
-### Prototype Iteration 3 Outfit-Ready Layers
-
-- Split the neutral mannequin into `Torso`, `Arms`, `LowerBody`, and `Feet` slots with deliberate seam overlap.
-- Kept the old `body` and `leg` files as legacy outputs; the runtime now uses the five-layer stack so future clothing can replace or cover individual regions.
-- Added `--compact` to the headless runner and GIF capture so candidate walk sources can be evaluated without changing the default runtime assets.
-
-### Automated Visual Capture
-
-`python workflow/tools/assetslab.py capture-walk` runs `prototype/tests/capture_test.gd` with internal W/A/S/D key events, captures the rendered viewport at 12 FPS, and uses the local Pillow tool environment to produce a GIF. Add `--rgs-walk-reference` to capture `movement_rgs_reference.gif`. Godot is launched with `--headless` and the Windows/OpenGL renderer so the viewport remains readable while no editor or game window is created.
-
-`python workflow/tools/assetslab.py test` runs the male smoke test and optionally the female smoke test with `--headless`; add `--compact` to test the compact asset variant. Set `GODOT_BIN` (or `GODOT_PATH`) or pass `--godot` when Godot is installed in a different directory.
-
-`workflow/tools/process_face_variants.py` converts the image-generated face and ear
-reference sheets into transparent 64 x 64 layers and writes
-`prototype/assets/characters/faces/face_manifest.json`. Use
-`--appearance-seed 12345` with the headless runner to verify a repeatable
-appearance selection.
-
-The random appearance test package is generated at each test startup under
-`prototype/test_output/random_appearance/`. It contains composited 4 x 8
-runtime frames and a manifest, and is ignored by Git. The package uses the same
-seed passed to Godot, so the generated preview and the original movement/GIF
-test exercise the same face, ears, and base layers.
-
-The fixed fitting candidate is stored under
-`prototype/assets/characters/base_features_v1/`. It is generated with
-direction-aware 4 x 8 frames and per-frame registration against the existing
-head alpha bounds. It is intentionally marked `randomization_ready: false`;
-random variants should only consume it after the base movement GIF is accepted.
-
-`python workflow/tools/assetslab.py capture-walk` resolves Python from `--python`, `PYTHON_BIN`, PATH, or the local `.venv`/sibling fallback. Pillow is required for GIF conversion.

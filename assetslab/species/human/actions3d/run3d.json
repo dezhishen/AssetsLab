@@ -1,0 +1,74 @@
+{
+  "schema": "assetslab_motion3d_v1",
+  "motion_id": "run3d",
+  "title": "Run 3D — 弹跳跑步",
+  "description": "3D 跑步：大步跨、腾空、提膝、后撩、前倾、对侧摆臂。躯干扭转完整跟随。",
+  "species": "human",
+  "frame_count": 8,
+  "params": {
+    "intensity": {"default": 1.0, "min": 0.0, "max": 1.5, "label": "力度协调"},
+    "stride": {"default": 1.0, "min": 0.0, "max": 2.0, "label": "步幅"},
+    "flight": {"default": 1.0, "min": 0.0, "max": 2.0, "label": "腾空"},
+    "knee_drive": {"default": 1.0, "min": 0.0, "max": 2.0, "label": "提膝"},
+    "heel_kick": {"default": 1.0, "min": 0.0, "max": 2.0, "label": "后撩"},
+    "torso_lean": {"default": 1.0, "min": 0.0, "max": 2.0, "label": "前倾"},
+    "arm_swing": {"default": 1.0, "min": 0.0, "max": 2.0, "label": "摆臂"}
+  },
+  "signals": {
+    "phase": {"phase": true},
+    "swing": {"mul": [{"sin": {"phase": true}}, {"param": "stride"}, {"param": "intensity"}]},
+    "bob": {"mul": [{"cos": {"mul": [{"phase": true}, 2.0]}}, {"param": "flight"}, {"param": "intensity"}, 8.0]},
+    "sway": {"mul": [{"sin": {"phase": true}}, {"param": "intensity"}]},
+    "lean": {"mul": [{"param": "torso_lean"}, {"param": "intensity"}]},
+    "arm": {"mul": [{"sin": {"phase": true}}, {"param": "arm_swing"}, {"param": "intensity"}]},
+    "arm_r": {"neg": {"signal": "arm"}},
+    "flight_l": {"mul": [{"table": [0.5, 0.7, 0.5, 0.15, 0.05, 0.2, 0.5, 0.7]}, {"param": "intensity"}]},
+    "drive_l": {"mul": [{"table": [0.5, 0.8, 0.5, 0.15, 0.0, 0.05, 0.15, 0.3]}, {"param": "intensity"}]},
+    "kick_l": {"mul": [{"table": [0.0, 0.0, 0.05, 0.0, 0.05, 0.3, 0.7, 0.5]}, {"param": "intensity"}]},
+    "flight_r": {"mul": [{"table": [0.05, 0.2, 0.5, 0.7, 0.5, 0.7, 0.5, 0.15]}, {"param": "intensity"}]},
+    "drive_r": {"mul": [{"table": [0.0, 0.05, 0.15, 0.3, 0.5, 0.8, 0.5, 0.15]}, {"param": "intensity"}]},
+    "kick_r": {"mul": [{"table": [0.05, 0.3, 0.7, 0.5, 0.0, 0.0, 0.05, 0.0]}, {"param": "intensity"}]}
+  },
+  "root3d": {
+    "y": {"neg": {"signal": "bob"}},
+    "z": {"mul": [{"signal": "lean"}, 6]}
+  },
+  "offsets3d": {
+    "ankle_left": {
+      "z": {"mul": [{"signal": "swing"}, 26]},
+      "y": {"mul": [{"add": [{"mul": [{"signal": "flight_l"}, {"param": "flight"}]}, {"mul": [{"signal": "drive_l"}, {"param": "knee_drive"}]}, {"mul": [{"signal": "kick_l"}, {"param": "heel_kick"}]}]}, -14]}
+    },
+    "ankle_right": {
+      "z": {"mul": [{"neg": {"signal": "swing"}}, 26]},
+      "y": {"mul": [{"add": [{"mul": [{"signal": "flight_r"}, {"param": "flight"}]}, {"mul": [{"signal": "drive_r"}, {"param": "knee_drive"}]}, {"mul": [{"signal": "kick_r"}, {"param": "heel_kick"}]}]}, -14]}
+    },
+    "pelvis": {"x": {"mul": [{"signal": "sway"}, 3]}},
+    "hip_left": {"x": {"mul": [{"signal": "sway"}, 3]}},
+    "hip_right": {"x": {"mul": [{"signal": "sway"}, 3]}},
+    "waist": {"x": {"mul": [{"signal": "sway"}, -2]}},
+    "abdomen": {"x": {"mul": [{"signal": "sway"}, -2]}},
+    "sternum": {"x": {"mul": [{"signal": "sway"}, -2.5]}},
+    "chest": {"x": {"mul": [{"signal": "sway"}, -3]}},
+    "upper_chest": {"x": {"mul": [{"signal": "sway"}, -3]}},
+    "neck": {"x": {"mul": [{"signal": "sway"}, -3]}},
+    "head": {"x": {"mul": [{"signal": "sway"}, -3]}},
+    "clavicle_left": {"x": {"mul": [{"signal": "sway"}, -3]}},
+    "clavicle_right": {"x": {"mul": [{"signal": "sway"}, -3]}},
+    "rib_upper_left": {"x": {"mul": [{"signal": "sway"}, -3]}},
+    "rib_upper_right": {"x": {"mul": [{"signal": "sway"}, -3]}},
+    "rib_lower_left": {"x": {"mul": [{"signal": "sway"}, -3]}},
+    "rib_lower_right": {"x": {"mul": [{"signal": "sway"}, -3]}},
+    "shoulder_left": {"z": {"mul": [{"signal": "arm_r"}, 7]}},
+    "shoulder_right": {"z": {"mul": [{"signal": "arm"}, 7]}},
+    "wrist_left": {"z": {"mul": [{"signal": "arm_r"}, 20]}, "y": {"mul": [{"signal": "arm_r"}, -8]}},
+    "wrist_right": {"z": {"mul": [{"signal": "arm"}, 20]}, "y": {"mul": [{"signal": "arm"}, -8]}}
+  },
+  "ik3d": {
+    "chains": [
+      {"root": "hip_left", "mid": "knee_left", "tip": "ankle_left"},
+      {"root": "hip_right", "mid": "knee_right", "tip": "ankle_right"},
+      {"root": "shoulder_left", "mid": "elbow_left", "tip": "wrist_left", "pole": [0.0, 0.0, -1.0]},
+      {"root": "shoulder_right", "mid": "elbow_right", "tip": "wrist_right", "pole": [0.0, 0.0, -1.0]}
+    ]
+  }
+}

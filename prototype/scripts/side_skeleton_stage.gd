@@ -14,6 +14,8 @@ func side_base_points() -> Dictionary:
 		"head": Vector2(ROOT_X, 150.0),
 		"face_forward": Vector2(548.0, 150.0),
 		"neck": Vector2(ROOT_X, 238.0),
+		"chest": Vector2(ROOT_X, 268.0),
+		"waist": Vector2(ROOT_X, 306.0),
 		"pelvis": Vector2(ROOT_X, 350.0),
 		"rear_shoulder": Vector2(462.0, 264.0),
 		"front_shoulder": Vector2(498.0, 258.0),
@@ -61,7 +63,9 @@ func _draw() -> void:
 	draw_colored_polygon(PackedVector2Array([Vector2(548.0, 150.0), Vector2(534.0, 142.0), Vector2(534.0, 158.0)]), Color("a9e8c3"))
 
 	_draw_bone(points["head"], points["neck"], BONE_COLOR)
-	_draw_bone(points["neck"], points["pelvis"], BONE_COLOR)
+	_draw_bone(points["neck"], points["chest"], BONE_COLOR)
+	_draw_bone(points["chest"], points["waist"], BONE_COLOR)
+	_draw_bone(points["waist"], points["pelvis"], BONE_COLOR)
 	draw_arc(points["head"], 68.0, 0.0, TAU, 48, BONE_COLOR, 4.0, true)
 	_draw_limb(points, "rear", REAR_COLOR)
 	_draw_limb(points, "front", FRONT_COLOR)

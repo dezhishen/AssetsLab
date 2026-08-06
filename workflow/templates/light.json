@@ -1,6 +1,0 @@
-{
-  "template_id": "light",
-  "title": "轻快小步",
-  "description": "小步幅、高频率感、活泼摆臂，参考轻快/敏捷角色的碎步行走。",
-  "params": {"stride": 0.8, "pelvis_bob": 1.1, "arm_swing": 1.3}
-}

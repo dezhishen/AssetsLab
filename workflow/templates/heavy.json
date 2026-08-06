@@ -1,6 +1,0 @@
-{
-  "template_id": "heavy",
-  "title": "沉稳重步",
-  "description": "大步幅 + 深骨盆起伏 + 收住摆臂，参考重装/大型角色的沉重步伐。",
-  "params": {"stride": 1.6, "pelvis_bob": 1.8, "arm_swing": 0.9}
-}

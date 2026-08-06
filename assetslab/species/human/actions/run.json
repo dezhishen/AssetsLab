@@ -1,0 +1,997 @@
+{
+  "schema": "assetslab_motion_v1",
+  "motion_id": "run",
+  "title": "Run — 弹跳跑步循环",
+  "description": "带腾空相的跑步循环：双脚离地（腾空），前摆高抬膝、后摆脚跟后撩，骨盆起伏大于行走，上身前倾，屈肘约 90° 摆臂。",
+  "frame_count": 8,
+  "params": {
+    "intensity": {
+      "default": 1.0,
+      "min": 0.0,
+      "max": 1.5,
+      "step": 0.05,
+      "label": "力度协调",
+      "desc": "主参数：协调腾空/提膝/摆臂等整体强度"
+    },
+    "stride": {
+      "default": 1.0,
+      "min": 0.0,
+      "max": 2.0,
+      "step": 0.05,
+      "label": "步幅",
+      "desc": "腿部前后跨步幅度（大于行走）"
+    },
+    "flight": {
+      "default": 1.0,
+      "min": 0.0,
+      "max": 2.0,
+      "step": 0.05,
+      "label": "腾空",
+      "desc": "身体垂直起伏 + 脚离地高度（腾空相）"
+    },
+    "knee_drive": {
+      "default": 1.0,
+      "min": 0.0,
+      "max": 2.0,
+      "step": 0.05,
+      "label": "提膝",
+      "desc": "前摆高抬膝（驱动脚前送高度）"
+    },
+    "heel_kick": {
+      "default": 1.0,
+      "min": 0.0,
+      "max": 2.0,
+      "step": 0.05,
+      "label": "后撩",
+      "desc": "后摆脚跟撩起高度（支撑腿蹬地）"
+    },
+    "torso_lean": {
+      "default": 1.0,
+      "min": 0.0,
+      "max": 2.0,
+      "step": 0.05,
+      "label": "前倾",
+      "desc": "上身前倾幅度（跑步动态平衡，大于行走）"
+    },
+    "arm_swing": {
+      "default": 1.0,
+      "min": 0.0,
+      "max": 2.0,
+      "step": 0.05,
+      "label": "摆臂",
+      "desc": "摆臂幅度（屈肘约 90°，肩部带动）"
+    }
+  },
+  "signals": {
+    "phase": {
+      "phase": true
+    },
+    "swing": {
+      "mul": [
+        {
+          "sin": {
+            "phase": true
+          }
+        },
+        {
+          "param": "stride"
+        },
+        {
+          "param": "intensity"
+        }
+      ]
+    },
+    "swing_r": {
+      "neg": {
+        "signal": "swing"
+      }
+    },
+    "bob": {
+      "mul": [
+        {
+          "cos": {
+            "mul": [
+              {
+                "phase": true
+              },
+              2.0
+            ]
+          }
+        },
+        {
+          "param": "flight"
+        },
+        {
+          "param": "intensity"
+        },
+        8.0
+      ]
+    },
+    "sway": {
+      "mul": [
+        {
+          "sin": {
+            "phase": true
+          }
+        },
+        {
+          "param": "intensity"
+        }
+      ]
+    },
+    "lean": {
+      "mul": [
+        {
+          "param": "torso_lean"
+        },
+        {
+          "param": "intensity"
+        }
+      ]
+    },
+    "arm": {
+      "mul": [
+        {
+          "sin": {
+            "phase": true
+          }
+        },
+        {
+          "param": "arm_swing"
+        },
+        {
+          "param": "intensity"
+        }
+      ]
+    },
+    "arm_r": {
+      "neg": {
+        "signal": "arm"
+      }
+    },
+    "flight_l": {
+      "mul": [
+        {
+          "table": [
+            0.5,
+            0.7,
+            0.5,
+            0.15,
+            0.05,
+            0.2,
+            0.5,
+            0.7
+          ]
+        },
+        {
+          "param": "intensity"
+        }
+      ]
+    },
+    "drive_l": {
+      "mul": [
+        {
+          "table": [
+            0.5,
+            0.8,
+            0.5,
+            0.15,
+            0.0,
+            0.05,
+            0.15,
+            0.3
+          ]
+        },
+        {
+          "param": "intensity"
+        }
+      ]
+    },
+    "kick_l": {
+      "mul": [
+        {
+          "table": [
+            0.0,
+            0.0,
+            0.05,
+            0.0,
+            0.05,
+            0.3,
+            0.7,
+            0.5
+          ]
+        },
+        {
+          "param": "intensity"
+        }
+      ]
+    },
+    "flight_r": {
+      "mul": [
+        {
+          "table": [
+            0.05,
+            0.2,
+            0.5,
+            0.7,
+            0.5,
+            0.7,
+            0.5,
+            0.15
+          ]
+        },
+        {
+          "param": "intensity"
+        }
+      ]
+    },
+    "drive_r": {
+      "mul": [
+        {
+          "table": [
+            0.0,
+            0.05,
+            0.15,
+            0.3,
+            0.5,
+            0.8,
+            0.5,
+            0.15
+          ]
+        },
+        {
+          "param": "intensity"
+        }
+      ]
+    },
+    "kick_r": {
+      "mul": [
+        {
+          "table": [
+            0.05,
+            0.3,
+            0.7,
+            0.5,
+            0.0,
+            0.0,
+            0.05,
+            0.0
+          ]
+        },
+        {
+          "param": "intensity"
+        }
+      ]
+    }
+  },
+  "root": {
+    "dx": {
+      "mul": [
+        {
+          "signal": "lean"
+        },
+        5
+      ]
+    },
+    "dy": {
+      "neg": {
+        "signal": "bob"
+      }
+    }
+  },
+  "offsets": {
+    "front": {
+      "legs": {
+        "ankle_left": {
+          "y": {
+            "mul": [
+              {
+                "add": [
+                  {
+                    "mul": [
+                      {
+                        "signal": "flight_l"
+                      },
+                      {
+                        "param": "flight"
+                      }
+                    ]
+                  },
+                  {
+                    "mul": [
+                      {
+                        "signal": "drive_l"
+                      },
+                      {
+                        "param": "knee_drive"
+                      }
+                    ]
+                  },
+                  {
+                    "mul": [
+                      {
+                        "signal": "kick_l"
+                      },
+                      {
+                        "param": "heel_kick"
+                      }
+                    ]
+                  }
+                ]
+              },
+              -13
+            ]
+          }
+        },
+        "ankle_right": {
+          "y": {
+            "mul": [
+              {
+                "add": [
+                  {
+                    "mul": [
+                      {
+                        "signal": "flight_r"
+                      },
+                      {
+                        "param": "flight"
+                      }
+                    ]
+                  },
+                  {
+                    "mul": [
+                      {
+                        "signal": "drive_r"
+                      },
+                      {
+                        "param": "knee_drive"
+                      }
+                    ]
+                  },
+                  {
+                    "mul": [
+                      {
+                        "signal": "kick_r"
+                      },
+                      {
+                        "param": "heel_kick"
+                      }
+                    ]
+                  }
+                ]
+              },
+              -13
+            ]
+          }
+        }
+      },
+      "pelvis": {
+        "pelvis": {
+          "x": {
+            "mul": [
+              {
+                "signal": "sway"
+              },
+              3
+            ]
+          }
+        },
+        "hip_left": {
+          "x": {
+            "mul": [
+              {
+                "signal": "sway"
+              },
+              3
+            ]
+          }
+        },
+        "hip_right": {
+          "x": {
+            "mul": [
+              {
+                "signal": "sway"
+              },
+              3
+            ]
+          }
+        },
+        "iliac_left": {
+          "x": {
+            "mul": [
+              {
+                "signal": "sway"
+              },
+              3
+            ]
+          }
+        },
+        "iliac_right": {
+          "x": {
+            "mul": [
+              {
+                "signal": "sway"
+              },
+              3
+            ]
+          }
+        }
+      },
+      "arms": {
+        "wrist_left": {
+          "x": {
+            "mul": [
+              {
+                "signal": "arm"
+              },
+              -4
+            ]
+          },
+          "y": {
+            "mul": [
+              {
+                "signal": "arm"
+              },
+              6
+            ]
+          }
+        },
+        "wrist_right": {
+          "x": {
+            "mul": [
+              {
+                "signal": "arm"
+              },
+              4
+            ]
+          },
+          "y": {
+            "mul": [
+              {
+                "signal": "arm_r"
+              },
+              6
+            ]
+          }
+        }
+      }
+    },
+    "side": {
+      "legs": {
+        "rear_ankle": {
+          "x": {
+            "mul": [
+              {
+                "signal": "swing"
+              },
+              30
+            ]
+          },
+          "y": {
+            "mul": [
+              {
+                "add": [
+                  {
+                    "mul": [
+                      {
+                        "signal": "flight_l"
+                      },
+                      {
+                        "param": "flight"
+                      }
+                    ]
+                  },
+                  {
+                    "mul": [
+                      {
+                        "signal": "drive_l"
+                      },
+                      {
+                        "param": "knee_drive"
+                      }
+                    ]
+                  },
+                  {
+                    "mul": [
+                      {
+                        "signal": "kick_l"
+                      },
+                      {
+                        "param": "heel_kick"
+                      }
+                    ]
+                  }
+                ]
+              },
+              -13
+            ]
+          }
+        },
+        "front_ankle": {
+          "x": {
+            "mul": [
+              {
+                "signal": "swing_r"
+              },
+              30
+            ]
+          },
+          "y": {
+            "mul": [
+              {
+                "add": [
+                  {
+                    "mul": [
+                      {
+                        "signal": "flight_r"
+                      },
+                      {
+                        "param": "flight"
+                      }
+                    ]
+                  },
+                  {
+                    "mul": [
+                      {
+                        "signal": "drive_r"
+                      },
+                      {
+                        "param": "knee_drive"
+                      }
+                    ]
+                  },
+                  {
+                    "mul": [
+                      {
+                        "signal": "kick_r"
+                      },
+                      {
+                        "param": "heel_kick"
+                      }
+                    ]
+                  }
+                ]
+              },
+              -13
+            ]
+          }
+        }
+      },
+      "pelvis": {
+        "waist": {
+          "x": {
+            "mul": [
+              {
+                "signal": "sway"
+              },
+              -2
+            ]
+          }
+        },
+        "sternum": {
+          "x": {
+            "mul": [
+              {
+                "signal": "sway"
+              },
+              -2.5
+            ]
+          }
+        },
+        "chest": {
+          "x": {
+            "mul": [
+              {
+                "signal": "sway"
+              },
+              -3
+            ]
+          }
+        },
+        "upper_chest": {
+          "x": {
+            "mul": [
+              {
+                "signal": "sway"
+              },
+              -3
+            ]
+          }
+        },
+        "neck": {
+          "x": {
+            "mul": [
+              {
+                "signal": "sway"
+              },
+              -3
+            ]
+          }
+        },
+        "jaw": {
+          "x": {
+            "mul": [
+              {
+                "signal": "sway"
+              },
+              -3
+            ]
+          }
+        },
+        "clavicle_front": {
+          "x": {
+            "mul": [
+              {
+                "signal": "sway"
+              },
+              -3
+            ]
+          }
+        },
+        "clavicle_rear": {
+          "x": {
+            "mul": [
+              {
+                "signal": "sway"
+              },
+              -3
+            ]
+          }
+        },
+        "front_shoulder": {
+          "x": {
+            "mul": [
+              {
+                "signal": "sway"
+              },
+              -3
+            ]
+          }
+        },
+        "rear_shoulder": {
+          "x": {
+            "mul": [
+              {
+                "signal": "sway"
+              },
+              -3
+            ]
+          }
+        },
+        "rib_front": {
+          "x": {
+            "mul": [
+              {
+                "signal": "sway"
+              },
+              -3
+            ]
+          }
+        },
+        "rib_rear": {
+          "x": {
+            "mul": [
+              {
+                "signal": "sway"
+              },
+              -3
+            ]
+          }
+        }
+      },
+      "arms": {
+        "front_wrist": {
+          "x": {
+            "mul": [
+              {
+                "signal": "arm"
+              },
+              18
+            ]
+          },
+          "y": {
+            "mul": [
+              {
+                "signal": "arm"
+              },
+              10
+            ]
+          }
+        },
+        "rear_wrist": {
+          "x": {
+            "mul": [
+              {
+                "signal": "arm_r"
+              },
+              18
+            ]
+          },
+          "y": {
+            "mul": [
+              {
+                "signal": "arm_r"
+              },
+              10
+            ]
+          }
+        }
+      }
+    },
+    "back": {
+      "legs": {
+        "rear_ankle_left": {
+          "y": {
+            "mul": [
+              {
+                "add": [
+                  {
+                    "mul": [
+                      {
+                        "signal": "flight_l"
+                      },
+                      {
+                        "param": "flight"
+                      }
+                    ]
+                  },
+                  {
+                    "mul": [
+                      {
+                        "signal": "drive_l"
+                      },
+                      {
+                        "param": "knee_drive"
+                      }
+                    ]
+                  },
+                  {
+                    "mul": [
+                      {
+                        "signal": "kick_l"
+                      },
+                      {
+                        "param": "heel_kick"
+                      }
+                    ]
+                  }
+                ]
+              },
+              -13
+            ]
+          }
+        },
+        "rear_ankle_right": {
+          "y": {
+            "mul": [
+              {
+                "add": [
+                  {
+                    "mul": [
+                      {
+                        "signal": "flight_r"
+                      },
+                      {
+                        "param": "flight"
+                      }
+                    ]
+                  },
+                  {
+                    "mul": [
+                      {
+                        "signal": "drive_r"
+                      },
+                      {
+                        "param": "knee_drive"
+                      }
+                    ]
+                  },
+                  {
+                    "mul": [
+                      {
+                        "signal": "kick_r"
+                      },
+                      {
+                        "param": "heel_kick"
+                      }
+                    ]
+                  }
+                ]
+              },
+              -13
+            ]
+          }
+        }
+      },
+      "pelvis": {
+        "pelvis": {
+          "x": {
+            "mul": [
+              {
+                "signal": "sway"
+              },
+              3
+            ]
+          }
+        },
+        "rear_hip_left": {
+          "x": {
+            "mul": [
+              {
+                "signal": "sway"
+              },
+              3
+            ]
+          }
+        },
+        "rear_hip_right": {
+          "x": {
+            "mul": [
+              {
+                "signal": "sway"
+              },
+              3
+            ]
+          }
+        }
+      },
+      "arms": {
+        "rear_wrist_left": {
+          "x": {
+            "mul": [
+              {
+                "signal": "arm"
+              },
+              -4
+            ]
+          },
+          "y": {
+            "mul": [
+              {
+                "signal": "arm"
+              },
+              6
+            ]
+          }
+        },
+        "rear_wrist_right": {
+          "x": {
+            "mul": [
+              {
+                "signal": "arm"
+              },
+              4
+            ]
+          },
+          "y": {
+            "mul": [
+              {
+                "signal": "arm_r"
+              },
+              6
+            ]
+          }
+        }
+      }
+    }
+  },
+  "selectors": {
+    "front_leg": {
+      "table": [
+        "left",
+        "left",
+        "left",
+        "left",
+        "right",
+        "right",
+        "right",
+        "right"
+      ]
+    },
+    "foreground_leg": {
+      "table": [
+        "front",
+        "front",
+        "front",
+        "front",
+        "rear",
+        "rear",
+        "rear",
+        "rear"
+      ]
+    },
+    "foreground": {
+      "table": [
+        "left",
+        "left",
+        "left",
+        "left",
+        "right",
+        "right",
+        "right",
+        "right"
+      ]
+    }
+  },
+  "ik": {
+    "front": {
+      "legs": {
+        "left": {
+          "hip": "hip_left",
+          "knee": "knee_left",
+          "foot": "ankle_left"
+        },
+        "right": {
+          "hip": "hip_right",
+          "knee": "knee_right",
+          "foot": "ankle_right"
+        }
+      },
+      "arms": {
+        "left": {
+          "shoulder": "shoulder_left",
+          "elbow": "elbow_left",
+          "hand": "wrist_left"
+        },
+        "right": {
+          "shoulder": "shoulder_right",
+          "elbow": "elbow_right",
+          "hand": "wrist_right"
+        }
+      }
+    },
+    "side": {
+      "legs": {
+        "rear": {
+          "hip": "rear_hip",
+          "knee": "rear_knee",
+          "foot": "rear_ankle"
+        },
+        "front": {
+          "hip": "front_hip",
+          "knee": "front_knee",
+          "foot": "front_ankle"
+        }
+      },
+      "arms": {
+        "front": {
+          "shoulder": "front_shoulder",
+          "elbow": "front_elbow",
+          "hand": "front_wrist"
+        },
+        "rear": {
+          "shoulder": "rear_shoulder",
+          "elbow": "rear_elbow",
+          "hand": "rear_wrist"
+        }
+      }
+    },
+    "back": {
+      "legs": {
+        "left": {
+          "hip": "rear_hip_left",
+          "knee": "rear_knee_left",
+          "foot": "rear_ankle_left"
+        },
+        "right": {
+          "hip": "rear_hip_right",
+          "knee": "rear_knee_right",
+          "foot": "rear_ankle_right"
+        }
+      },
+      "arms": {
+        "left": {
+          "shoulder": "rear_shoulder_left",
+          "elbow": "rear_elbow_left",
+          "hand": "rear_wrist_left"
+        },
+        "right": {
+          "shoulder": "rear_shoulder_right",
+          "elbow": "rear_elbow_right",
+          "hand": "rear_wrist_right"
+        }
+      }
+    }
+  },
+  "species": "human"
+}

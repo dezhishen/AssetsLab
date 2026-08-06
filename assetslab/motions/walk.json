@@ -1,0 +1,1402 @@
+{
+  "schema": "assetslab_motion_v1",
+  "motion_id": "walk",
+  "title": "Walk — 8 帧标准行走",
+  "description": "Default walk cycle with visible foot lift and pelvis bob.",
+  "frame_count": 8,
+  "params": {
+    "stride": {
+      "default": 1.0,
+      "min": 0.0,
+      "max": 2.5,
+      "label": "步幅"
+    },
+    "pelvis_bob": {
+      "default": 1.0,
+      "min": 0.0,
+      "max": 3.0,
+      "label": "骨盆起伏"
+    },
+    "arm_swing": {
+      "default": 1.0,
+      "min": 0.0,
+      "max": 2.0,
+      "label": "摆臂"
+    }
+  },
+  "signals": {
+    "phase": {
+      "phase": true
+    },
+    "sin": {
+      "mul": [
+        {
+          "sin": {
+            "phase": true
+          }
+        },
+        {
+          "param": "stride"
+        }
+      ]
+    },
+    "sin_r": {
+      "neg": {
+        "signal": "sin"
+      }
+    },
+    "sin_rect": {
+      "rect": {
+        "signal": "sin"
+      }
+    },
+    "sin_r_rect": {
+      "rect": {
+        "signal": "sin_r"
+      }
+    },
+    "cos": {
+      "mul": [
+        {
+          "cos": {
+            "phase": true
+          }
+        },
+        {
+          "param": "stride"
+        }
+      ]
+    },
+    "arm_left": {
+      "neg": {
+        "mul": [
+          {
+            "sin": {
+              "phase": true
+            }
+          },
+          {
+            "param": "arm_swing"
+          }
+        ]
+      }
+    },
+    "arm_right": {
+      "neg": {
+        "signal": "arm_left"
+      }
+    },
+    "arm_cos": {
+      "mul": [
+        {
+          "cos": {
+            "phase": true
+          }
+        },
+        {
+          "param": "arm_swing"
+        }
+      ]
+    },
+    "bob": {
+      "mul": [
+        {
+          "table": [
+            -5,
+            -2,
+            2,
+            8,
+            -5,
+            -2,
+            2,
+            8
+          ]
+        },
+        {
+          "param": "pelvis_bob"
+        }
+      ]
+    },
+    "rear_lift": {
+      "table": [
+        0,
+        0.7071067811865476,
+        1.0,
+        0.7071067811865476,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    "front_lift": {
+      "table": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0.7071067811865476,
+        1.0,
+        0.7071067811865476
+      ]
+    }
+  },
+  "root": {
+    "dx": 0,
+    "dy": {
+      "signal": "bob"
+    }
+  },
+  "offsets": {
+    "front": {
+      "legs": {
+        "left_knee": {
+          "x": {
+            "mul": [
+              {
+                "signal": "sin"
+              },
+              15
+            ]
+          },
+          "y": {
+            "mul": [
+              {
+                "signal": "sin_rect"
+              },
+              -35
+            ]
+          }
+        },
+        "right_knee": {
+          "x": {
+            "mul": [
+              {
+                "signal": "sin_r"
+              },
+              15
+            ]
+          },
+          "y": {
+            "mul": [
+              {
+                "signal": "sin_r_rect"
+              },
+              -35
+            ]
+          }
+        },
+        "left_foot": {
+          "x": {
+            "mul": [
+              {
+                "signal": "sin"
+              },
+              24
+            ]
+          },
+          "y": {
+            "mul": [
+              {
+                "signal": "sin_rect"
+              },
+              -50
+            ]
+          }
+        },
+        "right_foot": {
+          "x": {
+            "mul": [
+              {
+                "signal": "sin_r"
+              },
+              24
+            ]
+          },
+          "y": {
+            "mul": [
+              {
+                "signal": "sin_r_rect"
+              },
+              -50
+            ]
+          }
+        },
+        "foot_left": {
+          "x": {
+            "mul": [
+              {
+                "signal": "sin"
+              },
+              24
+            ]
+          },
+          "y": {
+            "mul": [
+              {
+                "signal": "sin_rect"
+              },
+              -50
+            ]
+          }
+        },
+        "foot_right": {
+          "x": {
+            "mul": [
+              {
+                "signal": "sin_r"
+              },
+              24
+            ]
+          },
+          "y": {
+            "mul": [
+              {
+                "signal": "sin_r_rect"
+              },
+              -50
+            ]
+          }
+        },
+        "knee_left": {
+          "x": {
+            "mul": [
+              {
+                "signal": "sin"
+              },
+              15
+            ]
+          },
+          "y": {
+            "mul": [
+              {
+                "signal": "sin_rect"
+              },
+              -35
+            ]
+          }
+        },
+        "knee_right": {
+          "x": {
+            "mul": [
+              {
+                "signal": "sin_r"
+              },
+              15
+            ]
+          },
+          "y": {
+            "mul": [
+              {
+                "signal": "sin_r_rect"
+              },
+              -35
+            ]
+          }
+        },
+        "left_ankle": {
+          "x": {
+            "mul": [
+              {
+                "signal": "sin"
+              },
+              24
+            ]
+          },
+          "y": {
+            "mul": [
+              {
+                "signal": "sin_rect"
+              },
+              -25.0
+            ]
+          }
+        },
+        "right_ankle": {
+          "x": {
+            "mul": [
+              {
+                "signal": "sin_r"
+              },
+              24
+            ]
+          },
+          "y": {
+            "mul": [
+              {
+                "signal": "sin_r_rect"
+              },
+              -25.0
+            ]
+          }
+        },
+        "ankle_left": {
+          "x": {
+            "mul": [
+              {
+                "signal": "sin"
+              },
+              24
+            ]
+          },
+          "y": {
+            "mul": [
+              {
+                "signal": "sin_rect"
+              },
+              -25.0
+            ]
+          }
+        },
+        "ankle_right": {
+          "x": {
+            "mul": [
+              {
+                "signal": "sin_r"
+              },
+              24
+            ]
+          },
+          "y": {
+            "mul": [
+              {
+                "signal": "sin_r_rect"
+              },
+              -25.0
+            ]
+          }
+        }
+      },
+      "arms": {
+        "left_elbow": {
+          "x": {
+            "mul": [
+              {
+                "signal": "arm_left"
+              },
+              8
+            ]
+          },
+          "y": {
+            "mul": [
+              {
+                "signal": "arm_right"
+              },
+              6
+            ]
+          }
+        },
+        "left_hand": {
+          "x": {
+            "mul": [
+              {
+                "signal": "arm_left"
+              },
+              16
+            ]
+          },
+          "y": {
+            "mul": [
+              {
+                "signal": "arm_right"
+              },
+              14
+            ]
+          }
+        },
+        "right_elbow": {
+          "x": {
+            "mul": [
+              {
+                "signal": "arm_right"
+              },
+              8
+            ]
+          },
+          "y": {
+            "mul": [
+              {
+                "signal": "arm_left"
+              },
+              6
+            ]
+          }
+        },
+        "right_hand": {
+          "x": {
+            "mul": [
+              {
+                "signal": "arm_right"
+              },
+              16
+            ]
+          },
+          "y": {
+            "mul": [
+              {
+                "signal": "arm_left"
+              },
+              14
+            ]
+          }
+        },
+        "elbow_left": {
+          "x": {
+            "mul": [
+              {
+                "signal": "arm_left"
+              },
+              8
+            ]
+          },
+          "y": {
+            "mul": [
+              {
+                "signal": "arm_right"
+              },
+              6
+            ]
+          }
+        },
+        "elbow_right": {
+          "x": {
+            "mul": [
+              {
+                "signal": "arm_right"
+              },
+              8
+            ]
+          },
+          "y": {
+            "mul": [
+              {
+                "signal": "arm_left"
+              },
+              6
+            ]
+          }
+        },
+        "hand_left": {
+          "x": {
+            "mul": [
+              {
+                "signal": "arm_left"
+              },
+              16
+            ]
+          },
+          "y": {
+            "mul": [
+              {
+                "signal": "arm_right"
+              },
+              14
+            ]
+          }
+        },
+        "hand_right": {
+          "x": {
+            "mul": [
+              {
+                "signal": "arm_right"
+              },
+              16
+            ]
+          },
+          "y": {
+            "mul": [
+              {
+                "signal": "arm_left"
+              },
+              14
+            ]
+          }
+        },
+        "left_wrist": {
+          "x": {
+            "mul": [
+              {
+                "signal": "arm_left"
+              },
+              8
+            ]
+          },
+          "y": {
+            "mul": [
+              {
+                "signal": "arm_right"
+              },
+              6
+            ]
+          }
+        },
+        "left_palm": {
+          "x": {
+            "mul": [
+              {
+                "signal": "arm_left"
+              },
+              16
+            ]
+          },
+          "y": {
+            "mul": [
+              {
+                "signal": "arm_right"
+              },
+              14
+            ]
+          }
+        },
+        "right_wrist": {
+          "x": {
+            "mul": [
+              {
+                "signal": "arm_right"
+              },
+              8
+            ]
+          },
+          "y": {
+            "mul": [
+              {
+                "signal": "arm_left"
+              },
+              6
+            ]
+          }
+        },
+        "right_palm": {
+          "x": {
+            "mul": [
+              {
+                "signal": "arm_right"
+              },
+              16
+            ]
+          },
+          "y": {
+            "mul": [
+              {
+                "signal": "arm_left"
+              },
+              14
+            ]
+          }
+        },
+        "wrist_left": {
+          "x": {
+            "mul": [
+              {
+                "signal": "arm_left"
+              },
+              8
+            ]
+          },
+          "y": {
+            "mul": [
+              {
+                "signal": "arm_right"
+              },
+              6
+            ]
+          }
+        },
+        "wrist_right": {
+          "x": {
+            "mul": [
+              {
+                "signal": "arm_right"
+              },
+              8
+            ]
+          },
+          "y": {
+            "mul": [
+              {
+                "signal": "arm_left"
+              },
+              6
+            ]
+          }
+        },
+        "palm_left": {
+          "x": {
+            "mul": [
+              {
+                "signal": "arm_left"
+              },
+              16
+            ]
+          },
+          "y": {
+            "mul": [
+              {
+                "signal": "arm_right"
+              },
+              14
+            ]
+          }
+        },
+        "palm_right": {
+          "x": {
+            "mul": [
+              {
+                "signal": "arm_right"
+              },
+              16
+            ]
+          },
+          "y": {
+            "mul": [
+              {
+                "signal": "arm_left"
+              },
+              14
+            ]
+          }
+        }
+      }
+    },
+    "side": {
+      "legs": {
+        "rear_knee": {
+          "x": {
+            "add": [
+              18,
+              {
+                "mul": [
+                  {
+                    "signal": "cos"
+                  },
+                  -18
+                ]
+              }
+            ]
+          },
+          "y": {
+            "mul": [
+              {
+                "signal": "rear_lift"
+              },
+              -30
+            ]
+          }
+        },
+        "front_knee": {
+          "x": {
+            "add": [
+              -18,
+              {
+                "mul": [
+                  {
+                    "signal": "cos"
+                  },
+                  18
+                ]
+              }
+            ]
+          },
+          "y": {
+            "mul": [
+              {
+                "signal": "front_lift"
+              },
+              -30
+            ]
+          }
+        },
+        "rear_foot": {
+          "x": {
+            "add": [
+              30,
+              {
+                "mul": [
+                  {
+                    "signal": "cos"
+                  },
+                  -30
+                ]
+              }
+            ]
+          },
+          "y": {
+            "mul": [
+              {
+                "signal": "rear_lift"
+              },
+              -55
+            ]
+          }
+        },
+        "front_foot": {
+          "x": {
+            "add": [
+              -30,
+              {
+                "mul": [
+                  {
+                    "signal": "cos"
+                  },
+                  30
+                ]
+              }
+            ]
+          },
+          "y": {
+            "mul": [
+              {
+                "signal": "front_lift"
+              },
+              -55
+            ]
+          }
+        },
+        "rear_ankle": {
+          "x": {
+            "add": [
+              30,
+              {
+                "mul": [
+                  {
+                    "signal": "cos"
+                  },
+                  -30
+                ]
+              }
+            ]
+          },
+          "y": {
+            "mul": [
+              {
+                "signal": "rear_lift"
+              },
+              -27.5
+            ]
+          }
+        },
+        "front_ankle": {
+          "x": {
+            "add": [
+              -30,
+              {
+                "mul": [
+                  {
+                    "signal": "cos"
+                  },
+                  30
+                ]
+              }
+            ]
+          },
+          "y": {
+            "mul": [
+              {
+                "signal": "front_lift"
+              },
+              -27.5
+            ]
+          }
+        }
+      },
+      "pelvis": {
+        "head": {
+          "x": {
+            "mul": [
+              {
+                "cos": {
+                  "phase": true
+                }
+              },
+              4
+            ]
+          }
+        },
+        "neck": {
+          "x": {
+            "mul": [
+              {
+                "cos": {
+                  "phase": true
+                }
+              },
+              4
+            ]
+          }
+        }
+      },
+      "arms": {
+        "rear_elbow": {
+          "x": {
+            "mul": [
+              {
+                "signal": "arm_cos"
+              },
+              10
+            ]
+          },
+          "y": {
+            "mul": [
+              {
+                "signal": "arm_cos"
+              },
+              3
+            ]
+          }
+        },
+        "rear_hand": {
+          "x": {
+            "mul": [
+              {
+                "signal": "arm_cos"
+              },
+              20
+            ]
+          },
+          "y": {
+            "mul": [
+              {
+                "signal": "arm_cos"
+              },
+              6
+            ]
+          }
+        },
+        "front_elbow": {
+          "x": {
+            "mul": [
+              {
+                "signal": "arm_cos"
+              },
+              -10
+            ]
+          },
+          "y": {
+            "mul": [
+              {
+                "signal": "arm_cos"
+              },
+              -3
+            ]
+          }
+        },
+        "front_hand": {
+          "x": {
+            "mul": [
+              {
+                "signal": "arm_cos"
+              },
+              -20
+            ]
+          },
+          "y": {
+            "mul": [
+              {
+                "signal": "arm_cos"
+              },
+              -6
+            ]
+          }
+        },
+        "rear_wrist": {
+          "x": {
+            "mul": [
+              {
+                "signal": "arm_cos"
+              },
+              10
+            ]
+          },
+          "y": {
+            "mul": [
+              {
+                "signal": "arm_cos"
+              },
+              3
+            ]
+          }
+        },
+        "rear_palm": {
+          "x": {
+            "mul": [
+              {
+                "signal": "arm_cos"
+              },
+              20
+            ]
+          },
+          "y": {
+            "mul": [
+              {
+                "signal": "arm_cos"
+              },
+              6
+            ]
+          }
+        },
+        "front_wrist": {
+          "x": {
+            "mul": [
+              {
+                "signal": "arm_cos"
+              },
+              -10
+            ]
+          },
+          "y": {
+            "mul": [
+              {
+                "signal": "arm_cos"
+              },
+              -3
+            ]
+          }
+        },
+        "front_palm": {
+          "x": {
+            "mul": [
+              {
+                "signal": "arm_cos"
+              },
+              -20
+            ]
+          },
+          "y": {
+            "mul": [
+              {
+                "signal": "arm_cos"
+              },
+              -6
+            ]
+          }
+        }
+      }
+    },
+    "back": {
+      "legs": {
+        "left_knee": {
+          "x": {
+            "mul": [
+              {
+                "signal": "sin"
+              },
+              15
+            ]
+          },
+          "y": {
+            "mul": [
+              {
+                "signal": "sin_rect"
+              },
+              -35
+            ]
+          }
+        },
+        "right_knee": {
+          "x": {
+            "mul": [
+              {
+                "signal": "sin_r"
+              },
+              15
+            ]
+          },
+          "y": {
+            "mul": [
+              {
+                "signal": "sin_r_rect"
+              },
+              -35
+            ]
+          }
+        },
+        "left_foot": {
+          "x": {
+            "mul": [
+              {
+                "signal": "sin"
+              },
+              24
+            ]
+          },
+          "y": {
+            "mul": [
+              {
+                "signal": "sin_rect"
+              },
+              -50
+            ]
+          }
+        },
+        "right_foot": {
+          "x": {
+            "mul": [
+              {
+                "signal": "sin_r"
+              },
+              24
+            ]
+          },
+          "y": {
+            "mul": [
+              {
+                "signal": "sin_r_rect"
+              },
+              -50
+            ]
+          }
+        },
+        "head": {
+          "y": {
+            "mul": [
+              {
+                "signal": "bob"
+              },
+              0.5
+            ]
+          }
+        },
+        "neck": {
+          "y": {
+            "mul": [
+              {
+                "signal": "bob"
+              },
+              0.5
+            ]
+          }
+        },
+        "foot_left": {
+          "x": {
+            "mul": [
+              {
+                "signal": "sin"
+              },
+              24
+            ]
+          },
+          "y": {
+            "mul": [
+              {
+                "signal": "sin_rect"
+              },
+              -50
+            ]
+          }
+        },
+        "foot_right": {
+          "x": {
+            "mul": [
+              {
+                "signal": "sin_r"
+              },
+              24
+            ]
+          },
+          "y": {
+            "mul": [
+              {
+                "signal": "sin_r_rect"
+              },
+              -50
+            ]
+          }
+        },
+        "knee_left": {
+          "x": {
+            "mul": [
+              {
+                "signal": "sin"
+              },
+              15
+            ]
+          },
+          "y": {
+            "mul": [
+              {
+                "signal": "sin_rect"
+              },
+              -35
+            ]
+          }
+        },
+        "knee_right": {
+          "x": {
+            "mul": [
+              {
+                "signal": "sin_r"
+              },
+              15
+            ]
+          },
+          "y": {
+            "mul": [
+              {
+                "signal": "sin_r_rect"
+              },
+              -35
+            ]
+          }
+        },
+        "left_ankle": {
+          "x": {
+            "mul": [
+              {
+                "signal": "sin"
+              },
+              24
+            ]
+          },
+          "y": {
+            "mul": [
+              {
+                "signal": "sin_rect"
+              },
+              -25.0
+            ]
+          }
+        },
+        "right_ankle": {
+          "x": {
+            "mul": [
+              {
+                "signal": "sin_r"
+              },
+              24
+            ]
+          },
+          "y": {
+            "mul": [
+              {
+                "signal": "sin_r_rect"
+              },
+              -25.0
+            ]
+          }
+        },
+        "ankle_left": {
+          "x": {
+            "mul": [
+              {
+                "signal": "sin"
+              },
+              24
+            ]
+          },
+          "y": {
+            "mul": [
+              {
+                "signal": "sin_rect"
+              },
+              -25.0
+            ]
+          }
+        },
+        "ankle_right": {
+          "x": {
+            "mul": [
+              {
+                "signal": "sin_r"
+              },
+              24
+            ]
+          },
+          "y": {
+            "mul": [
+              {
+                "signal": "sin_r_rect"
+              },
+              -25.0
+            ]
+          }
+        }
+      },
+      "arms": {
+        "rear_elbow_left": {
+          "x": {
+            "mul": [
+              {
+                "signal": "sin_r"
+              },
+              8
+            ]
+          },
+          "y": {
+            "mul": [
+              {
+                "signal": "sin"
+              },
+              6
+            ]
+          }
+        },
+        "rear_hand_left": {
+          "x": {
+            "mul": [
+              {
+                "signal": "sin_r"
+              },
+              16
+            ]
+          },
+          "y": {
+            "mul": [
+              {
+                "signal": "sin"
+              },
+              14
+            ]
+          }
+        },
+        "rear_elbow_right": {
+          "x": {
+            "mul": [
+              {
+                "signal": "sin"
+              },
+              8
+            ]
+          },
+          "y": {
+            "mul": [
+              {
+                "signal": "sin_r"
+              },
+              6
+            ]
+          }
+        },
+        "rear_hand_right": {
+          "x": {
+            "mul": [
+              {
+                "signal": "sin"
+              },
+              16
+            ]
+          },
+          "y": {
+            "mul": [
+              {
+                "signal": "sin_r"
+              },
+              14
+            ]
+          }
+        },
+        "rear_wrist_left": {
+          "x": {
+            "mul": [
+              {
+                "signal": "sin_r"
+              },
+              8
+            ]
+          },
+          "y": {
+            "mul": [
+              {
+                "signal": "sin"
+              },
+              6
+            ]
+          }
+        },
+        "rear_palm_left": {
+          "x": {
+            "mul": [
+              {
+                "signal": "sin_r"
+              },
+              16
+            ]
+          },
+          "y": {
+            "mul": [
+              {
+                "signal": "sin"
+              },
+              14
+            ]
+          }
+        },
+        "rear_wrist_right": {
+          "x": {
+            "mul": [
+              {
+                "signal": "sin"
+              },
+              8
+            ]
+          },
+          "y": {
+            "mul": [
+              {
+                "signal": "sin_r"
+              },
+              6
+            ]
+          }
+        },
+        "rear_palm_right": {
+          "x": {
+            "mul": [
+              {
+                "signal": "sin"
+              },
+              16
+            ]
+          },
+          "y": {
+            "mul": [
+              {
+                "signal": "sin_r"
+              },
+              14
+            ]
+          }
+        }
+      }
+    }
+  },
+  "selectors": {
+    "front_leg": {
+      "table": [
+        "left",
+        "left",
+        "left",
+        "left",
+        "right",
+        "right",
+        "right",
+        "right"
+      ]
+    },
+    "foreground_leg": {
+      "table": [
+        "front",
+        "rear",
+        "rear",
+        "rear",
+        "rear",
+        "front",
+        "front",
+        "front"
+      ]
+    },
+    "foreground": {
+      "table": [
+        "left",
+        "left",
+        "left",
+        "left",
+        "right",
+        "right",
+        "right",
+        "right"
+      ]
+    }
+  },
+  "species": "human"
+}

@@ -11,6 +11,8 @@ func front_base_points() -> Dictionary:
 	return {
 		"head": Vector2(CENTER_X, 150.0),
 		"neck": Vector2(CENTER_X, 238.0),
+		"chest": Vector2(CENTER_X, 268.0),
+		"waist": Vector2(CENTER_X, 306.0),
 		"shoulder_left": Vector2(422.0, 260.0),
 		"shoulder_right": Vector2(538.0, 260.0),
 		"elbow_left": Vector2(400.0, 325.0),
@@ -51,7 +53,9 @@ func _draw() -> void:
 
 	_draw_bone(points["head"], points["neck"])
 	_draw_bone(points["shoulder_left"], points["shoulder_right"])
-	_draw_bone(points["neck"], points["pelvis"])
+	_draw_bone(points["neck"], points["chest"])
+	_draw_bone(points["chest"], points["waist"])
+	_draw_bone(points["waist"], points["pelvis"])
 	_draw_bone(points["shoulder_left"], points["elbow_left"])
 	_draw_bone(points["elbow_left"], points["hand_left"])
 	_draw_bone(points["shoulder_right"], points["elbow_right"])

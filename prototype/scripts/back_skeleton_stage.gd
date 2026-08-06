@@ -9,7 +9,7 @@ const JOINT_COLOR := Color("fff1a8")
 const GUIDE_COLOR := Color("4b5e7a")
 
 func back_base_points() -> Dictionary:
-	return {"head":Vector2(CENTER_X,150),"neck":Vector2(CENTER_X,238),"pelvis":Vector2(CENTER_X,350),"rear_shoulder_left":Vector2(422,264),"rear_shoulder_right":Vector2(538,264),"front_shoulder_left":Vector2(432,258),"front_shoulder_right":Vector2(528,258),"rear_elbow_left":Vector2(400,326),"rear_elbow_right":Vector2(560,326),"front_elbow_left":Vector2(410,320),"front_elbow_right":Vector2(550,320),"rear_hand_left":Vector2(392,382),"rear_hand_right":Vector2(568,382),"front_hand_left":Vector2(402,376),"front_hand_right":Vector2(558,376),"rear_hip_left":Vector2(448,356),"rear_hip_right":Vector2(512,356),"front_hip_left":Vector2(456,350),"front_hip_right":Vector2(504,350),"rear_knee_left":Vector2(448,414),"rear_knee_right":Vector2(512,414),"front_knee_left":Vector2(456,410),"front_knee_right":Vector2(504,410),"rear_foot_left":Vector2(448,FLOOR_Y),"rear_foot_right":Vector2(512,FLOOR_Y),"front_foot_left":Vector2(456,FLOOR_Y),"front_foot_right":Vector2(504,FLOOR_Y)}
+	return {"head":Vector2(CENTER_X,150),"neck":Vector2(CENTER_X,238),"chest":Vector2(CENTER_X,268),"waist":Vector2(CENTER_X,306),"pelvis":Vector2(CENTER_X,350),"rear_shoulder_left":Vector2(422,264),"rear_shoulder_right":Vector2(538,264),"front_shoulder_left":Vector2(432,258),"front_shoulder_right":Vector2(528,258),"rear_elbow_left":Vector2(400,326),"rear_elbow_right":Vector2(560,326),"front_elbow_left":Vector2(410,320),"front_elbow_right":Vector2(550,320),"rear_hand_left":Vector2(392,382),"rear_hand_right":Vector2(568,382),"front_hand_left":Vector2(402,376),"front_hand_right":Vector2(558,376),"rear_hip_left":Vector2(448,356),"rear_hip_right":Vector2(512,356),"front_hip_left":Vector2(456,350),"front_hip_right":Vector2(504,350),"rear_knee_left":Vector2(448,414),"rear_knee_right":Vector2(512,414),"front_knee_left":Vector2(456,410),"front_knee_right":Vector2(504,410),"rear_foot_left":Vector2(448,FLOOR_Y),"rear_foot_right":Vector2(512,FLOOR_Y),"front_foot_left":Vector2(456,FLOOR_Y),"front_foot_right":Vector2(504,FLOOR_Y)}
 
 func validate_back_base() -> PackedStringArray:
 	var p:=back_base_points(); var errors:=PackedStringArray()
@@ -24,7 +24,7 @@ func validate_back_base() -> PackedStringArray:
 
 func _draw() -> void:
 	var p:=back_base_points(); draw_rect(Rect2(Vector2.ZERO,Vector2(960,600)),Color("111827")); draw_line(Vector2(160,FLOOR_Y),Vector2(800,FLOOR_Y),GUIDE_COLOR,2); draw_dashed_line(Vector2(CENTER_X,70),Vector2(CENTER_X,510),GUIDE_COLOR,1,8); draw_string(ThemeDB.fallback_font,Vector2(710,100),"BACK VIEW",HORIZONTAL_ALIGNMENT_LEFT,-1,20,Color("d8b4fe"))
-	_bone(p["head"],p["neck"],BONE_COLOR,7); _bone(p["neck"],p["pelvis"],BONE_COLOR,7); draw_arc(p["head"],68,0,TAU,48,BONE_COLOR,4,true)
+	_bone(p["head"],p["neck"],BONE_COLOR,7); _bone(p["neck"],p["chest"],BONE_COLOR,7); _bone(p["chest"],p["waist"],BONE_COLOR,7); _bone(p["waist"],p["pelvis"],BONE_COLOR,7); draw_arc(p["head"],68,0,TAU,48,BONE_COLOR,4,true)
 	for limb in ["rear","front"]:
 		var color:=REAR_COLOR if limb=="rear" else FRONT_COLOR
 		for side in ["left","right"]:
