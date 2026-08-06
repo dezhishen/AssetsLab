@@ -244,6 +244,9 @@ class AssetsLabHandler(SimpleHTTPRequestHandler):
             self.send_response(200)
             self.send_header("Content-Type", content_type)
             self.send_header("Content-Length", str(file_path.stat().st_size))
+            # HTML 始终不缓存（前端构建后刷新即生效）；带 hash 的静态资源保持缓存
+            if file_path.suffix == ".html":
+                self.send_header("Cache-Control", "no-cache")
             self.end_headers()
             self.wfile.write(file_path.read_bytes())
             return
@@ -253,6 +256,7 @@ class AssetsLabHandler(SimpleHTTPRequestHandler):
             self.send_response(200)
             self.send_header("Content-Type", "text/html; charset=utf-8")
             self.send_header("Content-Length", str(index.stat().st_size))
+            self.send_header("Cache-Control", "no-cache")
             self.end_headers()
             self.wfile.write(index.read_bytes())
         else:
