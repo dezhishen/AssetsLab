@@ -116,19 +116,22 @@
           </el-tab-pane>
 
           <!-- 动作预览 -->
-          <el-tab-pane :label="`🎬 动作预览 (${motions.length})`" name="motions">
+          <el-tab-pane :label="`🎬 动作预览 (${allMotions.length})`" name="motions">
             <div class="section">
               <div class="section-head"><h4>基于物种「{{ selectedPreset.species }}」的动作</h4></div>
               <div class="motion-grid">
-                <div v-for="m in motions" :key="m.motion_id || m.id" class="motion-card"
+                <div v-for="m in allMotions" :key="m.motion_id || m.id" class="motion-card"
                      :class="{ active: selectedMotion===(m.motion_id||m.id) }" @click="selectAndRenderMotion(m.motion_id || m.id)">
-                  <div class="motion-name">🎬 {{ m.title || m.id }}</div>
+                  <div class="motion-name">🎬 {{ m.title || m.id }}
+                    <el-tag v-if="m.is3d" size="small" type="success" effect="plain" style="margin-left:4px">3D</el-tag>
+                    <el-tag v-else size="small" type="info" effect="plain" style="margin-left:4px">2D</el-tag>
+                  </div>
                   <div class="motion-meta">
                     <span class="motion-id">{{ m.motion_id || m.id }}</span>
                     <span v-if="m.params && Object.keys(m.params).length" class="motion-params">{{ Object.keys(m.params).length }} 参数</span>
                   </div>
                 </div>
-                <div v-if="motions.length===0" class="empty-inline">该物种暂无动作定义</div>
+                <div v-if="allMotions.length===0" class="empty-inline">该物种暂无动作定义</div>
               </div>
 
               <!-- 动作参数调节 -->
@@ -159,7 +162,15 @@
                 <div class="section-head">
                   <h4>动作帧预览</h4>
                   <div class="preview-controls">
-                    <el-radio-group v-model="motionView" size="small">
+                    <!-- 3D 动作：快速相机控制（角度/距离/缩放） -->
+                    <template v-if="is3dMotion(selectedMotion)">
+                      <span class="cam-mini">yaw <el-input-number v-model="cam.yaw" :min="0" :max="360" :step="5" size="small" controls-position="right" style="width:90px"/></span>
+                      <span class="cam-mini">pitch <el-input-number v-model="cam.pitch" :min="-60" :max="60" :step="5" size="small" controls-position="right" style="width:90px"/></span>
+                      <span class="cam-mini">dist <el-input-number v-model="cam.dist" :min="200" :max="1500" :step="50" size="small" controls-position="right" style="width:90px"/></span>
+                      <span class="cam-mini">zoom <el-input-number v-model="cam.zoom" :min="0.5" :max="2" :step="0.1" size="small" controls-position="right" style="width:90px"/></span>
+                    </template>
+                    <!-- 2D 动作：三视图 -->
+                    <el-radio-group v-else v-model="motionView" size="small">
                       <el-radio-button value="front">正面</el-radio-button>
                       <el-radio-button value="side">侧面</el-radio-button>
                       <el-radio-button value="back">背面</el-radio-button>
@@ -262,7 +273,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { api } from '../api.js'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
@@ -285,6 +296,13 @@ const motionParams = ref({})
 const motionView = ref('front')
 const motionPreview = ref(null)
 const motionLoading = ref(false)
+
+// 动作预览：2D(actions/) + 3D(actions3d/) 合并，3D 动作用 3D 相机渲染
+const allMotions = computed(() => [
+  ...(motions.value || []).map(m => ({ ...m, is3d: false })),
+  ...(motions3d.value || []).map(m => ({ ...m, motion_id: m.motion_id, is3d: true })),
+])
+const is3dMotion = (mid) => allMotions.value.some(m => (m.motion_id || m.id) === mid && m.is3d)
 
 const hasAnyPreview = () => Object.values(previews.value).some(Boolean)
 
@@ -430,8 +448,8 @@ async function renderAllViews() {
 async function selectAndRenderMotion(mid) {
   selectedMotion.value = mid
   motionView.value = 'front'
-  // 从动作定义初始化参数（默认值）
-  const m = motions.value.find(x => (x.motion_id || x.id) === mid)
+  // 从动作定义初始化参数（默认值；2D 或 3D 动作）
+  const m = allMotions.value.find(x => (x.motion_id || x.id) === mid)
   selectedMotionParams.value = m?.params || {}
   motionParams.value = {}
   for (const [name, spec] of Object.entries(selectedMotionParams.value)) {
@@ -452,11 +470,18 @@ async function renderMotion() {
   if (!selectedMotion.value) return
   motionLoading.value = true
   try {
-    const r = await api.renderMotion(selectedMotion.value, {
-      view: motionView.value, stage:'arms', skeleton: selectedPreset.value.id,
-      gif: true, ...motionParams.value,
-    })
-    motionPreview.value = r.gif || r.frame || r.data_url
+    if (is3dMotion(selectedMotion.value)) {
+      // 3D 动作：3D 相机渲染（角度/距离/平移 + GIF）
+      const r = await api.renderMotion3d(selectedMotion.value, camQS() + '&gif=1' + paramQS())
+      motionPreview.value = r.gif || r.data_url
+    } else {
+      // 2D 动作：三视图渲染
+      const r = await api.renderMotion(selectedMotion.value, {
+        view: motionView.value, stage: 'arms', skeleton: selectedPreset.value.id,
+        gif: true, ...motionParams.value,
+      })
+      motionPreview.value = r.gif || r.frame || r.data_url
+    }
   } catch(e) { ElMessage.error(e.message) }
   motionLoading.value = false
 }
@@ -477,6 +502,7 @@ const preview3d = ref({ skeleton: null, motion: null })
 const motions3d = ref([])
 const selectedMotion3d = ref('walk3d')
 const camQS = () => `yaw=${cam.value.yaw}&pitch=${cam.value.pitch}&dist=${cam.value.dist}&zoom=${cam.value.zoom}&pan_x=${cam.value.panX}&pan_y=${cam.value.panY}`
+const paramQS = () => Object.entries(motionParams.value).map(([k, v]) => `${k}=${v}`).join('&')
 
 async function loadMotions3d() {
   try { motions3d.value = (await api.motions3d()).motions3d || [] } catch (e) { /* 静默 */ }
@@ -496,9 +522,13 @@ watch(selectedMotion3d, () => { if (preview3d.value.motion) render3d() })
 
 let camTimer = null
 watch(cam, () => {
-  if (!selectedPreset.value) return
   clearTimeout(camTimer)
-  camTimer = setTimeout(render3d, 300)
+  camTimer = setTimeout(() => {
+    // 3D 预览 tab 刷新骨架/动作
+    if (selectedPreset.value) render3d()
+    // 3D 动作预览中 → 同步刷新动作帧
+    if (selectedMotion.value && is3dMotion(selectedMotion.value) && motionPreview.value) renderMotion()
+  }, 300)
 }, { deep: true })
 
 // 进入 3D 预览 tab 时自动渲染一次（无需先调节）
@@ -579,6 +609,7 @@ function resetPreview3d() {
 .cam-item { border: 1px solid #ebeef5; border-radius: 8px; padding: 8px 12px; background: #fafbfc; }
 .cam-label { display: flex; justify-content: space-between; font-size: .8rem; color: #606266; margin-bottom: 4px; }
 .cam-key { font-family: monospace; color: #409eff; font-weight: 600; }
+.cam-mini { display: inline-flex; align-items: center; gap: 4px; font-size: .75rem; color: #909399; }
 
 /* 动作 */
 .motion-grid { display: flex; flex-wrap: wrap; gap: 10px; }.motion-card { padding: 12px 16px; border: 1px solid #e4e7ed; border-radius: 8px; cursor: pointer; min-width: 150px; transition: all .15s; }

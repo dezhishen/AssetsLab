@@ -128,7 +128,7 @@ class AssetsLabHandler(SimpleHTTPRequestHandler):
     # 阶段 1/2：3D 骨架 + 3D 动作，任意视角（yaw）正交投影。
 
     def _motions3d_list(self) -> None:
-        """GET /api/motions3d — 列出所有物种的 3D 动作（从 actions3d 扫描）。"""
+        """GET /api/motions3d — 列出所有物种的 3D 动作（含 params，供前端参数滑块）。"""
         items = []
         for sp_dir in (_PKG_ROOT / "species").iterdir():
             ad = sp_dir / "actions3d"
@@ -140,7 +140,10 @@ class AssetsLabHandler(SimpleHTTPRequestHandler):
                     items.append({
                         "motion_id": data.get("motion_id", p.stem),
                         "title": data.get("title", p.stem),
+                        "description": data.get("description", ""),
                         "species": data.get("species", sp_dir.name),
+                        "params": data.get("params", {}),
+                        "has_ik": bool(data.get("ik3d")),
                     })
                 except Exception:
                     continue
