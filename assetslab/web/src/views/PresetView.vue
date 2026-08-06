@@ -51,17 +51,13 @@
           </div>
         </div>
 
-        <!-- 概要统计 -->
-        <div class="stat-cards">
-          <div class="stat-card"><div class="stat-val">{{ selectedPreset.species }}</div><div class="stat-label">物种</div></div>
-          <div class="stat-card"><div class="stat-val">{{ Object.keys(body).length }}</div><div class="stat-label">体型参数</div></div>
-          <div class="stat-card"><div class="stat-val">{{ (presetDetail?.positions?.front||{}).__joints ?? Object.keys(presetDetail?.positions?.front||{}).length }}</div><div class="stat-label">正面关节</div></div>
-          <div class="stat-card"><div class="stat-val">{{ motions.length }}</div><div class="stat-label">可用动作</div></div>
-        </div>
-
-        <el-tabs v-model="activeTab" class="content-tabs">
-          <!-- 体型参数 -->
-          <el-tab-pane label="🎛 体型参数" name="params">
+        <!-- 工作区：左侧控制面板 + 右侧大预览画布 -->
+        <div class="workspace">
+          <!-- 左侧控制面板（参数调节） -->
+          <div class="control-panel">
+            <el-tabs v-model="activeTab" class="control-tabs">
+              <!-- 体型参数 -->
+              <el-tab-pane label="🎛 体型" name="params">
             <div class="section" v-if="presetDetail?.params">
               <div class="section-head">
                 <h4>体型参数</h4>
@@ -94,31 +90,10 @@
             </div>
           </el-tab-pane>
 
-          <!-- 骨架预览 -->
-          <el-tab-pane label="👁 骨架预览" name="preview">
+          <!-- 动作 -->
+          <el-tab-pane label="🎬 动作" name="motions">
             <div class="section">
-              <div class="section-head">
-                <h4>三视图预览</h4>
-                <el-button size="small" type="primary" @click="renderAllViews" :loading="previewLoading" icon="Refresh">渲染三视图</el-button>
-              </div>
-              <div class="preview-grid" v-if="hasAnyPreview">
-                <div class="preview-cell" v-for="v in ['front','side','back']" :key="v">
-                  <template v-if="previews[v]">
-                    <div class="preview-title">{{ {front:'正面',side:'侧面',back:'背面'}[v] }}</div>
-                    <img :src="previews[v]" />
-                  </template>
-                </div>
-              </div>
-              <div class="preview-empty" v-else>
-                <p>点击「渲染三视图」生成骨架预览</p>
-              </div>
-            </div>
-          </el-tab-pane>
-
-          <!-- 动作预览 -->
-          <el-tab-pane :label="`🎬 动作预览 (${allMotions.length})`" name="motions">
-            <div class="section">
-              <div class="section-head"><h4>基于物种「{{ selectedPreset.species }}」的动作</h4></div>
+              <div class="section-head"><h4>选择动作（{{ allMotions.length }}）</h4></div>
               <div class="motion-grid">
                 <div v-for="m in allMotions" :key="m.motion_id || m.id" class="motion-card"
                      :class="{ active: selectedMotion===(m.motion_id||m.id) }" @click="selectAndRenderMotion(m.motion_id || m.id)">
@@ -157,38 +132,13 @@
                 </div>
                 <div class="coord-hint" v-if="selectedMotionParams?.intensity">💡 「力度协调」为主参数：调节它会同步改变步幅 / 起伏 / 摆臂的整体强度。</div>
               </div>
-
-              <div class="section" v-if="motionPreview">
-                <div class="section-head">
-                  <h4>动作帧预览</h4>
-                  <div class="preview-controls">
-                    <!-- 3D 动作：快速相机控制（角度/距离/缩放） -->
-                    <template v-if="is3dMotion(selectedMotion)">
-                      <span class="cam-mini">yaw <el-input-number v-model="cam.yaw" :min="0" :max="360" :step="5" size="small" controls-position="right" style="width:90px"/></span>
-                      <span class="cam-mini">pitch <el-input-number v-model="cam.pitch" :min="-60" :max="60" :step="5" size="small" controls-position="right" style="width:90px"/></span>
-                      <span class="cam-mini">dist <el-input-number v-model="cam.dist" :min="200" :max="1500" :step="50" size="small" controls-position="right" style="width:90px"/></span>
-                      <span class="cam-mini">zoom <el-input-number v-model="cam.zoom" :min="0.5" :max="2" :step="0.1" size="small" controls-position="right" style="width:90px"/></span>
-                    </template>
-                    <!-- 2D 动作：三视图 -->
-                    <el-radio-group v-else v-model="motionView" size="small">
-                      <el-radio-button value="front">正面</el-radio-button>
-                      <el-radio-button value="side">侧面</el-radio-button>
-                      <el-radio-button value="back">背面</el-radio-button>
-                    </el-radio-group>
-                    <el-button size="small" @click="renderMotion" :loading="motionLoading" icon="Refresh">重新渲染</el-button>
-                  </div>
-                </div>
-                <div class="motion-preview">
-                  <img :src="motionPreview" />
-                </div>
-              </div>
             </div>
           </el-tab-pane>
 
-          <!-- 3D 预览（角度 + 距离） -->
-          <el-tab-pane label="🧊 3D 预览" name="preview3d">
+          <!-- 3D -->
+          <el-tab-pane label="🧊 3D" name="preview3d">
             <div class="section">
-              <div class="section-head"><h4>3D 相机：角度 + 距离（透视）</h4></div>
+              <div class="section-head"><h4>相机控制</h4></div>
               <div class="cam-grid">
                 <div class="cam-item">
                   <div class="cam-label">水平角 yaw <span class="cam-key">{{ cam.yaw }}°</span></div>
@@ -216,23 +166,76 @@
                 </div>
               </div>
               <div class="coord-hint">💡 调节角度/距离/平移实时预览：yaw 绕 Y 旋转、pitch 俯仰、distance 透视近大远小、pan 移动相机位置。</div>
-              <div class="preview-grid">
-                <div class="preview-cell">
-                  <div class="preview-title">🧊 3D 骨架（任意角度）</div>
-                  <img v-if="preview3d.skeleton" :src="preview3d.skeleton" />
-                  <div v-else class="preview-empty"><p>调节视角自动渲染</p></div>
-                </div>
-                <div class="preview-cell">
-                  <div class="preview-title">🚶 3D 动作 <el-select v-model="selectedMotion3d" size="small" style="width:110px;margin-left:6px">
-                    <el-option v-for="m in motions3d" :key="m.motion_id" :label="m.title" :value="m.motion_id" />
-                  </el-select></div>
-                  <img v-if="preview3d.motion" :src="preview3d.motion" />
-                  <div v-else class="preview-empty"><p>调节视角自动渲染</p></div>
-                </div>
-              </div>
             </div>
           </el-tab-pane>
-        </el-tabs>
+            </el-tabs>
+          </div>
+
+          <!-- 右侧：大预览画布 -->
+          <div class="canvas">
+            <div class="canvas-head">
+              <h4>{{ canvasTitle }}</h4>
+              <div class="preview-controls" v-if="activeTab==='motions'">
+                <template v-if="is3dMotion(selectedMotion)">
+                  <span class="cam-mini">yaw <el-input-number v-model="cam.yaw" :min="0" :max="360" :step="5" size="small" controls-position="right" style="width:90px"/></span>
+                  <span class="cam-mini">pitch <el-input-number v-model="cam.pitch" :min="-60" :max="60" :step="5" size="small" controls-position="right" style="width:90px"/></span>
+                  <span class="cam-mini">dist <el-input-number v-model="cam.dist" :min="200" :max="1500" :step="50" size="small" controls-position="right" style="width:90px"/></span>
+                  <span class="cam-mini">zoom <el-input-number v-model="cam.zoom" :min="0.5" :max="2" :step="0.1" size="small" controls-position="right" style="width:90px"/></span>
+                </template>
+                <el-radio-group v-else v-model="motionView" size="small">
+                  <el-radio-button value="front">正面</el-radio-button>
+                  <el-radio-button value="side">侧面</el-radio-button>
+                  <el-radio-button value="back">背面</el-radio-button>
+                </el-radio-group>
+                <el-button size="small" @click="renderMotion" :loading="motionLoading" icon="Refresh">重新渲染</el-button>
+              </div>
+              <div class="preview-controls" v-if="activeTab==='preview3d'">
+                <el-select v-model="selectedMotion3d" size="small" style="width:150px">
+                  <el-option v-for="m in motions3d" :key="m.motion_id" :label="m.title" :value="m.motion_id" />
+                </el-select>
+              </div>
+              <div class="preview-controls" v-if="activeTab==='params'">
+                <el-button size="small" @click="renderAllViews" :loading="previewLoading" icon="Refresh">渲染三视图</el-button>
+              </div>
+            </div>
+
+            <div class="canvas-body" :class="canvasBodyClass">
+              <!-- 体型 → 三视图骨架 -->
+              <template v-if="activeTab==='params'">
+                <template v-if="hasAnyPreview">
+                  <div class="preview-cell" v-for="v in ['front','side','back']" :key="v">
+                    <template v-if="previews[v]">
+                      <div class="preview-title">{{ {front:'正面',side:'侧面',back:'背面'}[v] }}</div>
+                      <img :src="previews[v]" />
+                    </template>
+                  </div>
+                </template>
+                <div v-else class="canvas-empty"><p>在左侧调节体型参数，右侧实时查看体形三视图</p></div>
+              </template>
+
+              <!-- 动作 → 动作帧大图 -->
+              <template v-else-if="activeTab==='motions'">
+                <img v-if="motionPreview" :src="motionPreview" class="fit-img" />
+                <div v-else class="canvas-empty"><p>在左侧选择一个动作开始预览</p></div>
+              </template>
+
+              <!-- 3D → 3D 骨架 + 动作 -->
+              <template v-else>
+                <template v-if="preview3d.skeleton || preview3d.motion">
+                  <div class="preview-cell">
+                    <div class="preview-title">3D 骨架</div>
+                    <img v-if="preview3d.skeleton" :src="preview3d.skeleton" class="fit-img" />
+                  </div>
+                  <div class="preview-cell">
+                    <div class="preview-title">3D 动作</div>
+                    <img v-if="preview3d.motion" :src="preview3d.motion" class="fit-img" />
+                  </div>
+                </template>
+                <div v-else class="canvas-empty"><p>调节左侧相机参数，右侧实时预览 3D 骨架与动作</p></div>
+              </template>
+            </div>
+          </div>
+        </div>
       </section>
 
       <section class="content empty" v-else>
@@ -305,6 +308,23 @@ const allMotions = computed(() => [
 const is3dMotion = (mid) => allMotions.value.some(m => (m.motion_id || m.id) === mid && m.is3d)
 
 const hasAnyPreview = () => Object.values(previews.value).some(Boolean)
+
+// 右侧画布标题 / 布局（跟随当前 tab）
+const canvasTitle = computed(() => ({
+  params: '👁 体形三视图', motions: '🎬 动作帧预览', preview3d: '🧊 3D 预览',
+}[activeTab.value] || ''))
+const canvasBodyClass = computed(() => ({
+  params: 'grid-3', motions: 'single', preview3d: 'grid-2',
+}[activeTab.value] || 'single'))
+
+// 当前体型参数覆盖（供骨架/2D 动作渲染实时使用，无需先保存）
+const bodyOverrides = () => {
+  const ov = {}
+  for (const [name, spec] of Object.entries(presetDetail.value?.params || {})) {
+    ov[name] = body.value[name] ?? spec.default
+  }
+  return ov
+}
 
 const PARAM_LABELS = {
   head_scale:'头大小', neck_length:'脖子长度', upper_torso_length:'上躯干长',
@@ -434,11 +454,10 @@ async function renderAllViews() {
   if (!selectedPreset.value) return
   previewLoading.value = true
   try {
-    // 保存当前参数后渲染
-    const data = { ...presetDetail.value, body: { ...body.value } }
-    await api.savePreset(selectedPreset.value.id, data)
+    // 体型参数实时覆盖渲染，无需先保存预设
+    const bodyOv = bodyOverrides()
     for (const view of ['front','side','back']) {
-      const r = await api.renderSkeleton(selectedPreset.value.id, { view })
+      const r = await api.renderSkeleton(selectedPreset.value.id, { view, body: bodyOv })
       previews.value[view] = r.data_url
     }
   } catch(e) { ElMessage.error(e.message) }
@@ -475,10 +494,10 @@ async function renderMotion() {
       const r = await api.renderMotion3d(selectedMotion.value, camQS() + '&gif=1' + paramQS())
       motionPreview.value = r.gif || r.data_url
     } else {
-      // 2D 动作：三视图渲染
+      // 2D 动作：三视图渲染（带体型参数覆盖，实时反映体形变化）
       const r = await api.renderMotion(selectedMotion.value, {
         view: motionView.value, stage: 'arms', skeleton: selectedPreset.value.id,
-        gif: true, ...motionParams.value,
+        gif: true, ...motionParams.value, ...bodyOverrides(),
       })
       motionPreview.value = r.gif || r.frame || r.data_url
     }
@@ -494,6 +513,14 @@ watch(motionParams, () => {
   if (!selectedMotion.value) return
   clearTimeout(motionParamTimer)
   motionParamTimer = setTimeout(() => renderMotion(), 400)
+}, { deep: true })
+
+// 体型参数 → 防抖自动重新渲染三视图（实时预览体形）
+let bodyTimer = null
+watch(body, () => {
+  if (!selectedPreset.value || activeTab.value !== 'params') return
+  clearTimeout(bodyTimer)
+  bodyTimer = setTimeout(renderAllViews, 300)
 }, { deep: true })
 
 // ---- 3D 预览（角度 + 距离 + 平移） ----
@@ -531,9 +558,10 @@ watch(cam, () => {
   }, 300)
 }, { deep: true })
 
-// 进入 3D 预览 tab 时自动渲染一次（无需先调节）
+// 进入各 tab 时自动渲染一次（无需先手动触发）
 watch(activeTab, (t) => {
   if (t === 'preview3d' && selectedPreset.value && !preview3d.value.skeleton) render3d()
+  if (t === 'params' && selectedPreset.value && !hasAnyPreview()) renderAllViews()
 })
 
 function resetPreview3d() {
@@ -542,14 +570,14 @@ function resetPreview3d() {
 </script>
 
 <style scoped>
-.page { max-width: 1280px; }
+.page { max-width: 1680px; }
 .page-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
 .page-header h2 { margin: 0 0 4px; font-size: 1.4rem; }
 .page-desc { color: #909399; font-size: .85rem; margin: 0; }
 .layout { display: flex; gap: 20px; min-height: 70vh; }
 
 /* 侧边栏 */
-.sidebar { width: 300px; flex-shrink: 0; background: #fff; border: 1px solid #e4e7ed; border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
+.sidebar { width: 240px; flex-shrink: 0; background: #fff; border: 1px solid #e4e7ed; border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
 .sidebar-header { padding: 12px 16px; font-weight: 600; font-size: .9rem; border-bottom: 1px solid #ebeef5; display: flex; justify-content: space-between; align-items: center; }
 .panel-loading { padding: 20px; }
 .sidebar-list { flex: 1; overflow-y: auto; max-height: calc(100vh - 220px); }
@@ -565,12 +593,29 @@ function resetPreview3d() {
 .empty-icon { font-size: 2rem; }
 
 /* 内容区 */
-.content { flex: 1; background: #fff; border: 1px solid #e4e7ed; border-radius: 10px; padding: 20px 24px; overflow-y: auto; max-height: calc(100vh - 160px); box-shadow: 0 1px 3px rgba(0,0,0,.04); }
+.content { flex: 1; background: #fff; border: 1px solid #e4e7ed; border-radius: 10px; padding: 20px 24px; display: flex; flex-direction: column; overflow-y: auto; max-height: calc(100vh - 160px); box-shadow: 0 1px 3px rgba(0,0,0,.04); }
 .content.empty { display: flex; align-items: center; justify-content: center; }
 .content-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
 .crumb { display: flex; align-items: center; gap: 6px; font-size: .85rem; }
 .crumb-root { color: #909399; } .crumb-sep { color: #c0c4cc; } .crumb-now { font-weight: 600; color: #303133; }
 .content-actions { display: flex; gap: 8px; }
+
+/* 工作区：左侧控制面板 + 右侧大画布 */
+.workspace { display: flex; gap: 18px; flex: 1; min-height: 0; }
+.control-panel { width: 380px; flex-shrink: 0; overflow-y: auto; padding-right: 12px; }
+.canvas { flex: 1; min-width: 0; display: flex; flex-direction: column; background: #111827; border: 1px solid #111827; border-radius: 10px; padding: 14px 16px; min-height: calc(100vh - 320px); }
+.canvas-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+.canvas-head h4 { margin: 0; color: #e5e7eb; font-size: .95rem; }
+.canvas .cam-mini { color: #d1d5db; }
+.canvas-body { flex: 1; display: flex; gap: 12px; min-height: 0; }
+.canvas-body.grid-3 .preview-cell,
+.canvas-body.grid-2 .preview-cell { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.canvas-body.single { align-items: center; justify-content: center; }
+.canvas-body .preview-title { color: #9ca3af; font-size: .78rem; margin-bottom: 6px; text-align: center; }
+.canvas-body img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 6px; background: #1f2937; }
+.canvas-body.grid-3 img, .canvas-body.grid-2 img { width: 100%; }
+.canvas-empty { display: flex; align-items: center; justify-content: center; color: #6b7280; flex: 1; padding: 30px; text-align: center; }
+.canvas-empty p { margin: 0; font-size: .85rem; }
 
 /* 统计卡片 */
 .stat-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }

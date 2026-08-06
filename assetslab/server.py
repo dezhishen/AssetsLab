@@ -52,9 +52,20 @@ class _RenderService:
     放在组装根，不单独成层。
     """
 
-    def skeleton_preview(self, skeleton_id: str, view: str):
+    def skeleton_preview(self, skeleton_id: str, view: str, body_overrides=None):
         render_mod.set_skeleton(skeleton_id)
-        return render_mod.render_frame(view, "skeleton", 0, 1.0, 1.0, 1.0)
+        base = None
+        if body_overrides:
+            # 体型参数实时覆盖：对目标视图坐标应用比例，无需先保存预设
+            try:
+                views = render_mod.skeleton_views()
+                if view in views:
+                    coords = {k: [float(x), float(y)] for k, (x, y) in views[view].items()}
+                    motion_mod.apply_proportions(coords, body_overrides, view)
+                    base = {k: (float(v[0]), float(v[1])) for k, v in coords.items()}
+            except Exception:
+                base = None
+        return render_mod.render_frame(view, "skeleton", 0, 1.0, 1.0, 1.0, base=base)
 
     def motion_frame(self, motion_id: str, *, view="front", stage="arms",
                      skeleton="standard", frame_index=0,
@@ -380,7 +391,10 @@ class AssetsLabHandler(SimpleHTTPRequestHandler):
             return self._json({"ok": False, "error": str(e)}, 400)
         try:
             view = str(body.get("view", "front"))
-            img = self.render.skeleton_preview(skel_id, view)
+            # 体型参数覆盖支持两种传法：顶层 {head_scale:..} 或嵌套 {body:{head_scale:..}}
+            overrides_src = body.get("body") if isinstance(body.get("body"), dict) else body
+            body_overrides = _float_map(overrides_src, motion_mod.PROPORTION_NAMES) or None
+            img = self.render.skeleton_preview(skel_id, view, body_overrides)
             return self._json({"ok": True, "data_url": _image_to_data_url(img)})
         except Exception as e:
             return self._json({"ok": False, "error": str(e)}, 500)
