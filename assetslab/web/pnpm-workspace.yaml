@@ -1,0 +1,5 @@
+allowBuilds:
+  esbuild: true
+# pnpm 11 设置（onlyBuiltDependencies 等新位置）
+onlyBuiltDependencies:
+  - esbuild

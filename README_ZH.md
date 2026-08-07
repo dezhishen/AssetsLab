@@ -1,314 +1,99 @@
 # AssetsLab（中文说明）
 
-[English](README.md) · **中文**
-
-基于 **Godot 4.7** 的像素风角色动画实验项目。核心工作是：通过**「骨架验证先行、分层图集渲染、无头测试把关」**的流水线，自研 QQTang 风格（大头）角色**四方向 × 八帧**行走动画，并附带一个最小可玩原型作为运行时验证。
-
-- 引擎：Godot 4.7（GL Compatibility 渲染，适合 2D 像素与跨平台/无头自动化）
-- 方向：front / right / back / left 四方向，每方向 8 帧行走循环
-- 运行时角色：7 层 `Sprite2D` 叠合（脚 / 下肢 / 手臂 / 躯干 / 耳朵 / 头 / 脸），头部与脸部外观由**确定性种子**选择
-- 最小玩法：WASD/方向键移动，空格放置一枚短引信炸弹（爆炸会把玩家炸回出生点）
+数据驱动角色素材管线：**3D 动作引擎（CMU 动捕真实数据）+ 物种/预设 + CLI/HTTP 双入口 + Web 前端预览 + Godot demo**。
 
 ## 项目内容
 
-| 模块 | 说明 |
-|---|---|
-| `prototype/` | Godot 4.7 工程：运行时脚本、分层资产、无头测试 |
-| `third_party/` | 开源参考素材（CC0 RGS 模块化角色、Female Adventurer 行走参考），仅作姿态时序参考，非最终美术风格 |
-| `PROJECT.md` | 项目总纲：开发状态、路线图、评审原则（英文） |
-| `references/` | 设计参考图：人体模型 sheet、正面角色锚点 |
-| `prototype/assets/characters/walk_base/` | 权威 4 向行走基底源图 |
-| `workflow/` | 工作流引擎：SDK + 工具（assetslab、构建、校验）+ 定义 |
-| `run/` | 工作流实例状态（git 忽略）：state.json + 步骤图片产物 |
-
-### 核心方法论：骨架优先行走流水线
-
-先用 Godot `_draw()` **程序化绘制的骨架**验证姿态时序与层次规则，验证通过后才据此重绘像素资产。每个方向按阶段递进，每阶段有独立脚本 + 无头捕获 + 内置断言：
-
-1. **静态基准骨架**：对称性、共享脚基线
-2. **八帧腿循环**：交替接触/迈步（F0/F4 为接触帧，前半循环左腿在前、后半右腿在前）
-3. **骨盆垂直浮动**：仅 ≤6px 峰峰值起伏
-4. **反向手臂摆动**：与对应腿反相，手不越中线
-
-进度：**front 与 side 已通过全部 4 阶段，back 停留在八帧腿循环**。每阶段产物与门槛记录在 `prototype/assets/characters/generated/skeleton_walk_pipeline_v1/` 的 manifest JSON 中。
+- **3D 动作引擎**：骨骼拓扑（`skeleton.json`）+ FK 关节旋转驱动动作，任意视角（轨道相机）渲染 PNG / GIF。
+- **真实动捕**：骨骼与 `walk3d` 完全按 **CMU MoCap（subject16, `16_15.bvh`）** 数据重建——骨长比例精确一致、全关节旋转照搬。
+- **物种 / 预设**：物种定义骨骼拓扑与动作；预设是基于物种的实例（调体型 + 动作幅度）。前端独立入口，不同角色处理。
+- **CLI / HTTP 同级**：共用同一套 `Api` 接口（`interfaces.Api` + `api.ApiService`），避免两侧漂移。
+- **Web 前端**（Vue 3）：物种 / 预设独立入口；动作预览（播放 + 导出 GIF）；3D 相机（快捷按钮 + 收纳面板 + 拖拽旋转）。
+- **Godot demo**：`prototype/`（Godot 4.7 工程）保留，作为运行时验证。
 
 ## 目录结构
 
-```text
-assets-lab/
-├── PROJECT.md                 # 项目总纲（英文）
-├── README.md                  # 英文版项目说明
-├── README_ZH.md               # 中文版项目说明（本文件）
-├── references/                # 设计参考图（人体模型 sheet、角色锚点）
-├── prototype/                 # Godot 4.7 工程
-│   ├── project.godot
-│   ├── main.tscn              # 主场景（角色 + 竞技场 + 墙体）
-│   ├── scripts/               # 运行时 + 骨架流水线各阶段脚本
-│   ├── assets/characters/     # 分层资产（chibi、faces、generated 候选等）
-│   ├── tests/                 # 无头验证测试（smoke_test 等）
-│   └── README.md              # 原型的详细运行说明
-├── workflow/                  # 工作流引擎：SDK + 工具 + 定义
-│   ├── tools/                 # 可执行脚本（assetslab、捕获、构建、校验）
-│   └── definitions/           # 声明式工作流定义
-├── run/                       # 工作流实例状态（git 忽略，生成物）
-└── third_party/               # 开源参考素材
+```
+assetslab/
+  api.py / interfaces.py / cli.py / server.py   ← 统一 Api（CLI 与 HTTP 共用）+ 薄路由 + CLI
+  species.py / presets.py / models.py / motion.py
+  skeleton3d.py / render.py                      ← 3D 引擎（FK/IK/投影）+ 绘制
+  species/human/                                 ← 物种：骨骼 + 默认体型 + 动作
+    skeleton.json / preset_schema.json / default.json
+    actions3d/walk3d.json                        ← 3D 动作（FK 旋转，真实 CMU 数据）
+  presets/                                       ← 预设（物种实例：body 体型 + actions 动作幅度）
+  web/                                           ← Vue 3 前端
+scripts/
+  mocap/                                         ← CMU 动捕工具链（BVH 解析 / 重建 / 验证）
+  verify_motions3d.py                            ← 3D 动作验证（8 项检查，数据驱动）
+prototype/                                       ← Godot 4.7 demo（保留）
 ```
 
 ## 快速开始
 
 ### 环境要求
 
-- **Godot 4.7**：自动化脚本要求 `_console.exe` 无头构建（`--headless`）。解析顺序：`--godot` → `GODOT_BIN`/`GODOT_PATH` → `PATH` 上的 `godot`/`godot4` → 相邻 `Godot-4.7` 目录。
-- **Python 3 + Pillow**（通过虚拟环境）：资产处理与 GIF 合成需要。解析顺序：`--python` → `PYTHON_BIN` → 本地 `.venv` → `PATH`。
-- 全部为**纯 Python 跨平台**方案，不依赖任何 PowerShell / shell 脚本。
-
-### 虚拟环境（推荐）
-
-所有 Python 工具运行在 `.venv/` 中，依赖相互隔离；解析器会自动优先使用它。
+- Python 3.11+（建议 `.venv/`，`Pillow==12.3.0`；纯 Python，无 numpy/scipy）
+- Node.js + **pnpm**（前端）
 
 ```bash
-# 首次创建
-python3 -m venv .venv
-.venv/bin/python -m pip install -r requirements.txt
-
-# 可选：激活后 `python` 指向 venv
-source .venv/bin/activate        # Windows: .venv\Scripts\activate
-
-# 推荐：直接用 venv 解释器（无需激活）
-.venv/bin/python workflow/tools/assetslab.py doctor
-.venv/bin/python -m workflow list
+python3 -m venv .venv && .venv/bin/python -m pip install -r requirements.txt
+cd assetslab/web && pnpm install
 ```
 
-Windows 使用 `.venv\Scripts\python.exe`。`requirements.txt` 固定 Python 依赖（Pillow）。
-
-所有命令默认在**仓库根目录**执行。
-
-> **CLI（统一入口）：** `workflow/tools/assetslab.py` 可在 Windows / Linux / macOS
-> 上运行：`doctor`、`test`、`capture-walk`、`stage <视图> <阶段>`、`preview`、
-> `run-script`。参数：`--female`、`--compact`、`--rebuild-head`、
-> `--appearance-seed` 等；Godot 解析顺序为 `--godot` → `GODOT_BIN`/`GODOT_PATH` → `PATH` → 相邻 `Godot-4.7` 安装。
-
-### 1. 运行无头冒烟测试
+### 生产
 
 ```bash
-# 生成随机外观包 -> 校验资产 -> 启动 Godot 冒烟测试
-python workflow/tools/assetslab.py test
-
-# 常见参数
-python workflow/tools/assetslab.py test --female                                  # 女性基底
-python workflow/tools/assetslab.py test --rebuild-head --vertical-candidate          # 校准头 + 纵向候选
-python workflow/tools/assetslab.py test --appearance-seed 20260730                 # 固定种子
-python workflow/tools/assetslab.py test --godot 'E:\Path\To\godot_console.exe' # 指定 Godot
+cd assetslab/web && pnpm run build            # 构建前端 dist
+cd ../.. && .venv/bin/python assetslab/server.py --port 8765   # 后端服务 dist + API
+# 打开 http://localhost:8765
 ```
 
-**跨平台等价命令：**
+### 开发（热更新，前后端分离）
 
-```bash
-python3 workflow/tools/assetslab.py test
-python3 workflow/tools/assetslab.py test --female --rebuild-head --vertical-candidate
-python3 workflow/tools/assetslab.py test --appearance-seed 20260730
-python3 workflow/tools/assetslab.py test --godot /path/to/godot
-```
-
-### 2. 捕获行走动画 GIF
-
-```bash
-python workflow/tools/assetslab.py capture-walk                       # 四方向行走 GIF -> prototype/test_output/
-python workflow/tools/assetslab.py capture-walk --rebuild-head --vertical-candidate --vertical-only  # 仅纵向候选
-python workflow/tools/assetslab.py capture-walk --milestone-body-right --right-only                 # 仅右向里程碑
-```
-
-**跨平台等价命令：**
-
-```bash
-python3 workflow/tools/assetslab.py capture-walk
-python3 workflow/tools/assetslab.py capture-walk --rebuild-head --vertical-candidate --vertical-only
-python3 workflow/tools/assetslab.py capture-walk --milestone-body-right --right-only
-```
-
-### 3. 骨架流水线（阶段推进）
-
-```bash
-python workflow/tools/assetslab.py stage front skeleton    # front 静态骨架
-python workflow/tools/assetslab.py stage front legs   # front 双腿循环
-python workflow/tools/assetslab.py stage front pelvis  # front 骨盆浮动
-python workflow/tools/assetslab.py stage front arms   # front 摆臂
-# side / back 对应脚本同理
-```
-
-**跨平台等价命令：**
-
-```bash
-python3 workflow/tools/assetslab.py stage front skeleton
-python3 workflow/tools/assetslab.py stage front legs
-python3 workflow/tools/assetslab.py stage front pelvis
-python3 workflow/tools/assetslab.py stage front arms
-python3 workflow/tools/assetslab.py stage back legs
-```
-
-每阶段输出到 `prototype/test_output/skeleton_pipeline/`（PNG + GIF），必须在可视化验收通过后才进入下一阶段。
-
-### 4. 运行 Godot 预览 demo（复用导出制品）
-
-`prototype/` 是纯 Godot 预览 demo，不再有 HTML 预览管线。运行 demo 时直接复用工作流最后一步「导出 Godot 制品」产出的制品包（`dist/<工作流实例>/`，含分层 `atlas/` + `runtime_manifest.json` + `character_walk_4way.gif`）：
-
-```bash
-# 在仓库根目录，将 demo 指向某个制品包：
-godot --path prototype -- --artifacts dist/no-review
-```
-
-另有**交互式辅助脚本**（Linux/macOS 用 `scripts/build_demo.sh`，Windows 用 `scripts/build_demo.bat`）：列出工作流实例、确保 `dist/<id>` 制品存在（缺失时自动运行 `export.artifacts`），并以窗口模式或 headless 冒烟测试方式运行 demo。
-
-`prototype/scripts/player.gd` 启动时读取 `runtime_manifest.json` 与
-`atlas/<图层>/walk_row<行>_frame<帧>.png`；未传 `--artifacts` 时回退到内置的
-`assets/characters/rebuild_atlas_v1_runtime/male/` 运行时。demo 保留交互移动（WASD/方向键）与放炸弹（空格）。
-
-### 5. 资产构建与处理
-
-```bash
-python workflow/tools/build_body_vertical_update.py   # 重建前/后纵向行走候选帧
-# 或：python3 workflow/tools/assetslab.py run-script build_body_vertical_update.py
-python workflow/tools/recolor_body_palettes.py        # 生成 light/warm/deep 肤色变体（保持尺寸与 alpha 不变）
-```
-
-### 6. 工作流引擎（AI / 人工调度）
-
-`-m workflow` 以**步进式**驱动流水线，状态按实例持久化到 `run/workflows/<workflow_id>/`：
-
-```bash
-python -m workflow list                                            # 列出实例
-python -m workflow new --definition default --id review-a          # 新建实例
-python -m workflow status --workflow review-a --json               # 查看状态
-python -m workflow next --workflow review-a                        # 推荐下一步
-python -m workflow run --workflow review-a --action skeleton.front --json
-python -m workflow set-body --workflow review-a --body head_scale=1.2   # 固化角色体型
-python -m workflow delete --workflow review-a                          # 删除实例（默认保留制品）
-python -m workflow delete-artifacts --workflow review-a                # 仅删除 dist/<id> 制品
-python -m workflow update                                              # 更新 webflow-cli 二进制自身
-```
-
-**动作参数化** — 每个动作可在定义里声明可调旋钮（如 `stride` / `pelvis_bob` / `arm_swing`），运行时可覆盖任意参数，实际使用的参数会记录进该动作状态供查看：
-
-```bash
-python -m workflow run --workflow review-a --action skeleton.front --param stride=1.2 --param pelvis_bob=1.5 --json
-```
-
-**风格参数模板** — 不必从中性参数（stride=1.0）开始，创建实例时可直接选一套业内风格默认参数（`--template realistic|cartoon|bouncy|heavy|light`）。模板值成为该实例的默认旋钮（每次运行仍可用 `--param` 覆盖）；Web 控制台新建实例时提供同样的模板选择，并会用它预填向导的参数滑块。
-
-```bash
-python -m workflow new --definition default --id hero --template bouncy
-python -m workflow run --workflow hero --action skeleton.front              # 用 bouncy 默认参数
-python -m workflow run --workflow hero --action skeleton.front --param stride=1.5   # 覆盖单个旋钮
-```
-
-**动作 / 体型分离** — 动作参数（`stride`/`pelvis_bob`/`arm_swing`）描述「怎么动」，是每动作的属性；**体型比例**（8 项**段参数**：头大小/颈长/躯干长/肩宽/上臂长/前臂长/大腿长/小腿长）描述「长什么样」，是**角色**的属性，属于整个实例（`state.body`），三视图（front/side/back）共享——改一次全步骤生效，避免同一角色三视图比例不一致。创建实例可套体型模板 `--body-template standard|chibi|tall|stocky`；`set-body` 固化角色，`run --body` 仅本次覆盖：
-
-```bash
-python -m workflow new --definition default --id hero --template bouncy --body-template chibi
-python -m workflow set-body --workflow hero --body head_scale=1.4
-python -m workflow run --workflow hero --action skeleton.front --body upper_arm_length=1.2
-```
-
-- **CLI** 是面向 AI 的调度通道：`--json` 输出机器可读，`outputs` 返回本地图片**绝对路径**。CLI 直接驱动工作流 SDK（`workflow.runner`），**不依赖 Web 服务**，无需启动服务器即可独立完成全部调度。
-- **Web** 是面向人工的完整通道：前端是 **Vue 3 + Element Plus + Tailwind CSS** 的 pnpm 工程化 SPA（`workflow/web/`，`pnpm build` → `workflow/web/dist` 由 `http://<host>:8765/` 提供）；图片经 `http://<host>:8765/run/workflows/<id>/steps/<action_id>/` 预览。CLI 与 Web API 是**同一 SDK 的两个平级适配器**——Web 服务器也直接调用 `workflow.runner`（不再外部调用 CLI），二者互不依赖。带可调参数的动作在运行前会弹出**参数调优窗**（拖动 stride/pelvis-bob/arm-swing 再运行），人真正参与调姿态。
-- **分步流程向导**：`http://<host>:8765/#/wizard?id=<workflow_id>` 一次只渲染一个步骤（步进器 + 上一步/下一步，类似安装向导）。每步展示参数与输出；控制台（`#/console`）中点击实例即进入向导。首次打开定位推荐的下一步。
-- `workflow_id` / `action_id` 贯穿 CLI、Web、持久化三层；多实例可**并行**，各自分文件存储。
-
-## 预览渲染（纯 Python）
-
-骨架流水线预览改用 Pillow 渲染（`workflow/tools/render_skeleton_preview.py`），无需 Godot。姿态参数化，AI 可直接调优：
-
-```bash
-python workflow/tools/assetslab.py stage front legs --renderer python --stride 1.2 --pelvis-bob 1.0 --arm-swing 1.1
-python workflow/tools/render_skeleton_preview.py --view side --stage arms --arm-swing 1.5
-```
-
-- `--stride` 步幅 · `--pelvis-bob` 骨盆浮动 · `--arm-swing` 摆臂幅度。
-- 工作流的骨架动作已默认 `--renderer python`；Godot 无头捕获仍以 `--renderer godot` 保留用于一致性验证。
-
-### 数据驱动动作预设（姿态库）
-
-不再把姿态写成散落的函数，而是把动画循环做成**声明式 JSON 预设**，放在 `workflow/motions/`（`walk`、`run`、`idle`、`jump`）。每个预设描述「波形信号 + 相对静态基座的关节偏移」，由引擎（`workflow/tools/motion.py`）采样成帧。**新增一个动作 = 新增一个 JSON 文件，无需改渲染器**。
-
-```bash
-python workflow/tools/assetslab.py motion list                          # 列出预设
-python workflow/tools/assetslab.py motion info run                      # 查看参数与 IK 组
-python workflow/tools/assetslab.py motion render run --view front --stage legs --ik
-python workflow/tools/assetslab.py motion check                         # walk == 内置姿态
-python workflow/tools/assetslab.py stage side arms --renderer python --motion run --ik
-```
-
-- `walk` 为参照预设：`motion check` 与像素级对比证明它与 Godot 一致的旧内置姿态**逐像素完全相同**（全部视图/阶段）。
-- **头部运动**：`head`/`neck` 以骨盆起伏的一半幅度跟随浮动，侧视图还有前后摆动——经典的「反向补偿」动画，头不再锁死（walk/run 上下浮动、idle 呼吸点头、jump 随身体升降）。
-- **骨骼层级（根驱动）**：关节构成刚性躯干链（pelvis → neck/head + shoulders/arms）。每个动作声明 `root`（骨盆平移：bob / 跳跃升降 / 前倾），躯干上的每个关节按各自系数继承它（`base.json` 的 `torso`）：肩/臂 1.0（刚性）、膝 0.5（衰减）、头 0.5（视线稳定）。跳跃时肩/臂随骨盆整体升降，无需逐关节补丁。
-- **双骨骼 IK**（`--ik`；预设内声明 `ik` 组）在大步幅下保持腿长恒定，并做「落地锁定」——脚目标超出可达半径时锁定回可达边界，用于 `run` / `jump`。
-- **体型比例参数**：静态基座本身也可调——8 项**段参数** `head_scale` / `neck_length` / `torso_length` / `shoulder_width` / `upper_arm_length` / `forearm_length` / `thigh_length` / `shin_length`（各 1.0 = 基准，**无整体 height**）。每项按骨骼段独立缩放（如 `head_scale` 从颈部放大头、`thigh_length`/`shin_length` 在脚贴地下加长腿），因此**同一套动作预设可驱动任意体型**。在工作流里体型是**角色级**属性（实例 `body`，三视图一致）：每步只调动作参数，体型在流程向导顶部「角色体型」面板或 `set-body`/`--body` 统一调整；底层渲染器仍以 `--proportion-*` 暴露：
-
+- 终端 1 — 后端 API（`--dev` 追加 CORS 头）：`.venv/bin/python assetslab/server.py --dev --port 8765`
+- 终端 2 — 前端 Vite dev（proxy `/api` `/run` → 8765，即时热更新）：
   ```bash
-  python workflow/tools/assetslab.py motion render walk --view front --stage arms \
-      --proportion-head-scale 1.4 --proportion-upper-arm-length 1.3
+  cd assetslab/web && pnpm run dev    # http://localhost:5173
   ```
-- **跨动作混合**：`--blend run --blend-t 0.5` 对关节做插值，实现 walk↔run 参数化过渡。
-- **Web**：工作流控制台（`#/console`）含 **动作预览台（Motion Studio）**——选动作/视角/阶段、拖动 stride/pelvis-bob/arm-swing 滑块、勾选 IK、跨动作混合，浏览器内通过 `POST /api/motions/<id>/render` 实时渲染循环。
+  - 也可在 web 目录 `pnpm run dev:api` 起后端；后端端口可用 `API_TARGET` 覆盖 proxy 目标。
 
-## 程序化蒙皮与皮肤（皮肤 = 部件 + 骨骼）
-
-蒙皮复用同一套骨架+动作引擎，把**皮肤部件**实时贴到 `base.json` 关节上（`workflow/tools/skin.py`）。**皮肤**是独立**皮肤包** `skins/<name>/`——`skin.json`（`coordinates="skeleton"`、固化体型 `body`、`layers`、`bindings`）+ 标准命名部件 `000_head_front.png`…（`<NNN>_<layer>_<view>.png`；`NNN` 按区域分段：`000`头颈/`100`左臂/`200`右臂/`300`躯干/`400`左腿/`500`右腿/`600`脚，每区 100 槽）+ `preview/` 动画。新皮肤 = 新目录。
+### CLI（不启动 server，与 HTTP 同级）
 
 ```bash
-python workflow/tools/build_mannequin_skin.py --body head_scale=1.15 --body shoulder_width=1.4 \
-    --palette orc --out orc                # 生成人体模特皮肤（体型 + 配色，体型固化进 skin.json）
-python workflow/tools/assetslab.py skin list                                  # 列出皮肤（pack + legacy）
-python workflow/tools/assetslab.py skin verify --skin orc                     # 绑定校验 + rest 合成（verify 第一个位置参数是 atlas，须用 --skin）
-python workflow/tools/assetslab.py skin render walk --view front --skin orc --gif out.gif
-python workflow/tools/assetslab.py skin anchors --skin orc --view front        # 提取各层锚点
+.venv/bin/python -m assetslab.cli species list
+.venv/bin/python -m assetslab.cli preset new human
+.venv/bin/python -m assetslab.cli render skeleton human --out skel.png --yaw 45 --body head_scale=1.2
+.venv/bin/python -m assetslab.cli render motion walk3d --gif --out walk.gif
+.venv/bin/python -m assetslab.cli render preset <id> --action walk3d --gif --out walk.gif
 ```
 
-- **生成皮肤**（`build_mannequin_skin.py`）：程序化人体模特部件，`--body`（8 项段参数，固化进 `skin.json`）+ `--palette`（`default`/`orc`/`human`/`undead`/`dwarf` 配色）+ `--out` 皮肤包名。现有皮肤：`mannequin`、`mannequin_swordswoman`、`orc`(兽人·绿·宽肩)、`human_warrior`(人类战士·蓝)、`undead`(亡灵·暗灰·瘦长)、`dwarf`(矮人·棕·矮壮) + legacy `skeleton`。
-- **烘焙成制品**（`export_skin_demo.py`）：把皮肤渲染成 demo 消费的预烘焙分层帧——`python workflow/tools/export_skin_demo.py --skin orc` → `dist/orc/`（7 层 4×8 atlas + `runtime_manifest.json` + 四向 GIF + README；皮肤层→demo 层、方向 front/right/back/left 映射）。
-- **side 视图**：左肢绑 `front_`、右肢绑 `rear_`（两条腿/两条手臂可见）；深度排序让后侧肢体在躯干后，避免穿透闪烁。
-- 工作流在 `export.artifacts` 后追加 `skin.verify` + `skin.render`（`--param skin/motion/view` 切换皮肤/视图），输出皮肤包 `skins/<name>/preview/`。
-- Godot demo：`godot --path prototype -- --artifacts dist/<id>`（空格/等号均可，加载成功打印 `ARTIFACTS_LOADED`）；皮肤动画预览 `--skin-mode --skin-pack=<name>`。
+## 3D 架构（FK 关节旋转 + 真实动捕）
 
-## 制品与 Godot demo
-
-工作流的最后一个动作 `export.artifacts` 会用纯 Python（无需 Godot）在 `dist/<workflow_id>/` 下打包一份**Godot 可直接使用**的制品：
-
-```text
-dist/<workflow_id>/
-├── atlas/                      # 分层 4×8 帧（feet/lower_body/arms/torso/head_base/ear/face）
-├── runtime_manifest.json       # 方向、层序、head_anchor_offsets
-├── character_walk_4way.gif     # Pillow 合成预览
-└── README.md
+```
+动作 walk3d.json（fk3d.rotations3d：全关节每帧真实旋转 table + root3d 根位移）
+   + 骨架 skeleton.json（fk_tree/fk_local 骨向量）+ default.json（positions_3d 体型）
+        ↓ build_skeleton_3d()
+3D 骨架 {joint: [x,y,z]}
+        ↓ pose_3d()  →  FK 正向运动学（父累积旋转）+ 3D IK + 刚性传播
+3D 姿势
+        ↓ project3d()（yaw/pitch/dist/zoom 透视）
+2D 屏幕坐标 → render_pose() → PNG / GIF
 ```
 
-用最小可运行 demo（保留交互玩法）加载制品：
-
-```bash
-godot --path prototype -- --artifacts dist/<workflow_id>
-```
-
-demo 保留 WASD/方向键移动与空格放炸弹的交互验证。
-
-## 输出位置与说明
-
-| 产物 | 路径 | Git |
-|---|---|---|
-| 测试 / 捕获输出 | `prototype/test_output/` | 忽略 |
-| 随机外观包 | `prototype/test_output/random_appearance/` | 忽略 |
-| 导出制品 | `dist/<工作流实例>/` | 忽略 |
-| 运行时分层资产 | `prototype/assets/characters/chibi/` | 跟踪 |
-| 生成候选 / 骨架流水线 | `prototype/assets/characters/generated/` | 跟踪 |
+- **骨骼与 walk 按真实 CMU 动捕重建**：骨长比例精确一致、全关节旋转照搬（`scripts/mocap/rebuild_skeleton_cmu.py`）。
+- 3D 相机 = 轨道相机（绕模型中心）：`yaw/pitch/dist/zoom`；前端支持拖拽旋转 + 快捷按钮 + 收纳面板。
+- 预设 = 基于物种的实例：**体型参数**（骨骼尺寸，schema 由骨架 `param_chains` 派生）+ **动作参数**（动作幅度，schema 由动作 JSON `params` 派生），界面按 schema 自动渲染。
 
 ## 当前状态与路线图
 
-- **已完成**：front / side 骨架完整循环（骨架→腿→骨盆→摆臂）；back 八帧腿循环；校准头部运行时；确定性种子外观。
-- **进行中**：back 骨盆/摆臂 → 验证左镜像 → 四方向锚点审查 → 身体块与头部附着校准。
-- **待办**：男/女变体、模块化随机脸/发/服装层、垂直行走候选并入运行时、斜向方向（推迟至四方向契约稳定）。
-- **已归档**：被否决的 AI 身体/头部实验、Skeleton2D 实验等保留在 `history0731` 分支供审计，不在主线路资产集中。
+- ✅ 骨骼 + walk：真实 CMU 数据驱动，`verify_motions3d.py` 8 项全 PASS
+- ✅ 统一 Api：CLI 与 HTTP 共享 `interfaces.Api`（硬约束）
+- ✅ 预设系统：独立入口（前端 + CLI），schema 派生 + 实时预览
+- ✅ Web 前端：动作预览（播放 + GIF 导出）、3D 轨道相机、dev 热更新
+- 🔜 run / jump 等动作按 CMU 真实数据补全；Godot demo 接入 3D 动作
 
 ## 相关文档
 
-- [`README.md`](README.md) — 英文版项目说明
-- [`PROJECT.md`](PROJECT.md) — 项目总纲：开发状态、候选评审与资源清理（英文）
-- [`prototype/README.md`](prototype/README.md) — 原型的详细技术说明与全部命令
+- `PROJECT.md` — 当前架构与约束（强制数据驱动）
+- `TODO.md` — 任务交接 / 待办

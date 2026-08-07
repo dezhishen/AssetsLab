@@ -19,14 +19,11 @@ Usage:
 from __future__ import annotations
 
 import argparse
-import base64
-import io
 import json
 import sys
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import unquote
-from typing import Protocol
 
 # Make 'assetslab' package importable when run as `python assetslab/server.py`
 _PKG_ROOT = Path(__file__).resolve().parent  # assetslab/
@@ -34,8 +31,8 @@ _REPO_ROOT = _PKG_ROOT.parent
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
-from assetslab.interfaces import SpeciesModule
-from assetslab.species import SpeciesService
+from assetslab.interfaces import Api
+from assetslab.api import ApiService
 
 # ---- paths ----
 PKG_ROOT = _PKG_ROOT
@@ -46,12 +43,25 @@ WEB_DIST = PKG_ROOT / "web" / "dist"
 
 
 class AssetsLabHandler(SimpleHTTPRequestHandler):
-    """HTTP 处理器。依赖注入：species / presets 两个服务。"""
+    """HTTP 处理器。依赖注入：统一 Api 服务（CLI 与 HTTP 共用同一套接口）。"""
 
     server_version = "AssetsLab/2.0"
 
     # 注入的依赖（由 build_server 设置）
-    species: SpeciesModule = None        # type: ignore[assignment]
+    api: Api = None        # type: ignore[assignment]
+    dev_mode: bool = False
+
+    def end_headers(self) -> None:
+        """开发模式（--dev）下追加 CORS 头，供前端 Vite dev / proxy 跨域。"""
+        if self.dev_mode:
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.send_header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+            self.send_header("Access-Control-Allow-Headers", "Content-Type")
+        super().end_headers()
+
+    def do_OPTIONS(self) -> None:
+        self.send_response(204)
+        self.end_headers()
 
     def log_message(self, format: str, *args: object) -> None:
         return  # silent
@@ -62,6 +72,10 @@ class AssetsLabHandler(SimpleHTTPRequestHandler):
         p = self.path
         if p.startswith("/api/species"):
             return self._species_get()
+        if p.startswith("/api/preset3d/"):
+            return self._preset3d_get()
+        if p.startswith("/api/presets"):
+            return self._presets_get()
         if p == "/api/motions3d":
             return self._motions3d_list()
         if p.startswith("/api/motion3d/"):
@@ -76,42 +90,30 @@ class AssetsLabHandler(SimpleHTTPRequestHandler):
         p = self.path
         if p.startswith("/api/species"):
             return self._species_post()
+        if p.startswith("/api/presets"):
+            return self._presets_post()
         self.send_error(404)
 
     def do_PUT(self) -> None:
         if p := self.path:
             if p.startswith("/api/species/"):
                 return self._species_post()
+            if p.startswith("/api/presets"):
+                return self._presets_post()
         self.send_error(404)
 
     def do_DELETE(self) -> None:
         if self.path.startswith("/api/species/"):
             return self._species_delete()
+        if self.path.startswith("/api/presets"):
+            return self._presets_delete()
 
     # -- 3D API ---------------------------------------------------------
     # 阶段 1/2：3D 骨架 + 3D 动作，任意视角（yaw）正交投影。
 
     def _motions3d_list(self) -> None:
         """GET /api/motions3d — 列出所有物种的 3D 动作（含 params，供前端参数滑块）。"""
-        items = []
-        for sp_dir in (_PKG_ROOT / "species").iterdir():
-            ad = sp_dir / "actions3d"
-            if not ad.is_dir():
-                continue
-            for p in sorted(ad.glob("*.json")):
-                try:
-                    data = json.load(open(p))
-                    items.append({
-                        "motion_id": data.get("motion_id", p.stem),
-                        "title": data.get("title", p.stem),
-                        "description": data.get("description", ""),
-                        "species": data.get("species", sp_dir.name),
-                        "params": data.get("params", {}),
-                        "has_ik": bool(data.get("ik3d")),
-                    })
-                except Exception:
-                    continue
-        return self._json({"motions3d": items})
+        return self._json({"motions3d": self.api.actions_list_all()})
 
     def _skeleton3d_get(self) -> None:
         """GET /api/skeleton3d/<species_id>?yaw=45&pitch=12&dist=600&zoom=1&<body 参数> — 3D 骨架任意角度/距离 PNG（基于物种默认参数）。"""
@@ -133,10 +135,10 @@ class AssetsLabHandler(SimpleHTTPRequestHandler):
         body = {k: float(v[0]) for k, v in qs.items() if k not in cam_keys}
         species_id = parts[0]
         try:
-            from assetslab.skeleton3d import build_skeleton_3d, render_view
-            skel3d = build_skeleton_3d(species_id, body or None)
-            img = render_view(skel3d, yaw, pitch, dist, zoom, pan_x, pan_y)
-            return self._json({"ok": True, "data_url": _image_to_data_url(img)})
+            data_url = self.api.render_skeleton3d(
+                species_id, yaw=yaw, pitch=pitch, dist=dist, zoom=zoom,
+                pan_x=pan_x, pan_y=pan_y, body=body or None)
+            return self._json({"ok": True, "data_url": data_url})
         except Exception as e:
             return self._json({"ok": False, "error": str(e)}, 500)
 
@@ -159,52 +161,13 @@ class AssetsLabHandler(SimpleHTTPRequestHandler):
         gif = qs.get("gif", ["0"])[0] in ("1", "true")
         species_q = qs.get("species", [None])[0]
         try:
-            from assetslab.skeleton3d import build_skeleton_3d, pose_3d, render_pose
-            # 从 species actions3d 扫描动作；可指定 species=<id> 限定范围（数据驱动，不硬编码）
-            species_id = None
-            path = None
-            for sp_dir in (_PKG_ROOT / "species").iterdir():
-                if species_q and sp_dir.name != species_q:
-                    continue
-                cand = sp_dir / "actions3d" / f"{parts[0]}.json"
-                if cand.exists():
-                    species_id, path = sp_dir.name, cand
-                    break
-            if path is None:
-                return self._json({"ok": False, "error": f"3D action not found: {parts[0]}"}, 404)
-            m3d = json.load(open(path))
-            # 基于物种默认参数构建骨架（数据驱动，不依赖预设）
-            skel3d = build_skeleton_3d(species_id)
-            center = tuple(skel3d.get("center", (480.0, 300.0, 0.0)))
-            n = int(m3d.get("frame_count", 8))
-            # 用首帧计算一次固定 autofit，多帧输出（GIF/frames）共用，避免逐帧缩放抖动
-            from assetslab.skeleton3d import _autofit_transform, project3d
-            base_pose = pose_3d(skel3d, m3d, 0)
-            base_pts = project3d(base_pose, yaw, pitch, dist, 1.0, center, 0.0, 0.0)
-            af = _autofit_transform(base_pts, zoom, pan_x, pan_y)
-            # frames=1：返回全部帧 PNG（前端 JS 轮播，动画与浏览器 GIF 播放无关，最可靠）
-            if qs.get("frames", ["0"])[0] in ("1", "true"):
-                hr = float(skel3d.get("head_radius", 22.0))
-                frame_urls = []
-                for i in range(n):
-                    p = pose_3d(skel3d, m3d, i)
-                    img = render_pose(p, skel3d["bones"], yaw, pitch, dist, zoom, center, pan_x, pan_y, autofit=af, head_radius=hr)
-                    frame_urls.append(_image_to_data_url(img))
-                return self._json({"ok": True, "frames": frame_urls, "frame_count": n})
-            if gif:
-                from PIL import Image
-                hr = float(skel3d.get("head_radius", 22.0))
-                frames = []
-                for i in range(n):
-                    p = pose_3d(skel3d, m3d, i)
-                    frames.append(render_pose(p, skel3d["bones"], yaw, pitch, dist, zoom, center, pan_x, pan_y, autofit=af, head_radius=hr).resize((640, 400), Image.Resampling.NEAREST))
-                buf = io.BytesIO()
-                frames[0].save(buf, format="GIF", save_all=True, append_images=frames[1:],
-                               duration=180, loop=0, disposal=2)
-                return self._json({"ok": True, "gif": "data:image/gif;base64," + base64.b64encode(buf.getvalue()).decode()})
-            pose = pose_3d(skel3d, m3d, frame)
-            img = render_pose(pose, skel3d["bones"], yaw, pitch, dist, zoom, center, pan_x, pan_y, autofit=af, head_radius=float(skel3d.get("head_radius", 22.0)))
-            return self._json({"ok": True, "data_url": _image_to_data_url(img)})
+            result = self.api.render_motion3d(
+                parts[0], species=species_q, yaw=yaw, pitch=pitch, dist=dist, zoom=zoom,
+                pan_x=pan_x, pan_y=pan_y, frame=frame, gif=gif,
+                frames=qs.get("frames", ["0"])[0] in ("1", "true"))
+            return self._json(result)
+        except KeyError as e:
+            return self._json({"ok": False, "error": str(e)}, 404)
         except Exception as e:
             return self._json({"ok": False, "error": str(e)}, 500)
 
@@ -245,31 +208,31 @@ class AssetsLabHandler(SimpleHTTPRequestHandler):
         """GET /api/species — list; /api/species/<id> — detail; .../actions/<aid> — action."""
         parts = _path_parts(self.path, "/api/species")
         if not parts:
-            return self._json({"species": self.species.list()})
+            return self._json({"species": self.api.species_list()})
 
         sp_id = parts[0]
         # 预设 schema：GET /api/species/<id>/preset_schema
         if len(parts) >= 2 and parts[1] == "preset_schema":
-            schema = self.species.get_preset_schema(sp_id)
+            schema = self.api.species_preset_schema(sp_id)
             if schema is None:
                 return self._json({"ok": False, "error": f"preset_schema not found: {sp_id}"}, 404)
             return self._json(schema)
         # 默认参数：GET /api/species/<id>/default
         if len(parts) >= 2 and parts[1] == "default":
             try:
-                return self._json(self.species.get_default(sp_id))
+                return self._json(self.api.species_default(sp_id))
             except KeyError:
                 return self._json({"ok": False, "error": f"default not found: {sp_id}"}, 404)
         # 动作详情：GET /api/species/<id>/actions/<action_id>
         if len(parts) >= 3 and parts[1] == "actions":
             action_id = parts[2]
             try:
-                return self._json(self.species.get_action(sp_id, action_id))
+                return self._json(self.api.action_get(sp_id, action_id))
             except KeyError:
                 return self._json({"ok": False, "error": f"action not found: {sp_id}/{action_id}"}, 404)
 
         try:
-            return self._json(self.species.get(sp_id))
+            return self._json(self.api.species_get(sp_id))
         except KeyError:
             return self._json({"ok": False, "error": f"species not found: {sp_id}"}, 404)
 
@@ -285,7 +248,7 @@ class AssetsLabHandler(SimpleHTTPRequestHandler):
         if not parts:
             # 创建物种
             try:
-                sp_id = self.species.create(body)
+                sp_id = self.api.species_create(body)
             except FileExistsError as e:
                 return self._json({"ok": False, "error": str(e)}, 409)
             except (ValueError, KeyError) as e:
@@ -296,7 +259,7 @@ class AssetsLabHandler(SimpleHTTPRequestHandler):
         # 默认参数保存：POST/PUT /api/species/<id>/default
         if len(parts) >= 2 and parts[1] == "default":
             try:
-                self.species.save_default(sp_id, body)
+                self.api.species_save_default(sp_id, body)
             except Exception as e:
                 return self._json({"ok": False, "error": str(e)}, 400)
             return self._json({"ok": True, "saved": sp_id})
@@ -306,14 +269,14 @@ class AssetsLabHandler(SimpleHTTPRequestHandler):
             if not action_id:
                 return self._json({"ok": False, "error": "action_id required"}, 400)
             try:
-                saved = self.species.save_action(sp_id, action_id, body)
+                saved = self.api.action_create(sp_id, body) if len(parts) == 2 else self.api.action_update(sp_id, action_id, body)
             except Exception as e:
                 return self._json({"ok": False, "error": str(e)}, 400)
             return self._json({"ok": True, "saved": saved})
 
         # 更新物种
         try:
-            sp_id = self.species.update(sp_id, body)
+            sp_id = self.api.species_update(sp_id, body)
         except Exception as e:
             return self._json({"ok": False, "error": str(e)}, 400)
         return self._json({"ok": True, "updated": sp_id})
@@ -329,19 +292,123 @@ class AssetsLabHandler(SimpleHTTPRequestHandler):
         if len(parts) >= 3 and parts[1] == "actions":
             action_id = parts[2]
             try:
-                self.species.delete_action(sp_id, action_id)
+                self.api.action_delete(sp_id, action_id)
             except KeyError:
                 return self._json({"ok": False, "error": f"action not found: {sp_id}/{action_id}"}, 404)
             return self._json({"ok": True, "deleted": action_id})
 
         # 删除物种
         try:
-            sp_id = self.species.delete(sp_id)
+            sp_id = self.api.species_delete(sp_id)
         except KeyError:
             return self._json({"ok": False, "error": f"species not found: {parts[0]}"}, 404)
         return self._json({"ok": True, "deleted": sp_id})
 
     # -- helpers -------------------------------------------------------
+
+    # -- presets API ---------------------------------------------------
+
+    def _presets_get(self) -> None:
+        """GET /api/presets — list; /api/presets/new?species= — 新建空白表单; /api/presets/<id> — 详情。"""
+        from urllib.parse import urlparse
+        parts = _path_parts(urlparse(self.path).path, "/api/presets")
+        if not parts:
+            return self._json({"presets": self.api.presets_list()})
+        if parts[0] == "new":
+            from urllib.parse import parse_qs, urlparse
+            qs = parse_qs(urlparse(self.path).query)
+            sp = qs.get("species", ["human"])[0]
+            try:
+                return self._json(self.api.preset_new(sp))
+            except Exception as e:
+                return self._json({"ok": False, "error": str(e)}, 400)
+        try:
+            return self._json(self.api.preset_get(parts[0]))
+        except KeyError:
+            return self._json({"ok": False, "error": f"preset not found: {parts[0]}"}, 404)
+
+    def _presets_post(self) -> None:
+        """POST /api/presets — create; PUT /api/presets/<id> — update。"""
+        from urllib.parse import urlparse
+        parts = _path_parts(urlparse(self.path).path, "/api/presets")
+        try:
+            body = self._read_body()
+        except Exception as e:
+            return self._json({"ok": False, "error": str(e)}, 400)
+        if not parts:
+            try:
+                pid = self.api.preset_create(body)
+            except FileExistsError as e:
+                return self._json({"ok": False, "error": str(e)}, 409)
+            except (ValueError, KeyError) as e:
+                return self._json({"ok": False, "error": str(e)}, 400)
+            return self._json({"ok": True, "created": pid})
+        try:
+            pid = self.api.preset_update(parts[0], body)
+        except KeyError:
+            return self._json({"ok": False, "error": f"preset not found: {parts[0]}"}, 404)
+        except Exception as e:
+            return self._json({"ok": False, "error": str(e)}, 400)
+        return self._json({"ok": True, "updated": pid})
+
+    def _presets_delete(self) -> None:
+        """DELETE /api/presets/<id> — delete preset。"""
+        from urllib.parse import urlparse
+        parts = _path_parts(urlparse(self.path).path, "/api/presets")
+        if not parts:
+            return self._json({"ok": False, "error": "missing id"}, 400)
+        try:
+            self.api.preset_delete(parts[0])
+        except KeyError:
+            return self._json({"ok": False, "error": f"preset not found: {parts[0]}"}, 404)
+        return self._json({"ok": True, "deleted": parts[0]})
+
+    def _preset3d_get(self) -> None:
+        """GET /api/preset3d/<id> 或 /api/preset3d/live — 预设渲染（骨架/动作）。
+
+        - <id>: 读 presets/<id>.json（body 体型参数 + actions 动作参数）
+        - live: 用 query 直接传参渲染（未保存的编辑实时预览）
+          ?species=human&body=<json>&actions=<json>[&action=walk3d]
+        不传 action → 渲染骨架（应用体型参数）。
+        """
+        from urllib.parse import parse_qs, urlparse
+        parts = _path_parts(urlparse(self.path).path, "/api/preset3d")
+        if len(parts) != 1:
+            return self._json({"ok": False, "error": "preset id or 'live' required"}, 400)
+        qs = parse_qs(urlparse(self.path).query)
+        yaw = float(qs.get("yaw", ["0"])[0])
+        pitch = float(qs.get("pitch", ["0"])[0])
+        dist = float(qs.get("dist", ["600"])[0])
+        zoom = float(qs.get("zoom", ["1"])[0])
+        pan_x = float(qs.get("pan_x", ["0"])[0])
+        pan_y = float(qs.get("pan_y", ["0"])[0])
+        frame = int(qs.get("frame", ["0"])[0])
+        gif = qs.get("gif", ["0"])[0] in ("1", "true")
+        frames = qs.get("frames", ["0"])[0] in ("1", "true")
+        action_id = qs.get("action", [None])[0]
+        try:
+            if parts[0] == "live":
+                species_id = qs.get("species", [None])[0]
+                if not species_id:
+                    return self._json({"ok": False, "error": "live preset requires species"}, 400)
+                body = json.loads(qs.get("body", ["{}"])[0])
+                actions = json.loads(qs.get("actions", ["{}"])[0])
+            else:
+                species_id = None
+                body = None
+                actions = None
+        except json.JSONDecodeError as e:
+            return self._json({"ok": False, "error": str(e)}, 400)
+        try:
+            result = self.api.render_preset3d(
+                parts[0], species=species_id, body=body, actions=actions,
+                action_id=action_id, yaw=yaw, pitch=pitch, dist=dist, zoom=zoom,
+                pan_x=pan_x, pan_y=pan_y, frame=frame, gif=gif, frames=frames)
+            return self._json(result)
+        except KeyError as e:
+            return self._json({"ok": False, "error": str(e)}, 404)
+        except Exception as e:
+            return self._json({"ok": False, "error": str(e)}, 500)
 
     def _json(self, data: dict, status: int = 200) -> None:
         body = json.dumps(data, ensure_ascii=False).encode()
@@ -363,12 +430,6 @@ class AssetsLabHandler(SimpleHTTPRequestHandler):
 
 def _path_parts(path: str, prefix: str) -> list[str]:
     return [unquote(p) for p in path[len(prefix):].rstrip("/").split("/") if p]
-
-
-def _image_to_data_url(img) -> str:
-    buf = io.BytesIO()
-    img.save(buf, format="PNG")
-    return "data:image/png;base64," + base64.b64encode(buf.getvalue()).decode()
 
 
 def _float_map(body: dict, keys: tuple[str, ...]) -> dict[str, float]:
@@ -399,21 +460,18 @@ def _mime(path: str) -> str:
 # ---- main ---------------------------------------------------------------
 
 
-def build_server(port: int = 8765, host: str = "0.0.0.0"):
-    """组装服务器：依赖注入各领域模块。
+def build_server(port: int = 8765, host: str = "0.0.0.0", dev: bool = False):
+    """组装服务器：依赖注入统一 Api 服务。
 
-    唯一的组装根：在这里实例化具体模块并注入到 Handler。
-    其余代码一律只依赖接口。
+    唯一的组装根：在这里实例化 ApiService（满足 interfaces.Api 契约）注入到 Handler。
+    其余代码一律只依赖 Api 接口（与 CLI 相同）。
+    dev=True：开发模式，追加 CORS 头（前端 Vite dev / proxy）。
     """
-    # 领域模块
-    species = SpeciesService(PKG_ROOT / "species")
-
+    api = ApiService(PKG_ROOT / "species", PKG_ROOT / "presets")
     handler = type(
         "InjectedHandler",
         (AssetsLabHandler,),
-        {
-            "species": species,
-        },
+        {"api": api, "dev_mode": dev},
     )
     return ThreadingHTTPServer((host, port), handler)
 
@@ -422,13 +480,16 @@ def main():
     parser = argparse.ArgumentParser(description="AssetsLab API Server")
     parser.add_argument("--port", type=int, default=8765)
     parser.add_argument("--host", default="0.0.0.0")
+    parser.add_argument("--dev", action="store_true",
+                        help="开发模式：追加 CORS 头，配合前端 Vite dev (pnpm run dev + proxy) 使用")
     args = parser.parse_args()
 
-    if not (WEB_DIST / "index.html").is_file():
+    if not args.dev and not (WEB_DIST / "index.html").is_file():
         print("Warning: web/dist not found. Run: cd assetslab/web && npm run build", file=sys.stderr)
 
-    server = build_server(args.port, args.host)
-    print(f"AssetsLab server: http://{args.host}:{args.port}")
+    server = build_server(args.port, args.host, dev=args.dev)
+    mode = "dev" if args.dev else "prod"
+    print(f"AssetsLab server [{mode}]: http://{args.host}:{args.port}")
     try:
         server.serve_forever()
     except KeyboardInterrupt:

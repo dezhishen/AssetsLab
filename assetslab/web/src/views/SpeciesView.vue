@@ -131,6 +131,7 @@
             :species-id="selectedSpecies?.id"
             :motion-id="actionEditor?.motion_id"
             :loading="motionRenderLoading"
+            @update:cam="cam = $event"
           />
         </div>
       </section>
@@ -223,8 +224,8 @@
                   <el-button size="small" type="primary" @click="renderAllViews" :loading="previewLoading" icon="Refresh">渲染</el-button>
                 </div>
               </div>
-              <div v-if="skeletonPreview" class="motion-preview"><img :src="skeletonPreview" /></div>
-              <div class="preview-empty" v-else><p>点击「渲染」生成 3D 骨架预览</p></div>
+              <div v-if="skeletonPreview" class="motion-preview skel-draggable" @mousedown="onSkelDragDown"><img :src="skeletonPreview" /></div>
+              <div class="preview-empty" v-else><p>点击「渲染」生成 3D 骨架预览（也可拖拽画面旋转视角）</p></div>
             </div>
           </el-tab-pane>
         </el-tabs>
@@ -243,11 +244,12 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { api } from '../api.js'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import CameraControls from '../components/CameraControls.vue'
 import MotionPreview from '../components/MotionPreview.vue'
+import { useOrbitDrag } from '../composables/useOrbitDrag.js'
 
 const loading = ref(true)
 const speciesList = ref([])
@@ -267,6 +269,22 @@ const motionFrames = ref([])
 const motionRenderLoading = ref(false)
 const cam = ref({ yaw: 30, pitch: 12, dist: 600, zoom: 1, panX: 0, panY: 0 })
 const camQS = () => `yaw=${cam.value.yaw}&pitch=${cam.value.pitch}&dist=${cam.value.dist}&zoom=${cam.value.zoom}&pan_x=${cam.value.panX}&pan_y=${cam.value.panY}`
+
+// 轨道相机：骨架预览拖拽旋转（改 cam → watch 自动重渲染）
+const { onMouseDown: onSkelDragDown } = useOrbitDrag({
+  getCam: () => cam.value,
+  setCam: (c) => { cam.value = c },
+})
+
+// 相机变化 → debounce 自动重渲染（快捷按钮 / 面板细调 / 拖拽旋转都走这里）
+let camTimer = null
+watch(cam, () => {
+  if (camTimer) clearTimeout(camTimer)
+  camTimer = setTimeout(() => {
+    if (actionEditor.value?.motion_id) renderAction()
+    else if (selectedSpecies.value) renderAllViews()
+  }, 350)
+}, { deep: true })
 
 const editForm = ref({ species_id:'', title:'', description:'', jointsStr:'', bonesStr:'', chainsStr:'', paramChainsStr:'', followChainsStr:'', followConfigStr:'', defaultStr:'' })
 
@@ -512,6 +530,8 @@ async function confirmDelete(sp) {
 .empty-inline { color: #c0c4cc; padding: 20px; text-align: center; }
 .preview-controls { display: flex; gap: 8px; align-items: center; }
 .motion-preview { display: flex; justify-content: center; }
+.motion-preview.skel-draggable { cursor: grab; user-select: none; }
+.motion-preview.skel-draggable:active { cursor: grabbing; }
 .motion-preview img { max-width: 100%; border: 1px solid #111827; border-radius: 8px; background: #111827; }
 
 .empty-state { text-align: center; color: #909399; }

@@ -10,6 +10,9 @@
         <router-link to="/species">
           <span class="nav-icon">🦴</span> 物种
         </router-link>
+        <router-link to="/presets">
+          <span class="nav-icon">🎨</span> 预设
+        </router-link>
       </nav>
       <div class="nav-right">
         <span class="status-dot"></span>

@@ -87,4 +87,30 @@ export const api = {
 
   /** 3D 动作：任意角度 + 距离 单帧渲染 PNG（动作按 species 获取与渲染） */
   renderMotion3d: (id, qs) => raw(`/api/motion3d/${encodeURIComponent(id)}?${qs}`),
+
+  // -- 预设 Preset（独立入口：预设 = 物种实例，调整体型 + 动作幅度） --
+
+  /** 预设列表 @returns {Promise<{presets: import('../../models').PresetSummary[]}>} */
+  presets: () => raw('/api/presets'),
+
+  /** 预设详情（预设值 + schema_info） @returns {Promise<import('../../models').PresetDetail>} */
+  presetDetail: (id) => raw(`/api/presets/${encodeURIComponent(id)}`),
+
+  /** 新建预设空白表单（含 schema） */
+  presetNew: (speciesId) => raw(`/api/presets/new?species=${encodeURIComponent(speciesId)}`),
+
+  /** 创建预设 */
+  createPreset: (data) => raw('/api/presets', json(data)),
+
+  /** 更新预设 */
+  updatePreset: (id, data) => raw(`/api/presets/${encodeURIComponent(id)}`, json_put(data)),
+
+  /** 删除预设 */
+  deletePreset: (id) => raw(`/api/presets/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+
+  /** 预设渲染：骨架/动作（应用体型 + 动作参数） */
+  preset3dRender: (id, qs) => raw(`/api/preset3d/${encodeURIComponent(id)}?${qs}`),
+
+  /** 预设实时渲染（live：未保存的 body/actions 预览） */
+  preset3dLive: (qs) => raw(`/api/preset3d/live?${qs}`),
 }

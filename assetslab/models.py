@@ -155,29 +155,32 @@ class JointPositions(TypedDict):
 
 
 class Preset(TypedDict):
-    """体型预设。
+    """体型预设（基于物种的实例：体型参数 + 动作参数）。
 
-    preset_id: 唯一标识，如 "standard", "female"
-    schema: 格式版本 "assetslab_preset_v3"
+    preset_id: 唯一标识，如 "model_male"
+    schema: 格式版本 "assetslab_preset_v1"
     title / description: 显示信息
-    species: 引用的物种 ID，如 "human"
-    head_radius: 头部显示半径（像素）
-    canvas: 画布设置
-    params: 体型参数规格（带范围/步进/标签）
-    body: 体型参数当前值
-    positions: 各视图下的关节坐标
+    species: 引用的物种 ID（schema 由物种派生）
+    body: 体型参数当前值（调整骨骼尺寸，如 head_scale / shoulder_width）
+    actions: 各动作参数覆盖（调整动作幅度，如 walk3d 的 intensity/stride）
     """
 
-    preset_id: str
     schema: str
+    preset_id: str
     title: str
     description: str
     species: str
-    head_radius: float
-    canvas: Canvas
-    params: Dict[str, ParamSpec]
     body: Dict[str, float]
-    positions: JointPositions
+    actions: Dict[str, Dict[str, float]]
+
+
+class PresetSummary(TypedDict):
+    """预设摘要（列表展示）。"""
+
+    preset_id: str
+    title: str
+    description: str
+    species: str
 
 
 # -------------------------------------------------------------------------
