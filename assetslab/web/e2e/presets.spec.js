@@ -13,7 +13,9 @@ test.describe('预设管理（全量 E2E）', () => {
     await page.locator('button', { hasText: '新建预设' }).first().click()
     await expect(page.locator('.panel-title', { hasText: '新建预设' })).toBeVisible()
     await page.locator('.el-select__wrapper').first().click()
-    await page.locator('.el-select-dropdown__item', { hasText: '人类骨骼拓扑' }).last().click({ force: true })
+    // el-select dropdown 为 fixed 定位，720 视口下弹层可能超界 → 用 DOM click 绕过坐标/视口检查
+    await page.locator('.el-select-dropdown__item', { hasText: '人类骨骼拓扑' }).last()
+      .evaluate((el) => el.click())
     await page.locator('button', { hasText: '初始化预设' }).click()
 
     // 编辑面板：基本信息 + 物种（新建时 crumb 为空，检查物种表单项）
@@ -41,8 +43,11 @@ test.describe('预设管理（全量 E2E）', () => {
     await page.locator('.el-tabs__item', { hasText: '预览' }).click()
     await expect(page.locator('.preview-stage img')).toBeVisible({ timeout: 30_000 })
     // 选择动作 walk3d → 动作帧渲染
+    // （el-select dropdown 为 fixed 定位，内容底部时弹层可能超出 720 视口 → 用 evaluate 触发 DOM click，
+    //   绕过 Playwright 视口/坐标检查，功能等价）
     await page.locator('.preview-controls .el-select__wrapper').first().click()
-    await page.locator('.el-select-dropdown__item', { hasText: 'Walk 3D' }).last().click({ force: true })
+    await page.locator('.el-select-dropdown__item', { hasText: 'Walk 3D' }).last()
+      .evaluate((el) => el.click())
     await expect(page.locator('.preview-controls .el-select__selected-item').filter({ hasText: 'Walk 3D' })).toHaveCount(1)
 
     // 保存 → 列表出现（pid 显示在 .item-id）
@@ -67,7 +72,9 @@ test.describe('预设管理（全量 E2E）', () => {
     await page.goto('/#/presets')
     await page.locator('button', { hasText: '新建预设' }).first().click()
     await page.locator('.el-select__wrapper').first().click()
-    await page.locator('.el-select-dropdown__item', { hasText: '人类骨骼拓扑' }).last().click({ force: true })
+    // el-select dropdown 为 fixed 定位，720 视口下弹层可能超界 → 用 DOM click 绕过坐标/视口检查
+    await page.locator('.el-select-dropdown__item', { hasText: '人类骨骼拓扑' }).last()
+      .evaluate((el) => el.click())
     await page.locator('button', { hasText: '初始化预设' }).click()
     const inputs = page.locator('.el-input__inner')
     await inputs.nth(0).fill(pid)
