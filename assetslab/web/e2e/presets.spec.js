@@ -60,4 +60,37 @@ test.describe('预设管理（全量 E2E）', () => {
     await page.goto('/#/presets')
     await expect(page.locator('.empty-state', { hasText: '选择或创建预设' })).toBeVisible()
   })
+
+  test('预设查看/编辑：打开已有 → 调整体型 → 保存 → 重新打开验证 → 删除', async ({ page }) => {
+    const pid = `e2e_edit_${Date.now()}`
+    // 新建 + 保存
+    await page.goto('/#/presets')
+    await page.locator('button', { hasText: '新建预设' }).first().click()
+    await page.locator('.el-select__wrapper').first().click()
+    await page.locator('.el-select-dropdown__item', { hasText: '人类骨骼拓扑' }).last().click({ force: true })
+    await page.locator('button', { hasText: '初始化预设' }).click()
+    const inputs = page.locator('.el-input__inner')
+    await inputs.nth(0).fill(pid)
+    await inputs.nth(1).fill('E2E 编辑预设')
+    await page.locator('button', { hasText: '保存预设' }).click()
+    await expect(page.locator('.list-item .item-id', { hasText: pid })).toBeVisible({ timeout: 10_000 })
+
+    // 打开已有预设 → 改名 → 保存（验证查看/编辑路径；名称字段比 el-slider 更稳定）
+    await page.locator('.list-item', { hasText: pid }).click()
+    await expect(page.locator('.crumb-now', { hasText: 'E2E 编辑预设' })).toBeVisible()
+    await page.locator('.el-form-item', { hasText: '名称' }).locator('input').fill('E2E 改名后')
+    await page.locator('button', { hasText: '保存预设' }).click()
+    await expect(page.locator('.list-item .item-name', { hasText: 'E2E 改名后' })).toBeVisible({ timeout: 10_000 })
+
+    // 重新打开：名称已持久化
+    await page.locator('.list-item', { hasText: pid }).click()
+    await expect(page.locator('.crumb-now', { hasText: 'E2E 改名后' })).toBeVisible()
+
+    // 删除
+    const item = page.locator('.list-item', { hasText: pid })
+    await item.hover()
+    await item.locator('button', { hasText: '删除' }).click()
+    await page.locator('.el-message-box__btns button', { hasText: '确定' }).click()
+    await expect(page.locator('.list-item .item-id', { hasText: pid })).toHaveCount(0)
+  })
 })

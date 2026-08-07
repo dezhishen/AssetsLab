@@ -82,4 +82,67 @@ test.describe('物种管理（全量 E2E）', () => {
     // 拖拽后正面取消高亮（相机已旋转到自定义角度）
     await expect(page.locator('button', { hasText: '正面' })).not.toHaveClass(/primary/, { timeout: 5_000 })
   })
+
+  test('物种 CRUD：新建 → 详情 → 编辑改名称 → 删除', async ({ page }) => {
+    const sid = `e2e_sp_${Date.now()}`
+    // 新建物种（最小合法骨架：joints + bones_3d + chains + 默认参数）
+    // 注意：.page-header 与右侧空状态区都有「新建物种」按钮，用 .page-header 限定
+    await page.locator('.page-header button', { hasText: '新建物种' }).click()
+    await expect(page.locator('.crumb-now', { hasText: '新建' })).toBeVisible()
+    await page.locator('.el-form-item', { hasText: '物种 ID' }).locator('input').fill(sid)
+    await page.locator('.el-form-item', { hasText: '名称' }).locator('input').fill('E2E 测试物种')
+    await page.locator('.el-form-item', { hasText: '关节组 (JSON)' }).locator('textarea')
+      .fill('{"core":["root","mid"]}')
+    await page.locator('.el-form-item', { hasText: '骨骼连接 3D' }).locator('textarea')
+      .fill('[["root","mid"]]')
+    await page.locator('.el-form-item', { hasText: '关节链 (JSON)' }).locator('textarea')
+      .fill('{"main":["root","mid"]}')
+    await page.locator('.el-form-item', { hasText: '默认参数' }).locator('textarea')
+      .fill('{"positions_3d":{"root":[0,0,0],"mid":[0,10,0]},"head_radius":5}')
+    await page.locator('button', { hasText: '创建' }).click()
+    await expect(page.locator('.list-item .item-name', { hasText: 'E2E 测试物种' })).toBeVisible({ timeout: 10_000 })
+
+    // 详情：统计卡（2 关节 / 1 骨 / 1 链）
+    await page.locator('.list-item .item-main', { hasText: 'E2E 测试物种' }).click()
+    await expect(page.locator('.crumb-now', { hasText: 'E2E 测试物种' })).toBeVisible()
+    await expect(page.locator('.stat-card .stat-val', { hasText: '2' }).first()).toBeVisible()
+    await expect(page.locator('.stat-card .stat-val', { hasText: '1' }).first()).toBeVisible()
+
+    // 编辑：改名称
+    await page.locator('button', { hasText: '编辑物种' }).click()
+    await expect(page.locator('.crumb-now', { hasText: '编辑' })).toBeVisible()
+    await page.locator('.el-form-item', { hasText: '名称' }).locator('input').fill('E2E 物种改名')
+    await page.locator('button', { hasText: '保存' }).click()
+    await expect(page.locator('.list-item .item-name', { hasText: 'E2E 物种改名' })).toBeVisible({ timeout: 10_000 })
+
+    // 删除（hover 显示操作 → 删除 → 确认弹窗）
+    const item = page.locator('.list-item', { hasText: 'E2E 物种改名' })
+    await item.hover()
+    await item.locator('button', { hasText: '删除' }).click()
+    await page.locator('.el-message-box__btns button', { hasText: '删除' }).click()
+    await expect(page.locator('.list-item .item-name', { hasText: 'E2E 物种改名' })).toHaveCount(0)
+  })
+
+  test('动作 CRUD：新建动作 → 保存 → 列表 → 删除', async ({ page }) => {
+    const aid = `e2e_act_${Date.now()}`
+    await page.locator('.list-item .item-main', { hasText: '人类骨骼拓扑' }).click()
+    await page.locator('.el-tabs__item', { hasText: '动作管理' }).click()
+    await expect(page.locator('.cell-title', { hasText: 'Walk 3D' })).toBeVisible()
+    // 新建动作（startCreateAction 预填模板，改 motion_id）
+    await page.locator('button', { hasText: '新建动作' }).click()
+    await expect(page.locator('.crumb-now', { hasText: '新动作' })).toBeVisible()
+    const motion = {
+      schema: 'assetslab_motion3d_v1', motion_id: aid, title: 'E2E 动作', description: '',
+      species: 'human', frame_count: 8, params: {}, root3d: { dy: { phase: true } }, offsets3d: {}, ik3d: {},
+    }
+    await page.locator('.json-editor textarea').fill(JSON.stringify(motion, null, 2))
+    await page.locator('button', { hasText: '保存动作' }).click()
+    // 列表出现新动作
+    await expect(page.locator('.cell-title', { hasText: 'E2E 动作' })).toBeVisible({ timeout: 10_000 })
+    // 删除
+    const row = page.locator('.el-table__row', { hasText: 'E2E 动作' })
+    await row.locator('button', { hasText: '删除' }).click()
+    await page.locator('.el-message-box__btns button', { hasText: '确定' }).click()
+    await expect(page.locator('.cell-title', { hasText: 'E2E 动作' })).toHaveCount(0)
+  })
 })
