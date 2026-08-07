@@ -41,9 +41,6 @@ _BUNDLE = getattr(sys, "_MEIPASS", None)
 WEB_DIST = (Path(_BUNDLE) / "web" / "dist") if _BUNDLE else (PKG_ROOT / "web" / "dist")
 
 
-# 2D 遗留渲染服务（方案 A）已移除：3D 渲染由 skeleton3d 提供，无 2D 引擎。
-
-
 class AssetsLabHandler(SimpleHTTPRequestHandler):
     """HTTP 处理器。依赖注入：统一 Api 服务（CLI 与 HTTP 共用同一套接口）。"""
 

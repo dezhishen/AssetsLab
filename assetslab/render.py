@@ -3,8 +3,7 @@
 
 提供画布与骨架绘制基础函数（canvas / bone / head / joint），
 供 skeleton3d 的 3D 渲染（render_view / render_pose）使用。
-颜色与线宽为纯常量；2D 遗留渲染（多视图动作帧/接触表/GIF）已随
-方案 A 移除——3D 预览是唯一预览路径。
+颜色与线宽为纯常量；渲染仅服务 3D 预览路径。
 """
 from __future__ import annotations
 

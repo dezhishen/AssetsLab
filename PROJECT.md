@@ -92,7 +92,7 @@ python assetslab/server.py --port 8765
         ↓ pose_3d()  →  FK 正向运动学（父累积旋转）+ 3D IK + 刚性传播
 3D 姿势
         ↓ project3d()（yaw/pitch/dist/zoom 透视）
-2D 屏幕坐标 → render_pose() → PNG / GIF
+屏幕坐标 → render_pose() → PNG / GIF
 ```
 
 - **骨骼与 walk 按真实 CMU 动捕重建**（subject16, `16_15.bvh`）：骨长比例精确一致、全关节旋转照搬

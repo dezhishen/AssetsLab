@@ -11,7 +11,7 @@
         ↓ pose_3d()  →  FK 正向运动学 + 3D IK + 刚性传播
     3D 姿势
         ↓ project3d()（透视投影）
-    2D 屏幕坐标 → render_pose() → PNG / GIF
+    屏幕坐标 → render_pose() → PNG / GIF
 """
 
 from __future__ import annotations
@@ -190,7 +190,7 @@ def _build_fk_local(joints3d: dict, fk_tree: dict) -> dict[str, list[float]]:
 CAM_CX, CAM_CY = 480.0, 300.0
 # 画布尺寸（与 render.py 一致；自动适配填满用）
 _CANVAS_W, _CANVAS_H = 960.0, 600.0
-# 骨架中心（相机坐标系原点；= 画布中心时正交投影精确还原 2D 坐标）
+# 骨架中心（相机坐标系原点；= 画布中心时正交投影精确还原屏幕坐标）
 _CENTER = (480.0, 300.0, 0.0)
 
 
@@ -434,7 +434,7 @@ def resolve_follow3d(explicit: dict[str, list[float]],
 # 3D 动作引擎（阶段 2 核心）
 # --------------------------------------------------------------------------
 # 动作在 3D 空间定义：offsets3d[关节] = {x/y/z 轴偏移表达式}，
-# 引擎在 3D 求姿势 → 投影到任意视角。与 2D 引擎共用信号 DSL（motion._eval）。
+# 引擎在 3D 求姿势 → 投影到任意视角。信号 DSL（motion._eval）驱动动作。
 
 
 def pose_3d(skel3d: dict, motion3d: dict, index: int, params: dict | None = None) -> dict[str, list[float]]:
@@ -557,7 +557,7 @@ def render_motion_3d(skel3d: dict, motion3d: dict, yaw_deg: float = 0.0,
                        head_radius=float(skel3d.get("head_radius", 22.0)))
 
 
-def _autofit_transform(joints2d: dict[str, tuple[float, float]],
+def _autofit_transform(screen_pts: dict[str, tuple[float, float]],
                        zoom: float = 1.0, pan_x: float = 0.0, pan_y: float = 0.0,
                        margin: float = 0.12, max_scale: float = 8.0
                        ) -> tuple[float, float, float]:
@@ -567,8 +567,8 @@ def _autofit_transform(joints2d: dict[str, tuple[float, float]],
     平移 = 居中偏移 + 用户 pan（相对平移）。这样默认预览大而清晰，
     相机控制里的 zoom/pan 仍按相对量生效。
     """
-    xs = [p[0] for p in joints2d.values()]
-    ys = [p[1] for p in joints2d.values()]
+    xs = [p[0] for p in screen_pts.values()]
+    ys = [p[1] for p in screen_pts.values()]
     minx, maxx, miny, maxy = min(xs), max(xs), min(ys), max(ys)
     w, h = maxx - minx, maxy - miny
     if w < 1 or h < 1:
@@ -599,21 +599,21 @@ def render_pose(pose: dict[str, list[float]], bones: list[list[str]],
 
     image, draw = canvas()
     # 先以 zoom=1/pan=0 投影（distance 仅影响透视），再做自动适配（填满画布并居中）
-    joints2d = project3d(pose, yaw_deg, pitch_deg, distance, 1.0, center=center,
-                         pan_x=0.0, pan_y=0.0)
+    screen_pts = project3d(pose, yaw_deg, pitch_deg, distance, 1.0, center=center,
+                           pan_x=0.0, pan_y=0.0)
     if autofit is not None:
         scale, tx, ty = autofit
     else:
-        scale, tx, ty = _autofit_transform(joints2d, zoom, pan_x, pan_y)
-    joints2d = {k: (v[0] * scale + tx, v[1] * scale + ty) for k, v in joints2d.items()}
+        scale, tx, ty = _autofit_transform(screen_pts, zoom, pan_x, pan_y)
+    screen_pts = {k: (v[0] * scale + tx, v[1] * scale + ty) for k, v in screen_pts.items()}
     # 头部椭圆：多首物种（三头飞龙）画出所有头（head / head_left / head_right），需在骨骼之上
     for hk in ("head", "head_left", "head_right"):
-        if hk in joints2d:
-            head(draw, joints2d[hk], BONE, radius=head_radius)
+        if hk in screen_pts:
+            head(draw, screen_pts[hk], BONE, radius=head_radius)
     for a, b in bones:
-        if a in joints2d and b in joints2d:
-            bone(draw, joints2d[a], joints2d[b], BONE)
-    for pt in joints2d.values():
+        if a in screen_pts and b in screen_pts:
+            bone(draw, screen_pts[a], screen_pts[b], BONE)
+    for pt in screen_pts.values():
         joint(draw, pt)
     return image
 
@@ -627,19 +627,19 @@ def render_view(skel3d: dict, yaw_deg: float = 0.0, pitch_deg: float = 0.0,
 
     image, draw = canvas()
     center = tuple(skel3d.get("center", _CENTER))
-    joints2d = project3d(skel3d["joints"], yaw_deg, pitch_deg, distance, 1.0, center=center,
-                         pan_x=0.0, pan_y=0.0)
-    scale, tx, ty = _autofit_transform(joints2d, zoom, pan_x, pan_y)
-    joints2d = {k: (v[0] * scale + tx, v[1] * scale + ty) for k, v in joints2d.items()}
+    screen_pts = project3d(skel3d["joints"], yaw_deg, pitch_deg, distance, 1.0, center=center,
+                           pan_x=0.0, pan_y=0.0)
+    scale, tx, ty = _autofit_transform(screen_pts, zoom, pan_x, pan_y)
+    screen_pts = {k: (v[0] * scale + tx, v[1] * scale + ty) for k, v in screen_pts.items()}
     # 头部椭圆：多首物种（三头飞龙）画出所有头
     hr = float(skel3d.get("head_radius", 22.0))
     for hk in ("head", "head_left", "head_right"):
-        if hk in joints2d:
-            head(draw, joints2d[hk], BONE, radius=hr)
+        if hk in screen_pts:
+            head(draw, screen_pts[hk], BONE, radius=hr)
     for a, b in skel3d["bones"]:
-        if a in joints2d and b in joints2d:
-            bone(draw, joints2d[a], joints2d[b], BONE)
-    for pt in joints2d.values():
+        if a in screen_pts and b in screen_pts:
+            bone(draw, screen_pts[a], screen_pts[b], BONE)
+    for pt in screen_pts.values():
         joint(draw, pt)
     return image
 

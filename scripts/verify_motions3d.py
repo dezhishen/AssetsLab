@@ -58,7 +58,7 @@ def _view_to_3d(name: str, view: str, joints: dict) -> str | None:
 
 
 def _planar(pose: dict, joint: str, view: str) -> tuple[float, float]:
-    """取关节在指定视图平面上的 2D 坐标：front→(x,y)、side→(z,y)、back→(-x,y)。"""
+    """取关节在指定视图平面上的屏幕坐标：front→(x,y)、side→(z,y)、back→(-x,y)。"""
     x, y, z = pose[joint]
     if view == 'side':
         return z, y

@@ -26,7 +26,7 @@
 ### Changed
 - **数据目录可配置**：`--data-dir`（默认仓库根 `data/`），测试用独立的 `test-data/`；
   打包运行时物种数据从 bundle 首次播种到用户可写目录
-- **彻底清理旧 2D 架构遗留**：删除 2D 合成/视图/类型，`skeleton.json` 仅保留 `bones_3d` 等 3D 定义
+- **数据定义精简**：`skeleton.json` 采用纯 3D 定义（`bones_3d` / `fk_tree`），无历史视图数据
 
 ### Fixed
 - 前端 E2E：el-select 下拉弹层在 720 视口下超界导致的点击失败（改 DOM click）
@@ -41,7 +41,7 @@
 - **dev 模式**：后端 `--dev`（CORS）+ 前端 Vite dev（proxy `/api`），前后端分离热更新
 
 ### Changed
-- 清理过时内容：skins / packaging / webflow 发布链 / 旧 2D 参考资产（保留 Godot demo `prototype/`）
+- 清理过时内容：skins / packaging / webflow 发布链（保留 Godot demo `prototype/`）
 
 ## [0.1.0] - 2026-05-25
 

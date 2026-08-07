@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""AssetsLab — 3D 动作 DSL 求值器（数据驱动，无 2D 遗留）。
+"""AssetsLab — 3D 动作 DSL 求值器（数据驱动）。
 
 3D 动作（species/<id>/actions3d/*.json）用 offsets3d / root3d / ik3d + signals
 描述每帧关节运动。本模块只提供通用表达式求值（_eval）与参数解析

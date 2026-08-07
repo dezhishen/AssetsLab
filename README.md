@@ -118,7 +118,7 @@ action walk3d.json (fk3d.rotations3d: per-joint per-frame real rotation tables +
         ↓ pose_3d()  →  FK forward kinematics (parent-accumulated rotation) + 3D IK + rigid
 3D pose
         ↓ project3d() (yaw/pitch/dist/zoom perspective)
-2D screen coords → render_pose() → PNG / GIF
+screen coords → render_pose() → PNG / GIF
 ```
 
 - **Skeleton & walk rebuilt from real CMU MoCap**: bone lengths match exactly, per-frame joint rotations copied verbatim (`scripts/mocap/rebuild_skeleton_cmu.py`).
