@@ -15,9 +15,6 @@ type JointName = string
 /** 一条骨骼：两个关节的连接 */
 type Bone = [JointName, JointName]
 
-/** 2D 坐标 */
-type Position = [x: number, y: number]
-
 /** 视图方向 */
 type View = 'front' | 'side' | 'back'
 
@@ -97,26 +94,17 @@ interface ParamChain {
 // -------------------------------------------------------------------------
 
 interface Preset {
-  preset_id: string                // 唯一标识，如 "standard", "female"
-  schema: 'assetslab_preset_v3'    // 格式版本
+  preset_id: string                // 唯一标识，如 "model_male"
+  schema: 'assetslab_preset_v1'    // 格式版本
   title: string                    // 显示名称
   description: string              // 描述
   species: string                  // 引用的物种 ID，如 "human"
 
-  /** 头部显示半径（像素） */
-  head_radius: number
-
-  /** 画布设置 */
-  canvas: Canvas
-
-  /** 体型参数规格（带范围/步进/标签） */
-  params: Record<string, ParamSpec>
-
-  /** 体型参数当前值 */
+  /** 体型参数当前值（调整骨骼尺寸，schema 由物种派生） */
   body: Record<string, number>
 
-  /** 各视图下的关节坐标 */
-  positions: JointPositions
+  /** 各动作参数覆盖（调整动作幅度） */
+  actions: Record<string, Record<string, number>>
 }
 
 /** 画布 */
@@ -136,16 +124,9 @@ interface ParamSpec {
   desc: string                    // 描述
 }
 
-/** 关节坐标：按视图索引 */
-interface JointPositions {
-  front: Record<JointName, Position>
-  side: Record<JointName, Position>
-  back: Record<JointName, Position>
-}
-
 // -------------------------------------------------------------------------
 // 3. 动作（Motion / Action）— 动画定义
-//    存储位置：species/<id>/actions/<motion_id>.json
+//    存储位置：species/<id>/actions3d/<motion_id>.json
 // -------------------------------------------------------------------------
 
 interface Motion {
@@ -258,27 +239,6 @@ interface SpeciesDetail extends SpeciesSkeleton {
   actions: Motion[]                // 从 actions/ 目录自动发现
 }
 
-/** GET /api/skeletons 列表项 */
-interface PresetListItem {
-  id: string                       // preset_id
-  title: string
-  description: string
-  species: string | null           // 引用的物种 ID
-  is_species: boolean
-  is_preset: boolean
-  body: Record<string, number>
-  views: View[]                    // 有坐标的视图
-  motions: string[]
-}
-
-/** GET /api/skeletons/<id> 详情 = Preset + 已合并物种数据 */
-interface PresetDetail extends Preset {
-  bones?: BoneMap                  // 从物种合并
-  chains?: ChainMap                // 从物种合并
-  joints?: JointGroups             // 从物种合并
-  param_chains?: Record<string, ParamChain>  // 从物种合并
-}
-
 /** GET /api/motions 列表项 */
 interface MotionListItem {
   id: string                       // motion_id
@@ -297,61 +257,28 @@ interface RenderResult {
   error?: string
 }
 
-// -------------------------------------------------------------------------
-// 6. 运行时骨架（合并后的内部表示，仅供理解渲染流程）
-// -------------------------------------------------------------------------
-
-/**
- * 运行时骨架 = Preset + Species 合并后的完整数据结构。
- * preset.positions 提供关节坐标，species.bones 提供骨骼连接。
- * 这是渲染器实际使用的格式，不作为存储格式。
- */
-interface RuntimeSkeleton {
-  skeleton_id: string              // preset_id
-  schema: string
-  title: string
-  description: string
-  canvas: Canvas
-  head_radius: number
-  body: Record<string, number>
-  views: JointPositions            // 从 preset.positions 来
-  bones: BoneMap                   // 从 species.bones 来
-  params: Record<string, ParamSpec>
-  param_chains: Record<string, ParamChain>
-  chains: ChainMap
-  torso: Record<View, Record<JointName, number>>  // 躯干继承权重
-  arm_chains: ChainMap
-  leg_chains: ChainMap
-  upper_joints: JointName[]
-}
-
 // =========================================================================
-// 关系速查
+// 关系速查（新架构：3D 坐标 + FK 关节旋转）
 // =========================================================================
 //
-//   Species ────────────────── Preset
-//   (骨骼拓扑)                (体型+坐标)
-//   skeleton.json             presets/<id>.json
-//       │                         │
-//       │ species_id ←────────── species
-//       │                         │
-//       ├─ joints                 ├─ positions (关节坐标)
-//       ├─ bones                  ├─ params (体型参数规格)
-//       ├─ chains                 ├─ body (体型参数值)
-//       ├─ param_chains           ├─ head_radius
-//       └─ torso_joints           └─ canvas
+//   Species ──────────────────── Preset
+//   (骨骼拓扑)                  (物种实例)
+//   species/<id>/skeleton.json  presets/<id>.json
+//       │                          │
+//       │ species_id ←──────────── species
+//       ├─ fk_tree / fk_local      ├─ body (体型参数值)
+//       ├─ bones_3d                └─ actions (各动作参数值)
+//       ├─ chains / param_chains
+//       ├─ constraints (约束)
+//       └─ default.json (positions_3d 体型 + canvas)
 //       │
-//       └─ actions/               Motion
-//          walk.json              (动画)
-//          run.json                   │
-//          ...                    species ← 所属物种
-//                                     │
-//                                 ├─ params (可调参数)
-//                                 ├─ signals (波形表达式)
-//                                 ├─ offsets (关节偏移)
-//                                 ├─ selectors (帧选择器)
-//                                 └─ ik (IK约束)
+//       └─ actions3d/              Motion
+//          walk3d.json             (3D 动作：fk3d 关节旋转)
+//                                      │
+//                                  ├─ fk3d.rotations3d (每帧旋转)
+//                                  ├─ root3d (根位移)
+//                                  ├─ params (可调参数)
+//                                  └─ signals (表达式)
 //
-//   运行时合并：Preset + Species → RuntimeSkeleton
-//   渲染时：RuntimeSkeleton + Motion → 动画帧
+//   渲染：build_skeleton_3d() → pose_3d() → project3d() → render_pose()
 // =========================================================================

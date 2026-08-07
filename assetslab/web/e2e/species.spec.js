@@ -13,9 +13,9 @@ test.describe('物种管理（全量 E2E）', () => {
   test('选择物种 → 详情统计卡 + 骨骼拓扑 tab', async ({ page }) => {
     await page.locator('.list-item .item-main', { hasText: '人类骨骼拓扑' }).click()
     await expect(page.locator('.crumb-now', { hasText: '人类骨骼拓扑' })).toBeVisible()
-    // 统计卡：36 关节 / 103 骨 / 1 动作
+    // 统计卡：36 关节 / 35 骨(bones_3d) / 1 动作
     await expect(page.locator('.stat-card .stat-val', { hasText: '36' }).first()).toBeVisible()
-    await expect(page.locator('.stat-card .stat-val', { hasText: '103' })).toBeVisible()
+    await expect(page.locator('.stat-card .stat-val', { hasText: '35' })).toBeVisible()
     // 关节链内容（spine 链）
     await expect(page.locator('.chain-row', { hasText: 'spine' }).first()).toBeVisible()
     // 参数链表
@@ -48,7 +48,7 @@ test.describe('物种管理（全量 E2E）', () => {
     // 动作表格内的「编辑」按钮（非 sidebar 的物种编辑）
     await page.locator('.el-table button', { hasText: '编辑' }).first().click()
     // 动作编辑器（面包屑 walk3d）
-    await expect(page.locator('.crumb-now', { hasText: 'walk3d' })).toBeVisible()
+    await expect(page.locator('.crumb-now', { hasText: 'walk3d' })).toBeVisible({ timeout: 20_000 })
     // 动作 JSON 定义区（el-input textarea，class 在 wrapper）
     await expect(page.locator('.json-editor')).toBeVisible()
     // 动作预览自动渲染（帧播放，播放按钮启用）

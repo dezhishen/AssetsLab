@@ -1,23 +1,17 @@
 #!/usr/bin/env python3
-"""AssetsLab — 3D 骨架数据 + 投影引擎（阶段 1）。
+"""AssetsLab — 3D 骨架数据 + FK 投影渲染引擎。
 
-背景：原架构是"2D 多视图"（每个视图独立存坐标 + 独立动作偏移），
-同一关节在 front/side/back 各有一份坐标，冗余且易不一致。
-本模块引入 3D 坐标系（x 左右 / y 上下 / z 前后），
-从现有 2D 数据【自动合成】3D 坐标，再通过【正交投影】得到任意视角。
+3D 坐标系（x 左右 / y 上下 / z 前后），关节旋转驱动动作（FK），
+任意视角（yaw/pitch/dist/zoom 透视投影）渲染 PNG/GIF。
 
 数据流：
-    2D preset (positions front/side/back)
-        ↓ build_skeleton_3d() 自动合成
-    3D 骨架 {joint: [x, y, z]} + 3D 骨列表
-        ↓ project(joints3d, yaw) 绕 Y 轴旋转 + 正交投影
-    2D 屏幕坐标 {joint: (sx, sy)}
-        ↓ render_view() 复用 render.py 绘制
-    PNG / 帧
-
-阶段 1 范围：3D 骨架数据 + 任意视角（yaw）骨架渲染。
-现有 2D 引擎 / 动作 / 验证管线保持零改动。
-阶段 2 再对动作做 3D 化（offsets_3d + 3D IK + 动态 z 排序）。
+    skeleton.json（fk_tree/fk_local 骨向量）+ default.json（positions_3d 体型）
+        ↓ build_skeleton_3d()
+    3D 骨架 {joint: [x,y,z]} + bones_3d
+        ↓ pose_3d()  →  FK 正向运动学 + 3D IK + 刚性传播
+    3D 姿势
+        ↓ project3d()（透视投影）
+    2D 屏幕坐标 → render_pose() → PNG / GIF
 """
 
 from __future__ import annotations
@@ -27,38 +21,10 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw
 
-from assetslab.models import Preset, SpeciesSkeleton, View
+from assetslab.models import SpeciesSkeleton
 
 PKG_ROOT = Path(__file__).resolve().parent
-PRESETS_ROOT = PKG_ROOT / "presets"
 SPECIES_ROOT = PKG_ROOT / "species"
-
-# 视图 → 是否水平镜像（back 从背后看，x 反向）
-_VIEW_FLIP = {"front": 1, "back": -1}
-
-# 3D 中线（side 视图 x 基准，用于把"前后"换算成 z 深度）
-SIDE_MID = 480.0
-
-
-def load_preset(preset_id: str, species_id: str | None = None) -> Preset:
-    """读取预设：优先 presets/<species>/<id>.json，找不到则跨物种子目录搜索。"""
-    path: Path | None = None
-    if species_id:
-        cand = PRESETS_ROOT / species_id / f"{preset_id}.json"
-        if cand.is_file():
-            path = cand
-    if path is None:
-        matches = sorted(PRESETS_ROOT.glob(f"*/{preset_id}.json"))
-        if matches:
-            path = matches[0]
-    if path is None:
-        cand = PRESETS_ROOT / f"{preset_id}.json"  # 兼容平铺
-        if cand.is_file():
-            path = cand
-    if path is None:
-        raise FileNotFoundError(f"preset not found: {preset_id}")
-    with open(path) as f:
-        return __import__("json").load(f)
 
 
 def load_species(species_id: str) -> SpeciesSkeleton:
@@ -70,27 +36,6 @@ def load_default(species_id: str) -> dict:
     """读取物种默认参数（species/<id>/default.json）：默认姿态 + 体型参数。"""
     with open(SPECIES_ROOT / species_id / "default.json") as f:
         return __import__("json").load(f)
-
-
-def _limb_side_map(chains: dict) -> dict[str, tuple[str, str]]:
-    """3D 关节名 → (side_front_name, side_rear_name)。
-
-    自动推导：左肢（*_left）映射到 side 的 front_*（近侧），
-    右肢（*_right）映射到 side 的 rear_*（远侧）；躯干关节同名。
-    返回 {joint3d: (front_name, rear_name)}。
-    """
-    out: dict[str, tuple[str, str]] = {}
-    for chain in chains.values():
-        for j in chain:
-            if j.endswith("_left"):
-                base = j[:-5]  # 去掉 _left
-                out[j] = (f"front_{base}", f"rear_{base}")
-            elif j.endswith("_right"):
-                base = j[:-6]
-                out[j] = (f"front_{base}", f"rear_{base}")
-            else:
-                out[j] = (j, j)  # 躯干：side 同名（如 neck, chest）
-    return out
 
 
 def apply_proportions_3d(joints3d: dict[str, list[float]],
@@ -210,8 +155,6 @@ def build_skeleton_3d(species_id: str = "human", body: dict | None = None) -> di
         "joints": joints3d,
         "bones": bones_3d,
         "chains": species.get("chains", {}),
-        "view2d": _build_view2d(_limb_side_map(species.get("chains", {})),
-                                species.get("chains", {}), default),
         "center": center,
         "floor_y": floor_y,
         "rigid_chains": rigid_chains,
@@ -234,48 +177,6 @@ def _build_fk_local(joints3d: dict, fk_tree: dict) -> dict[str, list[float]]:
     return out
 
 
-def _synthesize_3d(preset: Preset, species: SpeciesSkeleton) -> dict[str, list[float]]:
-    """兼容回退：从 2D front(x,y) + side(前后深度) 合成 3D 坐标。"""
-    front = preset["positions"]["front"]
-    side = preset["positions"]["side"]
-    side_map = _limb_side_map(species.get("chains", {}))
-    out: dict[str, list[float]] = {}
-    for j, (fx, fy) in front.items():
-        front_name, _ = side_map.get(j, (j, j))
-        sz = side.get(front_name, [SIDE_MID, 0.0])[0]
-        out[j] = [fx, fy, sz - SIDE_MID]
-    return out
-
-
-def chains_flat(chains: dict) -> set[str]:
-    out: set[str] = set()
-    for lst in chains.values():
-        out.update(lst)
-    return out
-
-
-def _build_view2d(side_map: dict, chains: dict, preset: dict) -> dict:
-    """构建 3D 关节 → 各 2D 视图关节名 的映射（供投影后对齐绘制）。
-
-    view2d[view][joint3d] = 2d 关节名（front/side/back 各自的名字）。
-    """
-    pos = preset.get("positions", {})
-    view2d: dict[str, dict[str, str]] = {"front": {}, "side": {}, "back": {}}
-    flat = chains_flat(chains)
-    for j in flat:
-        if j in pos.get("front", {}):
-            view2d["front"][j] = j
-        front_name, rear_name = side_map.get(j, (j, j))
-        if front_name in pos.get("side", {}):
-            view2d["side"][j] = front_name
-        # back：rearr 前后 + left/right
-        for suf in ("_left", "_right"):
-            bj = f"rear_{j}" if suf in j else j
-            if bj in pos.get("back", {}):
-                view2d["back"][j] = bj
-    return view2d
-
-
 # --------------------------------------------------------------------------
 # 投影（3D 相机：角度 + 距离）
 # --------------------------------------------------------------------------
@@ -286,11 +187,6 @@ CAM_CX, CAM_CY = 480.0, 300.0
 _CANVAS_W, _CANVAS_H = 960.0, 600.0
 # 骨架中心（相机坐标系原点；= 画布中心时正交投影精确还原 2D 坐标）
 _CENTER = (480.0, 300.0, 0.0)
-
-
-def project(joints3d: dict[str, list[float]], yaw_deg: float = 0.0) -> dict[str, tuple[float, float]]:
-    """兼容：绕 Y 轴旋转 yaw 后正交投影（不透视）。返回 {joint: (sx, sy)}。"""
-    return project3d(joints3d, yaw_deg=yaw_deg, pitch_deg=0.0, distance=1e9)
 
 
 def project3d(joints3d: dict[str, list[float]], yaw_deg: float = 0.0,

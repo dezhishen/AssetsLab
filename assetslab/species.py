@@ -64,7 +64,6 @@ class SpeciesService:
         """从骨架拓扑派生预设 schema（数据驱动，不硬编码关节/参数名）。
 
         - joints_3d 从 bones_3d 收集
-        - views_2d 从 bones(front/side/back) 收集
         - params 从 param_chains 派生（保留 existing_params 中人工定义的 label/min/max 等）
         """
         def _collect(bones):
@@ -77,7 +76,6 @@ class SpeciesService:
             return out
 
         joints_3d = _collect(skel.get("bones_3d", []))
-        views_2d = {v: _collect(skel.get("bones", {}).get(v, [])) for v in ("front", "side", "back")}
         old = existing_params or {}
         params: dict = {}
         for chain in skel.get("param_chains", {}).values():
@@ -90,13 +88,12 @@ class SpeciesService:
         return {
             "schema": "assetslab_preset_schema_v1",
             "species": skel.get("species_id"),
-            "description": "预设 schema（随物种骨架自动派生）：创建预设只需按此清单填充（positions_3d 为主；positions 2D 可由 3D 投影派生）。",
+            "description": "预设 schema（随物种骨架自动派生）：预设只需提供 body 体型参数 + actions 动作参数值。",
             "required_fields": [
                 "preset_id", "schema", "title", "description", "species",
-                "positions_3d", "positions", "params", "body", "canvas", "head_radius",
+                "body", "actions",
             ],
             "joints_3d": joints_3d,
-            "views_2d": views_2d,
             "params": params,
             "canvas": {"width": 960, "height": 600, "floor_y": 470},
             "head_radius": 24,
@@ -157,8 +154,7 @@ class SpeciesService:
             except Exception:
                 continue
             sp_id = d.get("species_id", sp_dir.name)
-            bones: BoneMap = d.get("bones", {})
-            total_bones = sum(len(v) for v in bones.values())
+            total_bones = len(d.get("bones_3d", []))
             actions = self.list_actions(sp_id)
             items.append({
                 "id": sp_id,

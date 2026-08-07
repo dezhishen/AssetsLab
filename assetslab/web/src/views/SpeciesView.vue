@@ -65,7 +65,7 @@
           <el-form-item label="关节组 (JSON)">
             <el-input v-model="editForm.jointsStr" type="textarea" :rows="5" class="mono" />
           </el-form-item>
-          <el-form-item label="骨骼连接 (JSON)">
+          <el-form-item label="骨骼连接 3D (JSON, bones_3d)">
             <el-input v-model="editForm.bonesStr" type="textarea" :rows="5" class="mono" />
           </el-form-item>
           <div class="form-grid">
@@ -402,7 +402,7 @@ async function renderAction() {
 function startCreate() {
   isCreating.value = true
   editMode.value = 'create'
-  editForm.value = { species_id:'', title:'', description:'', jointsStr:'{}', bonesStr:'{}', chainsStr:'{}', paramChainsStr:'{}', followChainsStr:'{}', followConfigStr:'{}', defaultStr:'{}' }
+  editForm.value = { species_id:'', title:'', description:'', jointsStr:'{}', bonesStr:'[]', chainsStr:'{}', paramChainsStr:'{}', followChainsStr:'{}', followConfigStr:'{}', defaultStr:'{}' }
 }
 
 function startEdit(sp) {
@@ -416,7 +416,7 @@ function startEdit(sp) {
       species_id: d.species_id || sp.id,
       title: d.title || '', description: d.description || '',
       jointsStr: JSON.stringify(d.joints || {}, null, 2),
-      bonesStr: JSON.stringify(d.bones || {}, null, 2),
+      bonesStr: JSON.stringify(d.bones_3d || [], null, 2),
       chainsStr: JSON.stringify(d.chains || {}, null, 2),
       paramChainsStr: JSON.stringify(d.param_chains || {}, null, 2),
       followChainsStr: JSON.stringify(d.follow_chains || {}, null, 2),
@@ -434,7 +434,7 @@ async function saveSpecies() {
       title: editForm.value.title.trim(),
       description: editForm.value.description.trim(),
       joints: JSON.parse(editForm.value.jointsStr),
-      bones: JSON.parse(editForm.value.bonesStr),
+      bones_3d: JSON.parse(editForm.value.bonesStr),
       chains: JSON.parse(editForm.value.chainsStr),
       param_chains: JSON.parse(editForm.value.paramChainsStr),
       follow_chains: JSON.parse(editForm.value.followChainsStr),

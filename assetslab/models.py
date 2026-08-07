@@ -21,9 +21,6 @@ JointName = str
 #: 一条骨骼：两个关节的连接
 Bone = Tuple[JointName, JointName]
 
-#: 2D 坐标
-Position = Tuple[float, float]
-
 #: 视图方向
 View = Literal["front", "side", "back"]
 
@@ -144,14 +141,6 @@ class ParamSpec(TypedDict):
     step: float      # 步进
     label: str       # 中文标签
     desc: str        # 描述
-
-
-class JointPositions(TypedDict):
-    """关节坐标：按视图索引。"""
-
-    front: Dict[JointName, Position]
-    side: Dict[JointName, Position]
-    back: Dict[JointName, Position]
 
 
 class Preset(TypedDict):
@@ -283,29 +272,6 @@ class SpeciesDetail(SpeciesSkeleton):
     actions: List["Motion"]
 
 
-class PresetListItem(TypedDict):
-    """GET /api/skeletons 列表项。"""
-
-    id: str
-    title: str
-    description: str
-    species: str | None                        # 引用的物种 ID
-    is_species: bool
-    is_preset: bool
-    body: Dict[str, float]
-    views: List[View]                          # 有坐标的视图
-    motions: List[str]
-
-
-class PresetDetail(Preset):
-    """GET /api/skeletons/<id> 详情 = Preset + 已合并物种数据。"""
-
-    bones: NotRequired[BoneMap]                # 从物种合并
-    chains: NotRequired[ChainMap]              # 从物种合并
-    joints: NotRequired[JointGroups]           # 从物种合并
-    param_chains: NotRequired[Dict[str, ParamChain]]  # 从物种合并
-
-
 class MotionListItem(TypedDict):
     """GET /api/motions 列表项。"""
 
@@ -326,63 +292,28 @@ class RenderResult(TypedDict):
     error: NotRequired[str]
 
 
-# -------------------------------------------------------------------------
-# 5. 运行时骨架（合并后的内部表示，仅供理解渲染流程）
-# -------------------------------------------------------------------------
-
-
-class RuntimeSkeleton(TypedDict):
-    """运行时骨架 = Preset + Species 合并后的完整数据结构。
-
-    preset.positions 提供关节坐标，species.bones 提供骨骼连接。
-    这是渲染器实际使用的格式，不作为存储格式。
-    """
-
-    skeleton_id: str                           # preset_id
-    schema: str
-    title: str
-    description: str
-    canvas: Canvas
-    head_radius: float
-    body: Dict[str, float]
-    views: JointPositions                      # 从 preset.positions 来
-    bones: BoneMap                             # 从 species.bones 来
-    params: Dict[str, ParamSpec]
-    param_chains: Dict[str, ParamChain]
-    chains: ChainMap
-    torso: Dict[View, Dict[JointName, float]]  # 躯干继承权重
-    arm_chains: Dict[str, Dict[JointName, List[JointName]]]
-    leg_chains: Dict[str, Dict[JointName, List[JointName]]]
-    upper_joints: List[JointName]
-
-
 # =========================================================================
-# 关系速查
+# 关系速查（新架构：3D 坐标 + FK 关节旋转）
 # =========================================================================
 #
-#   Species ────────────────── Preset
-#   (骨骼拓扑)                (体型+坐标)
-#   skeleton.json             presets/<id>.json
-#       │                         │
-#       │ species_id ←────────── species
-#       │                         │
-#       ├─ joints                 ├─ positions (关节坐标)
-#       ├─ bones                  ├─ params (体型参数规格)
-#       ├─ chains                 ├─ body (体型参数值)
-#       ├─ param_chains           ├─ head_radius
-#       └─ torso_joints           └─ canvas
+#   Species ──────────────────── Preset
+#   (骨骼拓扑)                  (物种实例)
+#   species/<id>/skeleton.json  presets/<id>.json
+#       │                          │
+#       │ species_id ←──────────── species
+#       ├─ fk_tree / fk_local      ├─ body (体型参数值)
+#       ├─ bones_3d                └─ actions (各动作参数值)
+#       ├─ chains / param_chains
+#       ├─ constraints (约束)
+#       └─ default.json (positions_3d 体型 + canvas)
 #       │
-#       └─ actions/               Motion
-#          walk.json              (动画)
-#          run.json                   │
-#          ...                    species ← 所属物种
-#                                     │
-#                                 ├─ params (可调参数)
-#                                 ├─ signals (波形表达式)
-#                                 ├─ offsets (关节偏移)
-#                                 ├─ selectors (帧选择器)
-#                                 └─ ik (IK约束)
+#       └─ actions3d/              Motion
+#          walk3d.json             (3D 动作：fk3d 关节旋转)
+#                                      │
+#                                  ├─ fk3d.rotations3d (每帧旋转)
+#                                  ├─ root3d (根位移)
+#                                  ├─ params (可调参数)
+#                                  └─ signals (表达式)
 #
-#   运行时合并：Preset + Species → RuntimeSkeleton
-#   渲染时：RuntimeSkeleton + Motion → 动画帧
+#   渲染：build_skeleton_3d() → pose_3d() → project3d() → render_pose()
 # =========================================================================
