@@ -33,6 +33,7 @@ if str(_REPO_ROOT) not in sys.path:
 
 from assetslab.interfaces import Api
 from assetslab.api import ApiService
+from assetslab.config import DEFAULT_DATA_DIR
 
 # ---- paths ----
 PKG_ROOT = _PKG_ROOT
@@ -460,14 +461,17 @@ def _mime(path: str) -> str:
 # ---- main ---------------------------------------------------------------
 
 
-def build_server(port: int = 8765, host: str = "0.0.0.0", dev: bool = False):
+def build_server(port: int = 8765, host: str = "0.0.0.0", dev: bool = False,
+                 data_dir: Path | None = None):
     """组装服务器：依赖注入统一 Api 服务。
 
     唯一的组装根：在这里实例化 ApiService（满足 interfaces.Api 契约）注入到 Handler。
     其余代码一律只依赖 Api 接口（与 CLI 相同）。
     dev=True：开发模式，追加 CORS 头（前端 Vite dev / proxy）。
+    data_dir：数据目录（默认仓库根 data/，测试用 test-data/）。
     """
-    api = ApiService(PKG_ROOT / "species", PKG_ROOT / "presets")
+    data_dir = data_dir or DEFAULT_DATA_DIR
+    api = ApiService(data_dir / "species", data_dir / "presets")
     handler = type(
         "InjectedHandler",
         (AssetsLabHandler,),
@@ -482,12 +486,15 @@ def main():
     parser.add_argument("--host", default="0.0.0.0")
     parser.add_argument("--dev", action="store_true",
                         help="开发模式：追加 CORS 头，配合前端 Vite dev (pnpm run dev + proxy) 使用")
+    parser.add_argument("--data-dir", default=None,
+                        help="数据目录（默认仓库根 data/，测试用 test-data/）")
     args = parser.parse_args()
 
     if not args.dev and not (WEB_DIST / "index.html").is_file():
         print("Warning: web/dist not found. Run: cd assetslab/web && npm run build", file=sys.stderr)
 
-    server = build_server(args.port, args.host, dev=args.dev)
+    data_dir = Path(args.data_dir) if args.data_dir else None
+    server = build_server(args.port, args.host, dev=args.dev, data_dir=data_dir)
     mode = "dev" if args.dev else "prod"
     print(f"AssetsLab server [{mode}]: http://{args.host}:{args.port}")
     try:

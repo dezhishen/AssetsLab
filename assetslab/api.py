@@ -14,6 +14,7 @@ import base64
 import io
 from pathlib import Path
 
+from .config import DEFAULT_DATA_DIR
 from .interfaces import Api
 from .models import Motion, MotionListItem, Preset, PresetSummary, SpeciesDetail, SpeciesListItem, SpeciesSkeleton
 from .presets import PresetService
@@ -111,7 +112,7 @@ class ApiService:
                           body: dict | None = None) -> str:
         """3D 骨架渲染（应用体型参数 body），返回 PNG data_url。"""
         from .skeleton3d import build_skeleton_3d, project3d, render_pose, _autofit_transform
-        skel3d = build_skeleton_3d(species_id, body=body)
+        skel3d = build_skeleton_3d(species_id, body=body, species_root=self.species._root)
         center = tuple(skel3d.get("center", (480.0, 300.0, 0.0)))
         hr = float(skel3d.get("head_radius", 22.0))
         base = {j: list(v) for j, v in skel3d["joints"].items()}
@@ -136,7 +137,7 @@ class ApiService:
             if not found:
                 raise KeyError(f"3D action not found: {action_id}")
             species_id, motion = found
-        skel3d = build_skeleton_3d(species_id)
+        skel3d = build_skeleton_3d(species_id, species_root=self.species._root)
         center = tuple(skel3d.get("center", (480.0, 300.0, 0.0)))
         hr = float(skel3d.get("head_radius", 22.0))
         n = int(motion.get("frame_count", 8))
@@ -190,7 +191,7 @@ class ApiService:
             species_id = preset.get("species", "")
             b = preset.get("body") or {}
             ac = preset.get("actions") or {}
-        skel3d = build_skeleton_3d(species_id, body=b)
+        skel3d = build_skeleton_3d(species_id, body=b, species_root=self.species._root)
         center = tuple(skel3d.get("center", (480.0, 300.0, 0.0)))
         hr = float(skel3d.get("head_radius", 22.0))
         if action_id:

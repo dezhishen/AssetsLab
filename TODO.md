@@ -7,7 +7,7 @@
 
 - **骨骼与 walk 按真实 CMU 动捕重建**（subject16, `16_15.bvh`）：骨长比例精确一致、全关节旋转照搬；`verify_motions3d.py` walk 8 项全 PASS。
 - **统一 Api**：`interfaces.Api`（Protocol, @runtime_checkable）声明全部操作，`api.ApiService` 唯一实现（组合物种+预设+渲染），`make_api()` 运行时硬约束；CLI（`python -m assetslab.cli`）与 HTTP（server.py）共用同一套接口，避免两侧漂移。
-- **预设系统**：`presets.py`（CRUD + schema 派生，值存 `assetslab/presets/<id>.json`，schema 由物种派生不落盘）；前端独立入口（PresetsView：体型参数 + 动作幅度 + 实时预览）；CLI `preset new/create/list/...`。
+- **预设系统**：`presets.py`（CRUD + schema 派生，值存 `data/presets/<id>.json`（数据目录默认仓库根 data/，--data-dir 可覆盖），schema 由物种派生不落盘）；前端独立入口（PresetsView：体型参数 + 动作幅度 + 实时预览）；CLI `preset new/create/list/...`。
 - **dev 模式**：后端 `--dev`（CORS + OPTIONS）、前端 `pnpm run dev`（Vite 5173，proxy `/api` → 8765），前后端分离热更新；`pnpm approve-builds --all` 解决 esbuild 构建忽略问题。
 - **3D 相机改造**：轨道相机（预览图拖拽旋转 + 快捷按钮 + 收纳面板），`useOrbitDrag`（isDragging 必须 ref）。
 - **清理过时内容**：skins / packaging / build / webflow 发布链 / 旧参考资产；保留 `prototype/`（Godot demo）、`scripts/mocap/`、`verify_motions3d.py`。
@@ -19,8 +19,8 @@
 |---|---|
 | `assetslab/api.py / interfaces.py / cli.py / server.py` | 统一 Api（CLI+HTTP 共享）+ 薄路由 + CLI |
 | `assetslab/species.py / presets.py / skeleton3d.py / motion.py` | 物种 / 预设 / 3D 引擎（FK/IK）/ DSL |
-| `assetslab/species/human/` | 骨骼 + default（CMU 体型）+ actions3d/walk3d |
-| `assetslab/presets/` | 预设（物种实例：body + actions） |
+| `data/species/human/` | 骨骼 + default（CMU 体型）+ actions3d/walk3d |
+| `data/presets/` | 预设（物种实例：body + actions；运行时用户数据） |
 | `assetslab/web/` | Vue 3 前端（物种 / 预设独立入口） |
 | `scripts/mocap/` | CMU 工具链（bvh_parser / rebuild_skeleton_cmu / extract_kin / compare_motion） |
 | `scripts/verify_motions3d.py` | 3D 动作验证（8 项检查，数据驱动） |

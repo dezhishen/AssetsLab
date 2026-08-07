@@ -14,20 +14,25 @@
 ## 目录结构
 
 ```
+data/                                            ← 数据目录（默认仓库根 data/，--data-dir 可覆盖）
+  species/human/                                 ← 物种：骨骼 + 默认体型 + 动作
+    skeleton.json / preset_schema.json / default.json
+    actions3d/walk3d.json                        ← 3D 动作（FK 旋转，真实 CMU 数据）
+  presets/                                       ← 预设（运行时用户数据，gitignore）
+test-data/                                       ← E2E/测试数据（由 data/ 生成，gitignore）
 assetslab/
   api.py / interfaces.py / cli.py / server.py   ← 统一 Api（CLI 与 HTTP 共用）+ 薄路由 + CLI
   species.py / presets.py / models.py / motion.py
   skeleton3d.py / render.py                      ← 3D 引擎（FK/IK/投影）+ 绘制
-  species/human/                                 ← 物种：骨骼 + 默认体型 + 动作
-    skeleton.json / preset_schema.json / default.json
-    actions3d/walk3d.json                        ← 3D 动作（FK 旋转，真实 CMU 数据）
-  presets/                                       ← 预设（物种实例：body 体型 + actions 动作幅度）
   web/                                           ← Vue 3 前端
 scripts/
   mocap/                                         ← CMU 动捕工具链（BVH 解析 / 重建 / 验证）
   verify_motions3d.py                            ← 3D 动作验证（8 项检查，数据驱动）
 prototype/                                       ← Godot 4.7 demo（保留）
 ```
+
+> **数据目录**：默认仓库根 `data/`（物种为资产提交；预设为运行时用户数据）。
+> 后端（server/CLI）可用 `--data-dir <dir>` 覆盖；E2E 使用独立的 `test-data/`（由 `e2e/global-setup.mjs` 自动生成）。
 
 ## 快速开始
 

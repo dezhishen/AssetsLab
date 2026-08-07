@@ -31,6 +31,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from assetslab.skeleton3d import build_skeleton_3d, pose_3d, load_species
+from assetslab.config import DEFAULT_DATA_DIR
 
 # 引擎通用默认（仅当物种数据未定义该约束时兜底；数据定义优先）
 DEFAULT_BONE_TOL = 0.05
@@ -86,11 +87,12 @@ def _ground_mode(motion3d: dict, gc: dict) -> dict | None:
     return None
 
 
-def verify(species_id: str, motion3d: dict, params: dict | None = None) -> list[dict]:
-    """返回 violations 列表（空 = 全 PASS）。"""
+def verify(species_id: str, motion3d: dict, params: dict | None = None,
+           species_root: Path | None = None) -> list[dict]:
+    """返回 violations 列表（空 = 全 PASS）。species_root 覆盖物种数据目录（默认 data/）。"""
     v: list[dict] = []
-    sp = load_species(species_id)
-    skel3d = build_skeleton_3d(species_id)
+    sp = load_species(species_id, species_root)
+    skel3d = build_skeleton_3d(species_id, species_root=species_root)
     n = int(motion3d.get('frame_count', 8))
     frames = [pose_3d(skel3d, motion3d, i, params) for i in range(n)]
     base = skel3d['joints']
@@ -303,9 +305,13 @@ def main() -> None:
     ap = argparse.ArgumentParser(description='3D 动作验证（数据驱动，基于物种默认参数）')
     ap.add_argument('--action', default='all', help='动作 id；默认 all 扫描该物种所有 3D 动作')
     ap.add_argument('--species', default='human')
+    ap.add_argument('--data-dir', default=None,
+                    help='数据目录（默认仓库根 data/，测试用 test-data/）')
     args = ap.parse_args()
 
-    actions_dir = ROOT / 'assetslab' / 'species' / args.species / 'actions3d'
+    data_dir = Path(args.data_dir) if args.data_dir else DEFAULT_DATA_DIR
+    species_root = data_dir / 'species'
+    actions_dir = species_root / args.species / 'actions3d'
     if args.action == 'all':
         action_ids = sorted(p.stem for p in actions_dir.glob('*.json'))
     else:
@@ -318,7 +324,7 @@ def main() -> None:
     for aid in action_ids:
         path = actions_dir / f'{aid}.json'
         motion3d = json.load(open(path))
-        v = verify(args.species, motion3d)
+        v = verify(args.species, motion3d, species_root=species_root)
         by_type = {c: [x for x in v if x['constraint'] == c] for c in labels}
         row = f'  {aid:8s} ' + '  '.join(
             f'{c:6s}:{"PASS" if not by_type[c] else f"FAIL({len(by_type[c])})"}'

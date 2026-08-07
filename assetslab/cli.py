@@ -28,10 +28,14 @@ if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
 from assetslab.api import make_api  # noqa: E402
+from assetslab.config import DEFAULT_DATA_DIR  # noqa: E402
+
+_DATA_DIR: Path | None = None  # --data-dir 覆盖（默认仓库根 data/）
 
 
 def api():
-    return make_api(_PKG_ROOT / "species", _PKG_ROOT / "presets")
+    data_dir = _DATA_DIR or DEFAULT_DATA_DIR
+    return make_api(data_dir / "species", data_dir / "presets")
 
 
 # -- 输出辅助 --
@@ -182,6 +186,7 @@ def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="assetslab",
         description="AssetsLab CLI — 与 HTTP API 同级，共用同一套接口（不启动 server）")
+    p.add_argument("--data-dir", default=None, help="数据目录（默认仓库根 data/）")
     sub = p.add_subparsers(dest="cmd", required=True)
 
     # species
@@ -231,7 +236,10 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> int:
+    global _DATA_DIR
     args = build_parser().parse_args(argv)
+    if args.data_dir:
+        _DATA_DIR = Path(args.data_dir)
     try:
         if args.cmd == "species":
             cmd_species(args)

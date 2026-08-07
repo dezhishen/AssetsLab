@@ -190,7 +190,7 @@ def write_skeleton():
     for label,a,b,cmuj in pairs:
         cmu_len = math.dist(base[cmuj], base[parents[cmuj]])
         print(f"  {label}: 我们 {L(J[a],J[b]):6.1f}px  vs CMU {cmu_len*S:6.1f}px")
-    p = WE/'assetslab/species/human/default.json'
+    p = WE/'data/species/human/default.json'
     d = json.loads(p.read_text(encoding='utf-8'))
     d['positions_3d'] = {k: [round(v[0],2),round(v[1],2),round(v[2],2)] for k,v in J.items()}
     d['head_radius'] = round(1.679*S/2, 1)
@@ -295,7 +295,7 @@ def write_walk():
         "fk3d": {"root": "pelvis", "rotations3d": rotations3d},
         "root3d": {"x": {"table": root_x}, "y": {"table": root_y}, "z": {"table": root_z}},
     }
-    p = WE/'assetslab/species/human/actions3d/walk3d.json'
+    p = WE/'data/species/human/actions3d/walk3d.json'
     p.write_text(json.dumps(motion, ensure_ascii=False, indent=2)+'\n', encoding='utf-8')
     print("\n已写 walk3d.json (真实 CMU 旋转)")
     # 验证：用我们引擎 FK vs CMU 真实坐标

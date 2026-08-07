@@ -21,20 +21,23 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw
 
+from assetslab.config import DEFAULT_DATA_DIR
 from assetslab.models import SpeciesSkeleton
 
 PKG_ROOT = Path(__file__).resolve().parent
-SPECIES_ROOT = PKG_ROOT / "species"
+SPECIES_ROOT = DEFAULT_DATA_DIR / "species"  # 默认数据目录（--data-dir 可覆盖）
 
 
-def load_species(species_id: str) -> SpeciesSkeleton:
-    with open(SPECIES_ROOT / species_id / "skeleton.json") as f:
+def load_species(species_id: str, species_root: Path | None = None) -> SpeciesSkeleton:
+    root = species_root or SPECIES_ROOT
+    with open(root / species_id / "skeleton.json") as f:
         return __import__("json").load(f)
 
 
-def load_default(species_id: str) -> dict:
+def load_default(species_id: str, species_root: Path | None = None) -> dict:
     """读取物种默认参数（species/<id>/default.json）：默认姿态 + 体型参数。"""
-    with open(SPECIES_ROOT / species_id / "default.json") as f:
+    root = species_root or SPECIES_ROOT
+    with open(root / species_id / "default.json") as f:
         return __import__("json").load(f)
 
 
@@ -111,16 +114,18 @@ def apply_proportions_3d(joints3d: dict[str, list[float]],
 
 
 
-def build_skeleton_3d(species_id: str = "human", body: dict | None = None) -> dict:
+def build_skeleton_3d(species_id: str = "human", body: dict | None = None,
+                      species_root: Path | None = None) -> dict:
     """读取 JSON 定义的 3D 骨架（数据驱动，基于物种默认参数）。
 
     基础姿态来自 species/<id>/default.json 的 ``positions_3d``（默认参数，数据即定义）；
     ``body`` 提供体型参数覆盖（可选），在 3D 空间应用 param_chains 缩放。
+    ``species_root`` 覆盖物种数据目录（默认 data/species，测试用 test-data/species）。
 
     返回 {"joints": {joint3d: [x, y, z]}, "bones": [[a,b],...], ...}
     """
-    default = load_default(species_id)
-    species = load_species(species_id)
+    default = load_default(species_id, species_root)
+    species = load_species(species_id, species_root)
 
     # 3D 坐标：物种默认参数（JSON 显式定义）
     joints3d: dict[str, list[float]] = {
@@ -649,11 +654,13 @@ def main() -> None:
 
     ap = argparse.ArgumentParser(description="3D 骨架投影预览（基于物种默认参数）")
     ap.add_argument("--species", default="human")
+    ap.add_argument("--data-dir", default=None, help="物种数据目录（默认仓库根 data/）")
     ap.add_argument("--yaw", type=float, default=0.0, help="视角角（度）：0=front 90=side 180=back 45=斜")
     ap.add_argument("--out", default=None, help="输出 PNG 路径")
     args = ap.parse_args()
 
-    skel3d = build_skeleton_3d(args.species)
+    species_root = Path(args.data_dir) / "species" if args.data_dir else None
+    skel3d = build_skeleton_3d(args.species, species_root=species_root)
     img = render_view(skel3d, args.yaw)
     if args.out:
         img.save(args.out)

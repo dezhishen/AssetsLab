@@ -47,7 +47,7 @@ def real_walk_cycle(path, target=8):
 def our_walk_angles():
     sk=build_skeleton_3d('human')
     import json
-    m=json.load(open(str(ROOT/'assetslab/species/human/actions3d/walk3d.json')))
+    m=json.load(open(str(ROOT/'data/species/human/actions3d/walk3d.json')))
     hip=[];knee=[];sh=[];el=[]
     for i in range(8):
         p=pose_3d(sk,m,i)
