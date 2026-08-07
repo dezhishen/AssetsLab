@@ -33,11 +33,12 @@ if str(_REPO_ROOT) not in sys.path:
 
 from assetslab.interfaces import Api
 from assetslab.api import ApiService
-from assetslab.config import DEFAULT_DATA_DIR
+from assetslab.config import DEFAULT_DATA_DIR, ensure_species_seeded
 
 # ---- paths ----
 PKG_ROOT = _PKG_ROOT
-WEB_DIST = PKG_ROOT / "web" / "dist"
+_BUNDLE = getattr(sys, "_MEIPASS", None)
+WEB_DIST = (Path(_BUNDLE) / "web" / "dist") if _BUNDLE else (PKG_ROOT / "web" / "dist")
 
 
 # 2D 遗留渲染服务（方案 A）已移除：3D 渲染由 skeleton3d 提供，无 2D 引擎。
@@ -468,9 +469,9 @@ def build_server(port: int = 8765, host: str = "0.0.0.0", dev: bool = False,
     唯一的组装根：在这里实例化 ApiService（满足 interfaces.Api 契约）注入到 Handler。
     其余代码一律只依赖 Api 接口（与 CLI 相同）。
     dev=True：开发模式，追加 CORS 头（前端 Vite dev / proxy）。
-    data_dir：数据目录（默认仓库根 data/，测试用 test-data/）。
+    data_dir：数据目录（默认仓库根 data/，测试用 test-data/；打包运行时从 bundle 播种）。
     """
-    data_dir = data_dir or DEFAULT_DATA_DIR
+    data_dir = ensure_species_seeded(data_dir or DEFAULT_DATA_DIR)
     api = ApiService(data_dir / "species", data_dir / "presets")
     handler = type(
         "InjectedHandler",

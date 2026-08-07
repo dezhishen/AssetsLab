@@ -1,0 +1,128 @@
+# ============================================================================
+# AssetsLab 跨平台二进制发布
+# ----------------------------------------------------------------------------
+# 触发：
+#   - push tag v*（如 v0.3.0 / v0.3.1 / v0.4.0 / v1.0.0-rc.1）→ 构建 + GitHub Release
+#   - workflow_dispatch（手动）→ 仅构建验证（不上传 Release）
+#
+# 版本语义（SemVer 2.0.0）：
+#   - MAJOR.MINOR.PATCH 由 tag 决定（v*），workflow 不自动 bump
+#   - 预发布后缀 -alpha/-beta/-rc → 自动标记为 GitHub Pre-release（预览版）
+#   - 变更日志：Keep a Changelog（CHANGELOG.md），按 tag 提取对应版本块作为 Release Notes
+#
+# 产物（每平台）：
+#   assetslab-server-<ver>[.exe]  — HTTP server（嵌入 Vue 前端 + 物种数据）
+#   assetslab-cli-<ver>[.exe]     — 命令行工具（嵌入物种数据）
+# ============================================================================
+
+name: Release Binaries
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: '构建版本号（如 0.3.0 或 0.3.0-rc.1；仅用于验证，不影响 tag）'
+        required: false
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build ${{ matrix.label }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            py: '3.12'
+            label: linux-x64
+          - os: windows-latest
+            py: '3.12'
+            label: windows-x64
+          - os: macos-14
+            py: '3.12'
+            label: macos-arm64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.py }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: pnpm
+          cache-dependency-path: assetslab/web/pnpm-lock.yaml
+
+      - name: Enable pnpm (corepack)
+        run: corepack enable
+
+      - name: Install frontend deps
+        working-directory: assetslab/web
+        run: pnpm install --frozen-lockfile
+
+      - name: Build frontend (Vue SPA → web/dist)
+        working-directory: assetslab/web
+        run: pnpm build
+
+      - name: Install pyinstaller
+        run: pip install pyinstaller
+
+      - name: Build server & cli binaries
+        env:
+          # 版本号：tag 触发用 tag（v*）；手动触发用输入值，默认 dev
+          ASSETSLAB_VERSION: ${{ github.ref_name }}
+        run: python scripts/build_release.py
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: assetslab-${{ matrix.label }}
+          path: dist/assetslab-*
+          if-no-files-found: error
+
+  release:
+    name: Publish Release
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release/
+          merge-multiple: true
+
+      - name: Extract CHANGELOG for this tag
+        shell: bash
+        run: |
+          VER="${GITHUB_REF_NAME#v}"
+          python - "$VER" <<'PY'
+          import re, sys
+          ver = sys.argv[1]
+          text = open('CHANGELOG.md', encoding='utf-8').read()
+          # 提取 "## [<前缀><ver>] - <date>" 到下一个版本块的段落
+          m = re.search(
+              r'^## \[[^\]]*' + re.escape(ver) + r'[^\]]*\]\s*-\s*\S+.*?(?=^## \[|\Z)',
+              text, re.S | re.M)
+          body = m.group(0).strip() if m else f'## 版本 {ver}\n\n（未在 CHANGELOG.md 找到对应条目，请补充）'
+          open('release-body.md', 'w', encoding='utf-8').write(body)
+          PY
+          echo "Release body 行数: $(wc -l < release-body.md)"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release/assetslab-*
+          body_path: release-body.md
+          # SemVer 预发布后缀（-alpha/-beta/-rc）→ 标记为 Pre-release（预览版）
+          prerelease: ${{ contains(github.ref_name, '-') }}
+          draft: false

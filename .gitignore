@@ -24,6 +24,9 @@ prototype/test_output/
 dist/
 build/
 node_modules/
+# pyinstaller 生成的 spec（运行 scripts/build_release.py 时产生）
+/assetslab-*.spec
+*.spec.bak
 
 # --- Godot import metadata ---
 *.import

@@ -28,13 +28,13 @@ if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
 from assetslab.api import make_api  # noqa: E402
-from assetslab.config import DEFAULT_DATA_DIR  # noqa: E402
+from assetslab.config import DEFAULT_DATA_DIR, ensure_species_seeded  # noqa: E402
 
-_DATA_DIR: Path | None = None  # --data-dir 覆盖（默认仓库根 data/）
+_DATA_DIR: Path | None = None  # --data-dir 覆盖（默认仓库根 data/；打包运行时用户目录）
 
 
 def api():
-    data_dir = _DATA_DIR or DEFAULT_DATA_DIR
+    data_dir = ensure_species_seeded(_DATA_DIR or DEFAULT_DATA_DIR)
     return make_api(data_dir / "species", data_dir / "presets")
 
 

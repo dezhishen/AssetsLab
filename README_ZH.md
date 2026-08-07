@@ -68,6 +68,28 @@ cd ../.. && .venv/bin/python assetslab/server.py --port 8765   # 后端服务 di
 # 打开 http://localhost:8765
 ```
 
+### 发布（跨平台二进制）
+
+基于 **pyinstaller** 构建嵌入 web 的 server / cli 二进制，GitHub Actions 在 **`v*` tag** 时跨平台发布：
+
+```bash
+# 本地构建（需已构建前端 + 安装 pyinstaller）
+python scripts/build_release.py   # 产物 dist/assetslab-server-<ver> / assetslab-cli-<ver>
+```
+
+**发布流程（SemVer + Keep a Changelog）**：
+
+1. 更新 `CHANGELOG.md`（按 Added / Changed / Fixed 分类，有取舍地汇总用户可见变更）
+2. 打 tag 触发 Actions 构建 → 自动生成 GitHub Release：
+   - `v1.0.0` — 正式版（MAJOR：不兼容 API）
+   - `v0.4.0` — 小版本（MINOR：向后兼容的新功能）
+   - `v0.3.1` — fix 版本（PATCH：缺陷修复）
+   - `v0.4.0-rc.1` — 预览版（预发布后缀 `-alpha/-beta/-rc` → 自动标记 Pre-release）
+3. Release Notes 自动从 `CHANGELOG.md` 提取对应版本块
+
+二进制默认数据目录为 `~/.assetslab/data`（首次运行从 bundle 播种物种；预设持久化可写），
+可用 `--data-dir` 覆盖。
+
 ### 开发（热更新，前后端分离）
 
 - 终端 1 — 后端 API（`--dev` 追加 CORS 头）：`.venv/bin/python assetslab/server.py --dev --port 8765`
@@ -110,6 +132,7 @@ cd ../.. && .venv/bin/python assetslab/server.py --port 8765   # 后端服务 di
 - ✅ 统一 Api：CLI 与 HTTP 共享 `interfaces.Api`（硬约束）
 - ✅ 预设系统：独立入口（前端 + CLI），schema 派生 + 实时预览
 - ✅ Web 前端：动作预览（播放 + GIF 导出）、3D 轨道相机、dev 热更新
+- ✅ 跨平台发布：pyinstaller 二进制（server 嵌入 web）+ GitHub Actions（`v*` tag，含预览版）
 - 🔜 run / jump 等动作按 CMU 真实数据补全；Godot demo 接入 3D 动作
 
 ## 相关文档

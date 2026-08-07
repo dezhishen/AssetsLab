@@ -68,6 +68,27 @@ cd ../.. && .venv/bin/python assetslab/server.py --port 8765   # serve dist + AP
 # open http://localhost:8765
 ```
 
+### Release (cross-platform binaries)
+
+PyInstaller builds embed-web **server / cli** binaries; GitHub Actions publishes them cross-platform on **`v*` tags**:
+
+```bash
+# Local build (requires built front-end + pyinstaller installed)
+python scripts/build_release.py   # → dist/assetslab-server-<ver> / assetslab-cli-<ver>
+```
+
+**Release flow (SemVer + Keep a Changelog)**:
+
+1. Update `CHANGELOG.md` (concise, user-visible changes grouped by Added / Changed / Fixed)
+2. Tag to trigger Actions build → auto GitHub Release:
+   - `v1.0.0` — stable (MAJOR: breaking API)
+   - `v0.4.0` — minor (MINOR: backward-compatible features)
+   - `v0.3.1` — fix/patch (PATCH: bug fixes)
+   - `v0.4.0-rc.1` — preview (pre-release suffix `-alpha/-beta/-rc` → auto Pre-release)
+3. Release Notes auto-extracted from the matching `CHANGELOG.md` version block
+
+Packaged binaries default to `~/.assetslab/data` (species seeded from bundle on first run; presets writable/persistent), overridable via `--data-dir`.
+
 ### Development (hot reload, split front/back)
 
 - Terminal 1 — backend API (`--dev` adds CORS): `.venv/bin/python assetslab/server.py --dev --port 8765`
@@ -110,6 +131,7 @@ action walk3d.json (fk3d.rotations3d: per-joint per-frame real rotation tables +
 - ✅ Unified Api: CLI & HTTP share `interfaces.Api` (hard constraint)
 - ✅ Presets: independent entry (front-end + CLI), schema-derived + live preview
 - ✅ Web: motion preview (play + GIF export), orbit camera, dev hot reload
+- ✅ Cross-platform release: pyinstaller binaries (server embeds web) + GitHub Actions (`v*` tag, incl. pre-release)
 - 🔜 run/jump motions from real CMU data; wire Godot demo to 3D motions
 
 ## Docs
