@@ -12,6 +12,7 @@
 - **3D 相机改造**：轨道相机（预览图拖拽旋转 + 快捷按钮 + 收纳面板），`useOrbitDrag`（isDragging 必须 ref）。
 - **清理过时内容**：skins / packaging / build / webflow 发布链 / 旧参考资产；保留 `prototype/`（Godot demo）、`scripts/mocap/`、`verify_motions3d.py`。
 - **前端动作预览**：`MotionPreview.vue` 封装播放 + 导出 GIF（后端 `gif=1`）。
+- **全量测试**：E2E 10 用例全通过（物种/预设 CRUD、渲染、GIF、相机）；CLI 流程化测试 5 用例（`scripts/test_cli.py`，物种/动作/预设/渲染/错误处理，数据隔离 `test-data-cli/`）。
 
 ## 二、当前结构
 
@@ -24,6 +25,7 @@
 | `assetslab/web/` | Vue 3 前端（物种 / 预设独立入口） |
 | `scripts/mocap/` | CMU 工具链（bvh_parser / rebuild_skeleton_cmu / extract_kin / compare_motion） |
 | `scripts/verify_motions3d.py` | 3D 动作验证（8 项检查，数据驱动） |
+| `scripts/test_cli.py` | CLI 流程化测试（unittest，物种/动作/预设/渲染，数据隔离 test-data-cli/） |
 | `prototype/` | **Godot 4.7 demo（保留）** |
 
 ## 三、下一步（待办）

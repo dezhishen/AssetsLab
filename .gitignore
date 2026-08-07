@@ -40,3 +40,7 @@ data/presets/
 
 # --- 测试数据（E2E 用 test-data/，由 e2e/global-setup.mjs 生成，不提交） ---
 test-data/
+test-data-cli/
+
+# --- CLI/脚本测试输出 ---
+test-output/

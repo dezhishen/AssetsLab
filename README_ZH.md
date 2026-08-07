@@ -28,11 +28,12 @@ assetslab/
 scripts/
   mocap/                                         ← CMU 动捕工具链（BVH 解析 / 重建 / 验证）
   verify_motions3d.py                            ← 3D 动作验证（8 项检查，数据驱动）
+  test_cli.py                                    ← CLI 流程化测试（unittest，数据隔离）
 prototype/                                       ← Godot 4.7 demo（保留）
 ```
 
 > **数据目录**：默认仓库根 `data/`（物种为资产提交；预设为运行时用户数据）。
-> 后端（server/CLI）可用 `--data-dir <dir>` 覆盖；E2E 使用独立的 `test-data/`（由 `e2e/global-setup.mjs` 自动生成）。
+> 后端（server/CLI）可用 `--data-dir <dir>` 覆盖；E2E 使用独立的 `test-data/`（由 `e2e/global-setup.mjs` 自动生成）；CLI 测试使用独立的 `test-data-cli/`。
 
 ## 快速开始
 
@@ -44,6 +45,19 @@ prototype/                                       ← Godot 4.7 demo（保留）
 ```bash
 python3 -m venv .venv && .venv/bin/python -m pip install -r requirements.txt
 cd assetslab/web && pnpm install
+```
+
+## 测试
+
+```bash
+# 3D 动作数据验证（8 项检查：骨长/贴地/平滑/对称/关节/肘/坐标/参数）
+.venv/bin/python scripts/verify_motions3d.py
+
+# CLI 流程化测试（物种/动作/预设/渲染 CRUD，数据隔离 test-data-cli/）
+.venv/bin/python scripts/test_cli.py
+
+# 前端 E2E 全量（自动起后端 --data-dir test-data + Vite，10 个用例）
+cd assetslab/web && pnpm test:e2e
 ```
 
 ### 生产
