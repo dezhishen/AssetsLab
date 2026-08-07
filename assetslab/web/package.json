@@ -7,7 +7,8 @@
     "dev": "vite",
     "dev:api": "../../.venv/bin/python ../server.py --dev",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@element-plus/icons-vue": "^2.3.1",
@@ -16,6 +17,7 @@
     "vue-router": "^4.5.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.62.1",
     "@vitejs/plugin-vue": "^5.2.1",
     "autoprefixer": "^10.4.20",
     "postcss": "^8.4.49",

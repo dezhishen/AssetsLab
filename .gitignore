@@ -30,3 +30,7 @@ node_modules/
 # --- OS junk ---
 .DS_Store
 Thumbs.db
+
+# --- Playwright E2E 输出 ---
+assetslab/web/test-results/
+assetslab/web/playwright-report/
