@@ -5,29 +5,23 @@
 # 模块之间只依赖这里声明的接口，不依赖具体实现。
 #
 # 领域模块（彼此几乎独立，仅存在真实领域关系）：
-#   species.py  物种模块     — 自包含，无依赖
-#   preset.py   预设模块     — 依赖物种模块接口（创建预设要读物种）
-#   motion.py   动作模块     — 依赖物种模块接口（动作属于物种）
-#   render.py   渲染模块     — 依赖预设+动作
-#   server.py   组装所有模块
+#   species.py  物种模块     — 自包含，无依赖（骨架/默认参数/动作/约束数据）
+#   motion.py   3D 动作 DSL 求值器（通用表达式求值，无状态）
+#   render.py   3D 绘制原语（画布/骨骼/关节/头部）
+#   skeleton3d.py 3D 骨架/动作引擎（读数据渲染、IK、校验支撑）
+#   server.py   组装所有模块（仅 3D 端点，基于物种默认参数）
 # =========================================================================
 
 from __future__ import annotations
 
 from typing import Protocol
 
-from PIL import Image
-
 from .models import (
     Motion,
     MotionListItem,
-    Preset,
-    PresetDetail,
-    PresetListItem,
     SpeciesDetail,
     SpeciesListItem,
     SpeciesSkeleton,
-    View,
 )
 
 # -------------------------------------------------------------------------
@@ -51,43 +45,3 @@ class SpeciesModule(Protocol):
     def save_action(self, species_id: str, action_id: str, data: Motion) -> str: ...
     def delete_action(self, species_id: str, action_id: str) -> str: ...
     def find_action(self, action_id: str) -> tuple[str, Motion] | None: ...
-
-
-# -------------------------------------------------------------------------
-# 预设模块接口
-# -------------------------------------------------------------------------
-
-
-class PresetModule(Protocol):
-    """预设模块对外能力。"""
-
-    def list(self) -> list[PresetListItem]: ...
-    def get(self, preset_id: str) -> PresetDetail: ...
-    def save(self, preset_id: str, data: Preset) -> str: ...
-
-
-# -------------------------------------------------------------------------
-# 渲染模块接口
-# -------------------------------------------------------------------------
-
-
-class RenderService(Protocol):
-    """渲染模块对外能力：骨架预览 + 动作帧。返回 PIL Image。"""
-
-    def skeleton_preview(self, skeleton_id: str, view: View) -> Image.Image:
-        """渲染单个骨架姿势帧。skeleton_id 通常是预设 ID（含坐标）。"""
-        ...
-
-    def motion_frame(
-        self,
-        motion_id: str,
-        *,
-        view: View = "front",
-        stage: str = "legs",
-        skeleton: str = "standard",
-        frame_index: int = 0,
-        overrides: dict[str, float] | None = None,
-        proportions: dict[str, float] | None = None,
-    ) -> Image.Image:
-        """渲染动作的一帧。"""
-        ...

@@ -72,34 +72,19 @@ export const api = {
   /** 删除动作 */
   deleteAction: (speciesId, actionId) => raw(`/api/species/${encodeURIComponent(speciesId)}/actions/${encodeURIComponent(actionId)}`, { method: 'DELETE' }),
 
-  // -- 预设 Preset --
+  // -- 物种默认参数（物种自带姿态/体型；动作与骨架预览的基础） --
 
-  /** 预设列表 @returns {Promise<{skeletons: import('../../models').PresetListItem[]}>} */
-  presets: () => raw('/api/skeletons'),
+  /** 读物种默认参数 @returns {Promise<object>} */
+  speciesDefault: (id) => raw(`/api/species/${encodeURIComponent(id)}/default`),
 
-  /** 预设详情（合并物种数据） @returns {Promise<import('../../models').PresetDetail>} */
-  presetDetail: (id) => raw(`/api/skeletons/${encodeURIComponent(id)}`),
+  /** 保存物种默认参数 */
+  saveSpeciesDefault: (id, data) => raw(`/api/species/${encodeURIComponent(id)}/default`, json(data)),
 
-  /** 创建预设 */
-  createPreset: (data) => raw('/api/skeletons', json(data)),
+  // -- 3D 预览（3D 坐标 + 投影；基于物种默认参数） --
 
-  /** 保存预设 */
-  savePreset: (id, data) => raw(`/api/skeletons/${encodeURIComponent(id)}/save`, json(data)),
-
-  /** 删除预设 */
-  deletePreset: (id) => raw(`/api/skeletons/${encodeURIComponent(id)}`, { method: 'DELETE' }),
-
-  /** 骨架预览渲染 */
-  renderSkeleton: (id, body) => raw(`/api/skeletons/${encodeURIComponent(id)}/render`, json(body)),
-
-  // -- 3D 预览（阶段 1/2：3D 坐标 + 投影） --
-
-  /** 3D 骨架：任意角度(yaw/pitch) + 距离(透视) 渲染 PNG */
+  /** 3D 骨架：任意角度(yaw/pitch) + 距离(透视) 渲染 PNG（species_id 路径） */
   renderSkeleton3d: (id, qs) => raw(`/api/skeleton3d/${encodeURIComponent(id)}?${qs}`),
 
-  /** 3D 动作列表（从 species actions3d 扫描） */
-  motions3d: () => raw('/api/motions3d'),
-
-  /** 3D 动作：任意角度 + 距离 单帧渲染 PNG */
+  /** 3D 动作：任意角度 + 距离 单帧渲染 PNG（动作按 species 获取与渲染） */
   renderMotion3d: (id, qs) => raw(`/api/motion3d/${encodeURIComponent(id)}?${qs}`),
 }

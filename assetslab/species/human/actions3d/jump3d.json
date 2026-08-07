@@ -2,43 +2,323 @@
   "schema": "assetslab_motion3d_v1",
   "motion_id": "jump3d",
   "title": "Jump 3D — 蹲/起跳/滞空/落地",
-  "description": "3D 跳跃：预备下蹲蓄力 → 起跳爆发 → 滞空收腿 → 落地屈膝缓冲。双臂下摆蓄力后上举。",
+  "description": "3D 跳跃（T-pose 基座）：预备下蹲蓄力 → 起跳爆发 → 滞空收腿 → 落地屈膝缓冲。双臂下摆蓄力后上举。",
   "species": "human",
   "frame_count": 8,
   "params": {
-    "intensity": {"default": 1.0, "min": 0.0, "max": 1.5, "label": "力度协调"},
-    "height": {"default": 1.0, "min": 0.0, "max": 2.0, "label": "跳跃高度"},
-    "crouch": {"default": 1.0, "min": 0.0, "max": 2.0, "label": "下蹲"},
-    "arm_raise": {"default": 1.0, "min": 0.0, "max": 2.0, "label": "举臂"},
-    "tuck": {"default": 1.0, "min": 0.0, "max": 2.0, "label": "收腿"},
-    "land_absorb": {"default": 1.0, "min": 0.0, "max": 2.0, "label": "落地缓冲"}
+    "intensity": {
+      "default": 1.0,
+      "min": 0.0,
+      "max": 1.5,
+      "label": "力度协调"
+    },
+    "height": {
+      "default": 1.0,
+      "min": 0.0,
+      "max": 2.0,
+      "label": "跳跃高度"
+    },
+    "crouch": {
+      "default": 1.0,
+      "min": 0.0,
+      "max": 2.0,
+      "label": "下蹲"
+    },
+    "arm_raise": {
+      "default": 1.0,
+      "min": 0.0,
+      "max": 2.0,
+      "label": "举臂"
+    },
+    "tuck": {
+      "default": 1.0,
+      "min": 0.0,
+      "max": 2.0,
+      "label": "收腿"
+    },
+    "land_absorb": {
+      "default": 1.0,
+      "min": 0.0,
+      "max": 2.0,
+      "label": "落地缓冲"
+    }
   },
   "signals": {
-    "phase": {"phase": true},
-    "squat": {"mul": [{"table": [0.0, 9.0, 15.0, 9.0, 3.0, 2.0, 8.0, 3.0]}, {"param": "crouch"}, {"param": "intensity"}]},
-    "rise": {"mul": [{"table": [0.0, 0.0, 0.0, 6.0, 16.0, 14.0, 8.0, 2.0]}, {"param": "height"}, {"param": "intensity"}]},
-    "land": {"mul": [{"table": [0.0, 0.0, 0.0, 0.0, 0.0, 3.0, 10.0, 5.0]}, {"param": "land_absorb"}, {"param": "intensity"}]},
-    "air_foot": {"mul": [{"table": [0.0, 0.0, 2.0, 8.0, 20.0, 18.0, 11.0, 4.0]}, {"param": "height"}, {"param": "intensity"}]},
-    "tuck_foot": {"mul": [{"table": [0.0, 0.0, 0.0, 2.0, 8.0, 8.0, 3.0, 0.0]}, {"param": "tuck"}, {"param": "intensity"}]},
-    "arm": {"mul": [{"table": [0.0, 4.0, 8.0, 1.0, -6.0, -14.0, -9.0, -2.0]}, {"param": "arm_raise"}, {"param": "intensity"}]}
+    "phase": {
+      "phase": true
+    },
+    "squat": {
+      "mul": [
+        {
+          "table": [
+            0.0,
+            9.0,
+            15.0,
+            9.0,
+            3.0,
+            2.0,
+            8.0,
+            3.0
+          ]
+        },
+        {
+          "param": "crouch"
+        },
+        {
+          "param": "intensity"
+        }
+      ]
+    },
+    "rise": {
+      "mul": [
+        {
+          "table": [
+            0.0,
+            0.0,
+            0.0,
+            6.0,
+            16.0,
+            14.0,
+            8.0,
+            2.0
+          ]
+        },
+        {
+          "param": "height"
+        },
+        {
+          "param": "intensity"
+        }
+      ]
+    },
+    "land": {
+      "mul": [
+        {
+          "table": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            3.0,
+            10.0,
+            5.0
+          ]
+        },
+        {
+          "param": "land_absorb"
+        },
+        {
+          "param": "intensity"
+        }
+      ]
+    },
+    "air_foot": {
+      "mul": [
+        {
+          "table": [
+            0.0,
+            0.0,
+            2.0,
+            8.0,
+            20.0,
+            18.0,
+            11.0,
+            4.0
+          ]
+        },
+        {
+          "param": "height"
+        },
+        {
+          "param": "intensity"
+        }
+      ]
+    },
+    "tuck_foot": {
+      "mul": [
+        {
+          "table": [
+            0.0,
+            0.0,
+            0.0,
+            2.0,
+            8.0,
+            8.0,
+            3.0,
+            0.0
+          ]
+        },
+        {
+          "param": "tuck"
+        },
+        {
+          "param": "intensity"
+        }
+      ]
+    },
+    "arm": {
+      "mul": [
+        {
+          "table": [
+            0.0,
+            10.0,
+            25.0,
+            -30.0,
+            -95.0,
+            -145.0,
+            -110.0,
+            -55.0
+          ]
+        },
+        {
+          "param": "arm_raise"
+        },
+        {
+          "param": "intensity"
+        }
+      ]
+    },
+    "arm_z": {
+      "mul": [
+        {
+          "table": [
+            0.0,
+            -10.0,
+            -25.0,
+            35.0,
+            40.0,
+            40.0,
+            50.0,
+            30.0
+          ]
+        },
+        {
+          "param": "arm_raise"
+        },
+        {
+          "param": "intensity"
+        }
+      ]
+    }
   },
   "root3d": {
-    "y": {"add": [{"signal": "squat"}, {"neg": {"signal": "rise"}}, {"signal": "land"}]}
+    "y": {
+      "add": [
+        {
+          "neg": {
+            "signal": "rise"
+          }
+        },
+        {
+          "signal": "land"
+        }
+      ]
+    }
   },
   "offsets3d": {
-    "ankle_left": {"y": {"neg": {"add": [{"signal": "air_foot"}, {"signal": "tuck_foot"}]}}},
-    "ankle_right": {"y": {"neg": {"add": [{"signal": "air_foot"}, {"signal": "tuck_foot"}]}}},
-    "shoulder_left": {"y": {"mul": [{"signal": "arm"}, 0.6]}},
-    "shoulder_right": {"y": {"mul": [{"signal": "arm"}, 0.6]}},
-    "wrist_left": {"y": {"signal": "arm"}},
-    "wrist_right": {"y": {"signal": "arm"}}
+    "ankle_left": {
+      "y": {
+        "neg": {
+          "add": [
+            {
+              "signal": "air_foot"
+            },
+            {
+              "signal": "tuck_foot"
+            }
+          ]
+        }
+      }
+    },
+    "ankle_right": {
+      "y": {
+        "neg": {
+          "add": [
+            {
+              "signal": "air_foot"
+            },
+            {
+              "signal": "tuck_foot"
+            }
+          ]
+        }
+      }
+    },
+    "shoulder_left": {
+      "y": {
+        "mul": [
+          {
+            "signal": "arm"
+          },
+          0.1
+        ]
+      }
+    },
+    "shoulder_right": {
+      "y": {
+        "mul": [
+          {
+            "signal": "arm"
+          },
+          0.1
+        ]
+      }
+    },
+    "wrist_left": {
+      "y": {
+        "signal": "arm"
+      },
+      "z": {
+        "signal": "arm_z"
+      }
+    },
+    "wrist_right": {
+      "y": {
+        "signal": "arm"
+      },
+      "z": {
+        "signal": "arm_z"
+      }
+    },
+    "pelvis": {
+      "y": {
+        "signal": "squat"
+      }
+    }
   },
   "ik3d": {
     "chains": [
-      {"root": "hip_left", "mid": "knee_left", "tip": "ankle_left"},
-      {"root": "hip_right", "mid": "knee_right", "tip": "ankle_right"},
-      {"root": "shoulder_left", "mid": "elbow_left", "tip": "wrist_left", "pole": [0.0, 0.0, -1.0]},
-      {"root": "shoulder_right", "mid": "elbow_right", "tip": "wrist_right", "pole": [0.0, 0.0, -1.0]}
+      {
+        "root": "hip_left",
+        "mid": "knee_left",
+        "tip": "ankle_left"
+      },
+      {
+        "root": "hip_right",
+        "mid": "knee_right",
+        "tip": "ankle_right"
+      },
+      {
+        "root": "shoulder_left",
+        "mid": "elbow_left",
+        "tip": "wrist_left",
+        "pole": [
+          0.0,
+          0.0,
+          -1.0
+        ]
+      },
+      {
+        "root": "shoulder_right",
+        "mid": "elbow_right",
+        "tip": "wrist_right",
+        "pole": [
+          0.0,
+          0.0,
+          -1.0
+        ]
+      }
     ]
   }
 }

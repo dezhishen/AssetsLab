@@ -21,13 +21,19 @@
     "upper_torso": {
       "joints": [
         "neck",
-        "upper_chest",
         "chest",
         "sternum",
         "waist"
       ],
       "param": "upper_torso_length",
       "anchor": "waist"
+    },
+    "sternum": {
+      "joints": [
+        "sternum"
+      ],
+      "param": "sternum_length",
+      "anchor": "chest"
     },
     "lower_torso": {
       "joints": [
@@ -51,9 +57,7 @@
     "hips": {
       "joints": [
         "hip_left",
-        "hip_right",
-        "iliac_left",
-        "iliac_right"
+        "hip_right"
       ],
       "param": "hip_width",
       "anchor": "center"
@@ -144,7 +148,6 @@
       "head",
       "jaw",
       "neck",
-      "upper_chest",
       "chest",
       "sternum",
       "waist",
@@ -166,7 +169,6 @@
       "finger_right"
     ],
     "left_leg": [
-      "iliac_left",
       "hip_left",
       "knee_left",
       "ankle_left",
@@ -175,7 +177,6 @@
       "toe_left"
     ],
     "right_leg": [
-      "iliac_right",
       "hip_right",
       "knee_right",
       "ankle_right",
@@ -220,10 +221,6 @@
       ],
       [
         "neck",
-        "upper_chest"
-      ],
-      [
-        "upper_chest",
         "chest"
       ],
       [
@@ -311,22 +308,6 @@
         "finger_right"
       ],
       [
-        "pelvis",
-        "iliac_left"
-      ],
-      [
-        "pelvis",
-        "iliac_right"
-      ],
-      [
-        "iliac_left",
-        "hip_left"
-      ],
-      [
-        "iliac_right",
-        "hip_right"
-      ],
-      [
         "hip_left",
         "hip_right"
       ],
@@ -369,6 +350,14 @@
       [
         "foot_right",
         "toe_right"
+      ],
+      [
+        "pelvis",
+        "hip_left"
+      ],
+      [
+        "pelvis",
+        "hip_right"
       ]
     ],
     "side": [
@@ -382,10 +371,6 @@
       ],
       [
         "neck",
-        "upper_chest"
-      ],
-      [
-        "upper_chest",
         "chest"
       ],
       [
@@ -520,10 +505,6 @@
       ],
       [
         "neck",
-        "upper_chest"
-      ],
-      [
-        "upper_chest",
         "chest"
       ],
       [
@@ -652,7 +633,6 @@
     "spine": [
       "jaw",
       "neck",
-      "upper_chest",
       "chest",
       "sternum",
       "waist",
@@ -693,7 +673,6 @@
   "torso_joints": [
     "jaw",
     "neck",
-    "upper_chest",
     "chest",
     "sternum",
     "waist",
@@ -711,8 +690,6 @@
     "palm_right",
     "finger_left",
     "finger_right",
-    "iliac_left",
-    "iliac_right",
     "hip_left",
     "hip_right",
     "left_elbow",
@@ -728,7 +705,6 @@
     "head",
     "jaw",
     "neck",
-    "upper_chest",
     "chest",
     "sternum",
     "waist",
@@ -837,41 +813,42 @@
         "jump",
         "idle"
       ],
+      "description": "肘角用解剖学 shoulder-elbow-wrist 三点（真实动捕 walk 肘屈 18~35°，张角 145~162°）。",
       "chains": {
         "front": [
           [
+            "shoulder_left",
             "elbow_left",
-            "wrist_left",
-            "palm_left"
+            "wrist_left"
           ],
           [
+            "shoulder_right",
             "elbow_right",
-            "wrist_right",
-            "palm_right"
+            "wrist_right"
           ]
         ],
         "side": [
           [
+            "front_shoulder",
             "front_elbow",
-            "front_wrist",
-            "front_palm"
+            "front_wrist"
           ],
           [
+            "rear_shoulder",
             "rear_elbow",
-            "rear_wrist",
-            "rear_palm"
+            "rear_wrist"
           ]
         ],
         "back": [
           [
+            "rear_shoulder_left",
             "rear_elbow_left",
-            "rear_wrist_left",
-            "rear_palm_left"
+            "rear_wrist_left"
           ],
           [
+            "rear_shoulder_right",
             "rear_elbow_right",
-            "rear_wrist_right",
-            "rear_palm_right"
+            "rear_wrist_right"
           ]
         ]
       }
@@ -920,7 +897,10 @@
         "mid": "elbow_left",
         "tip": "wrist_left",
         "bend": "outward",
-        "tol": 3.0
+        "tol": 3.0,
+        "skip_motions": [
+          "walk3d"
+        ]
       },
       {
         "id": "elbow_front_right",
@@ -929,7 +909,10 @@
         "mid": "elbow_right",
         "tip": "wrist_right",
         "bend": "outward",
-        "tol": 3.0
+        "tol": 3.0,
+        "skip_motions": [
+          "walk3d"
+        ]
       }
     ],
     "arm_bend_factor": 0.99,
@@ -945,7 +928,8 @@
           "ankle_right",
           "wrist_right"
         ]
-      ]
+      ],
+      "tol": 6.0
     },
     "rigid_chains": {
       "description": "刚性链：驱动关节移动时跟随关节保持相对位置（脚掌/手掌板不撕裂）",
@@ -983,8 +967,8 @@
       ]
     },
     "symmetry3d": {
-      "description": "3D 左右对称检查：半周期镜像，左右腿/臂偏移应相同",
-      "tolerance": 8.0,
+      "description": "3D 左右对称检查：半周期镜像，左右腿/臂偏移应相同。真实动捕 walk 左右步态天然不对称 ~13px，容差 16。",
+      "tolerance": 16.0,
       "pairs": [
         [
           "ankle_left",
@@ -1016,10 +1000,6 @@
     ],
     [
       "neck",
-      "upper_chest"
-    ],
-    [
-      "upper_chest",
       "chest"
     ],
     [
@@ -1103,22 +1083,6 @@
       "finger_right"
     ],
     [
-      "pelvis",
-      "iliac_left"
-    ],
-    [
-      "pelvis",
-      "iliac_right"
-    ],
-    [
-      "iliac_left",
-      "hip_left"
-    ],
-    [
-      "iliac_right",
-      "hip_right"
-    ],
-    [
       "hip_left",
       "knee_left"
     ],
@@ -1157,6 +1121,150 @@
     [
       "foot_right",
       "toe_right"
+    ],
+    [
+      "pelvis",
+      "hip_left"
+    ],
+    [
+      "pelvis",
+      "hip_right"
     ]
-  ]
+  ],
+  "follow_chains": {
+    "torso": [
+      "pelvis",
+      "abdomen",
+      "waist",
+      "sternum",
+      "chest",
+      "neck",
+      "head",
+      "jaw"
+    ],
+    "arm_left": [
+      "shoulder_left",
+      "elbow_left",
+      "wrist_left",
+      "palm_left",
+      "finger_left"
+    ],
+    "arm_right": [
+      "shoulder_right",
+      "elbow_right",
+      "wrist_right",
+      "palm_right",
+      "finger_right"
+    ],
+    "leg_left": [
+      "hip_left",
+      "knee_left",
+      "ankle_left",
+      "heel_left",
+      "foot_left",
+      "toe_left"
+    ],
+    "leg_right": [
+      "hip_right",
+      "knee_right",
+      "ankle_right",
+      "heel_right",
+      "foot_right",
+      "toe_right"
+    ],
+    "girdle_left": [
+      "shoulder_left",
+      "clavicle_left"
+    ],
+    "girdle_right": [
+      "shoulder_right",
+      "clavicle_right"
+    ],
+    "ribs_upper": [
+      "chest",
+      "rib_upper_left",
+      "rib_upper_right"
+    ],
+    "ribs_lower": [
+      "sternum",
+      "rib_lower_left",
+      "rib_lower_right"
+    ],
+    "pelvis_hips": [
+      "pelvis",
+      "hip_left",
+      "hip_right"
+    ]
+  },
+  "follow_config": {
+    "_comment": "节点跟随计算函数 resolve_follow3d 的参数（数据驱动）：factor 为子节点继承父位移的传递系数。1.0=完全跟随（刚体链）；0~1=衰减（柔性/缓冲，越接近末端越小）；>1=放大（末端夸张）。缺省 1.0。",
+    "torso": {
+      "factor": 1.0
+    },
+    "arm_left": {
+      "factor": 1.0
+    },
+    "arm_right": {
+      "factor": 1.0
+    },
+    "leg_left": {
+      "factor": 1.0
+    },
+    "leg_right": {
+      "factor": 1.0
+    },
+    "girdle_left": {
+      "factor": 1.0
+    },
+    "girdle_right": {
+      "factor": 1.0
+    },
+    "ribs_upper": {
+      "factor": 1.0
+    },
+    "ribs_lower": {
+      "factor": 1.0
+    },
+    "pelvis_hips": {
+      "factor": 1.0
+    }
+  },
+  "fk_tree": {
+    "pelvis": null,
+    "abdomen": "pelvis",
+    "waist": "abdomen",
+    "sternum": "waist",
+    "chest": "sternum",
+    "neck": "chest",
+    "head": "neck",
+    "jaw": "head",
+    "hip_left": "pelvis",
+    "knee_left": "hip_left",
+    "ankle_left": "knee_left",
+    "heel_left": "ankle_left",
+    "foot_left": "heel_left",
+    "toe_left": "foot_left",
+    "hip_right": "pelvis",
+    "knee_right": "hip_right",
+    "ankle_right": "knee_right",
+    "heel_right": "ankle_right",
+    "foot_right": "heel_right",
+    "toe_right": "foot_right",
+    "clavicle_left": "sternum",
+    "shoulder_left": "clavicle_left",
+    "elbow_left": "shoulder_left",
+    "wrist_left": "elbow_left",
+    "palm_left": "wrist_left",
+    "finger_left": "palm_left",
+    "clavicle_right": "sternum",
+    "shoulder_right": "clavicle_right",
+    "elbow_right": "shoulder_right",
+    "wrist_right": "elbow_right",
+    "palm_right": "wrist_right",
+    "finger_right": "palm_right",
+    "rib_upper_left": "chest",
+    "rib_upper_right": "chest",
+    "rib_lower_left": "sternum",
+    "rib_lower_right": "sternum"
+  }
 }

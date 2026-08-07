@@ -2,15 +2,15 @@
 """AssetsLab HTTP API server.
 
 组装（composition root）各领域模块，只依赖接口：
-  species.py   物种模块（自包含）
-  preset.py    预设模块（依赖物种模块接口）
-  motion.py    动作模块（依赖物种模块接口）
-  render.py    骨架绘制模块
+  species.py     物种模块（自包含：骨架/默认参数/动作/约束）
+  skeleton3d.py  3D 骨架/动作引擎（读物种默认参数渲染）
+  motion.py      3D 动作 DSL 求值器
+  render.py      3D 绘制原语
 
-API:
-  /api/species     — 物种 (CRUD)
-  /api/skeletons   — 预设 (list, detail, render, save)
-  /api/motions     — 动作 (list, render)
+API（仅 3D，基于物种默认参数）:
+  /api/species            — 物种 (CRUD) + /default 默认参数读写
+  /api/skeleton3d/<sp>    — 3D 骨架任意视角 PNG（基于物种默认参数）
+  /api/motion3d/<action>  — 3D 动作帧/GIF（基于物种默认参数）
 
 Usage:
   python assetslab/server.py --port 8765
@@ -34,10 +34,7 @@ _REPO_ROOT = _PKG_ROOT.parent
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
-from assetslab import motion as motion_mod
-from assetslab import render as render_mod
-from assetslab.interfaces import PresetModule, RenderService, SpeciesModule
-from assetslab.preset import PresetService
+from assetslab.interfaces import SpeciesModule
 from assetslab.species import SpeciesService
 
 # ---- paths ----
@@ -45,50 +42,16 @@ PKG_ROOT = _PKG_ROOT
 WEB_DIST = PKG_ROOT / "web" / "dist"
 
 
-class _RenderService:
-    """渲染服务实现（组装根内部适配器）。
-
-    将 render.py（骨架绘制）与 motion.py（动作引擎）封装成 RenderService 接口。
-    放在组装根，不单独成层。
-    """
-
-    def skeleton_preview(self, skeleton_id: str, view: str, body_overrides=None):
-        render_mod.set_skeleton(skeleton_id)
-        base = None
-        if body_overrides:
-            # 体型参数实时覆盖：对目标视图坐标应用比例，无需先保存预设
-            try:
-                views = render_mod.skeleton_views()
-                if view in views:
-                    coords = {k: [float(x), float(y)] for k, (x, y) in views[view].items()}
-                    motion_mod.apply_proportions(coords, body_overrides, view)
-                    base = {k: (float(v[0]), float(v[1])) for k, v in coords.items()}
-            except Exception:
-                base = None
-        return render_mod.render_frame(view, "skeleton", 0, 1.0, 1.0, 1.0, base=base)
-
-    def motion_frame(self, motion_id: str, *, view="front", stage="arms",
-                     skeleton="standard", frame_index=0,
-                     overrides=None, proportions=None):
-        motion = motion_mod.load_motion(motion_id)
-        motion_mod.set_skeleton(skeleton)
-        # 动作定义了 IK 链就启用 IK（保证腿长恒定，hip/knee/foot 联动）
-        use_ik = bool(motion.get("ik"))
-        return motion_mod.render_frame(
-            motion, view, stage, int(frame_index),
-            overrides or None, use_ik, proportions or None,
-        )
+# 2D 遗留渲染服务（方案 A）已移除：3D 渲染由 skeleton3d 提供，无 2D 引擎。
 
 
 class AssetsLabHandler(SimpleHTTPRequestHandler):
-    """HTTP 处理器。依赖注入：species / presets / render 三个服务。"""
+    """HTTP 处理器。依赖注入：species / presets 两个服务。"""
 
     server_version = "AssetsLab/2.0"
 
     # 注入的依赖（由 build_server 设置）
     species: SpeciesModule = None        # type: ignore[assignment]
-    presets: PresetModule = None         # type: ignore[assignment]
-    render: RenderService = None         # type: ignore[assignment]
 
     def log_message(self, format: str, *args: object) -> None:
         return  # silent
@@ -99,28 +62,24 @@ class AssetsLabHandler(SimpleHTTPRequestHandler):
         p = self.path
         if p.startswith("/api/species"):
             return self._species_get()
-        if p.startswith("/api/skeletons"):
-            return self._skeletons_get()
         if p == "/api/motions3d":
             return self._motions3d_list()
         if p.startswith("/api/motion3d/"):
             return self._motion3d_get()
         if p.startswith("/api/skeleton3d/"):
             return self._skeleton3d_get()
+        if p.startswith("/api/"):
+            return self._json({"ok": False, "error": "api not found"}, 404)
         return self._serve_static()
 
     def do_POST(self) -> None:
         p = self.path
         if p.startswith("/api/species"):
             return self._species_post()
-        if p == "/api/skeletons" or p.startswith("/api/skeletons/"):
-            return self._skeletons_post()
         self.send_error(404)
 
     def do_PUT(self) -> None:
         if p := self.path:
-            if p.startswith("/api/skeletons/"):
-                return self._skeletons_post()
             if p.startswith("/api/species/"):
                 return self._species_post()
         self.send_error(404)
@@ -128,8 +87,6 @@ class AssetsLabHandler(SimpleHTTPRequestHandler):
     def do_DELETE(self) -> None:
         if self.path.startswith("/api/species/"):
             return self._species_delete()
-        if self.path.startswith("/api/skeletons/"):
-            return self._skeleton_delete()
 
     # -- 3D API ---------------------------------------------------------
     # 阶段 1/2：3D 骨架 + 3D 动作，任意视角（yaw）正交投影。
@@ -157,7 +114,7 @@ class AssetsLabHandler(SimpleHTTPRequestHandler):
         return self._json({"motions3d": items})
 
     def _skeleton3d_get(self) -> None:
-        """GET /api/skeleton3d/<preset_id>?yaw=45&pitch=12&dist=600&zoom=1 — 3D 骨架任意角度/距离 PNG。"""
+        """GET /api/skeleton3d/<species_id>?yaw=45&pitch=12&dist=600&zoom=1&<body 参数> — 3D 骨架任意角度/距离 PNG（基于物种默认参数）。"""
         from urllib.parse import parse_qs, urlparse
         path_only = urlparse(self.path).path
         parts = _path_parts(path_only, "/api/skeleton3d")
@@ -171,9 +128,13 @@ class AssetsLabHandler(SimpleHTTPRequestHandler):
         zoom = float(qs.get("zoom", ["1"])[0])
         pan_x = float(qs.get("pan_x", ["0"])[0])
         pan_y = float(qs.get("pan_y", ["0"])[0])
+        # 其余查询参数作为体型参数（param_chains 驱动，3D 空间应用）
+        cam_keys = {"yaw", "pitch", "dist", "zoom", "pan_x", "pan_y"}
+        body = {k: float(v[0]) for k, v in qs.items() if k not in cam_keys}
+        species_id = parts[0]
         try:
             from assetslab.skeleton3d import build_skeleton_3d, render_view
-            skel3d = build_skeleton_3d(parts[0])
+            skel3d = build_skeleton_3d(species_id, body or None)
             img = render_view(skel3d, yaw, pitch, dist, zoom, pan_x, pan_y)
             return self._json({"ok": True, "data_url": _image_to_data_url(img)})
         except Exception as e:
@@ -196,12 +157,15 @@ class AssetsLabHandler(SimpleHTTPRequestHandler):
         pan_y = float(qs.get("pan_y", ["0"])[0])
         frame = int(qs.get("frame", ["0"])[0])
         gif = qs.get("gif", ["0"])[0] in ("1", "true")
+        species_q = qs.get("species", [None])[0]
         try:
             from assetslab.skeleton3d import build_skeleton_3d, pose_3d, render_pose
-            # 从所有物种的 actions3d 扫描动作（不硬编码物种/路径）
+            # 从 species actions3d 扫描动作；可指定 species=<id> 限定范围（数据驱动，不硬编码）
             species_id = None
             path = None
             for sp_dir in (_PKG_ROOT / "species").iterdir():
+                if species_q and sp_dir.name != species_q:
+                    continue
                 cand = sp_dir / "actions3d" / f"{parts[0]}.json"
                 if cand.exists():
                     species_id, path = sp_dir.name, cand
@@ -209,43 +173,42 @@ class AssetsLabHandler(SimpleHTTPRequestHandler):
             if path is None:
                 return self._json({"ok": False, "error": f"3D action not found: {parts[0]}"}, 404)
             m3d = json.load(open(path))
-            # 预设由请求指定，缺省取第一个可用预设（数据驱动，不硬编码）
-            preset_id = qs.get("preset", [None])[0] or self._default_preset()
-            if preset_id is None:
-                return self._json({"ok": False, "error": "no preset available"}, 500)
-            skel3d = build_skeleton_3d(preset_id, species_id)
+            # 基于物种默认参数构建骨架（数据驱动，不依赖预设）
+            skel3d = build_skeleton_3d(species_id)
             center = tuple(skel3d.get("center", (480.0, 300.0, 0.0)))
+            n = int(m3d.get("frame_count", 8))
+            # 用首帧计算一次固定 autofit，多帧输出（GIF/frames）共用，避免逐帧缩放抖动
+            from assetslab.skeleton3d import _autofit_transform, project3d
+            base_pose = pose_3d(skel3d, m3d, 0)
+            base_pts = project3d(base_pose, yaw, pitch, dist, 1.0, center, 0.0, 0.0)
+            af = _autofit_transform(base_pts, zoom, pan_x, pan_y)
+            # frames=1：返回全部帧 PNG（前端 JS 轮播，动画与浏览器 GIF 播放无关，最可靠）
+            if qs.get("frames", ["0"])[0] in ("1", "true"):
+                hr = float(skel3d.get("head_radius", 22.0))
+                frame_urls = []
+                for i in range(n):
+                    p = pose_3d(skel3d, m3d, i)
+                    img = render_pose(p, skel3d["bones"], yaw, pitch, dist, zoom, center, pan_x, pan_y, autofit=af, head_radius=hr)
+                    frame_urls.append(_image_to_data_url(img))
+                return self._json({"ok": True, "frames": frame_urls, "frame_count": n})
             if gif:
                 from PIL import Image
+                hr = float(skel3d.get("head_radius", 22.0))
                 frames = []
-                for i in range(int(m3d.get("frame_count", 8))):
-                    pose = pose_3d(skel3d, m3d, i)
-                    frames.append(render_pose(pose, skel3d["bones"], yaw, pitch, dist, zoom, center, pan_x, pan_y).resize((480, 300), Image.Resampling.NEAREST))
+                for i in range(n):
+                    p = pose_3d(skel3d, m3d, i)
+                    frames.append(render_pose(p, skel3d["bones"], yaw, pitch, dist, zoom, center, pan_x, pan_y, autofit=af, head_radius=hr).resize((640, 400), Image.Resampling.NEAREST))
                 buf = io.BytesIO()
                 frames[0].save(buf, format="GIF", save_all=True, append_images=frames[1:],
                                duration=180, loop=0, disposal=2)
                 return self._json({"ok": True, "gif": "data:image/gif;base64," + base64.b64encode(buf.getvalue()).decode()})
             pose = pose_3d(skel3d, m3d, frame)
-            img = render_pose(pose, skel3d["bones"], yaw, pitch, dist, zoom, center, pan_x, pan_y)
+            img = render_pose(pose, skel3d["bones"], yaw, pitch, dist, zoom, center, pan_x, pan_y, autofit=af, head_radius=float(skel3d.get("head_radius", 22.0)))
             return self._json({"ok": True, "data_url": _image_to_data_url(img)})
         except Exception as e:
             return self._json({"ok": False, "error": str(e)}, 500)
 
     # -- static files --------------------------------------------------
-
-    def _default_preset(self) -> str | None:
-        """数据驱动默认预设：presets 目录第一个可用（不硬编码具体 id）。"""
-        pdir = _PKG_ROOT / "presets"
-        if not pdir.is_dir():
-            return None
-        for p in sorted(pdir.glob("*.json")):
-            try:
-                d = json.load(open(p))
-                if d.get("preset_id"):
-                    return d["preset_id"]
-            except Exception:
-                continue
-        return None
 
     def _serve_static(self) -> None:
         """Serve the Vue SPA: try WEB_DIST, fallback to index.html."""
@@ -291,6 +254,12 @@ class AssetsLabHandler(SimpleHTTPRequestHandler):
             if schema is None:
                 return self._json({"ok": False, "error": f"preset_schema not found: {sp_id}"}, 404)
             return self._json(schema)
+        # 默认参数：GET /api/species/<id>/default
+        if len(parts) >= 2 and parts[1] == "default":
+            try:
+                return self._json(self.species.get_default(sp_id))
+            except KeyError:
+                return self._json({"ok": False, "error": f"default not found: {sp_id}"}, 404)
         # 动作详情：GET /api/species/<id>/actions/<action_id>
         if len(parts) >= 3 and parts[1] == "actions":
             action_id = parts[2]
@@ -324,6 +293,13 @@ class AssetsLabHandler(SimpleHTTPRequestHandler):
             return self._json({"ok": True, "created": sp_id})
 
         sp_id = parts[0]
+        # 默认参数保存：POST/PUT /api/species/<id>/default
+        if len(parts) >= 2 and parts[1] == "default":
+            try:
+                self.species.save_default(sp_id, body)
+            except Exception as e:
+                return self._json({"ok": False, "error": str(e)}, 400)
+            return self._json({"ok": True, "saved": sp_id})
         # 动作路由：POST /api/species/<id>/actions 或 PUT .../actions/<aid>
         if len(parts) >= 2 and parts[1] == "actions":
             action_id = body.get("motion_id", "").strip() if len(parts) == 2 else parts[2]
@@ -364,83 +340,6 @@ class AssetsLabHandler(SimpleHTTPRequestHandler):
         except KeyError:
             return self._json({"ok": False, "error": f"species not found: {parts[0]}"}, 404)
         return self._json({"ok": True, "deleted": sp_id})
-
-    # -- skeletons (presets) API ---------------------------------------
-
-    def _skeletons_get(self) -> None:
-        """GET /api/skeletons — list; GET /api/skeletons/<id> — detail with species merge."""
-        parts = _path_parts(self.path, "/api/skeletons")
-        if not parts:
-            return self._json({"skeletons": self.presets.list(), "species": []})
-        try:
-            return self._json(self.presets.get(parts[0]))
-        except KeyError:
-            return self._json({"ok": False, "error": f"skeleton not found: {parts[0]}"}, 404)
-
-    def _skeletons_post(self) -> None:
-        """POST /api/skeletons — create preset;
-        POST /api/skeletons/<id>/render | /api/skeletons/<id>/save"""
-        parts = _path_parts(self.path, "/api/skeletons")
-        if not parts:
-            # 创建预设
-            try:
-                data = self._read_body()
-                preset_id = self.presets.create(data)
-            except FileExistsError as e:
-                return self._json({"ok": False, "error": str(e)}, 409)
-            except Exception as e:
-                return self._json({"ok": False, "error": str(e)}, 400)
-            return self._json({"ok": True, "created": preset_id})
-        if len(parts) == 2 and parts[1] == "render":
-            return self._skeleton_render(parts[0])
-        if len(parts) == 2 and parts[1] == "save":
-            return self._skeleton_save(parts[0])
-        self.send_error(404)
-
-    def _skeleton_delete(self) -> None:
-        """DELETE /api/skeletons/<id> — delete preset."""
-        parts = _path_parts(self.path, "/api/skeletons")
-        if not parts:
-            return self._json({"ok": False, "error": "missing id"}, 400)
-        try:
-            preset_id = self.presets.delete(parts[0])
-        except KeyError:
-            return self._json({"ok": False, "error": f"skeleton not found: {parts[0]}"}, 404)
-        return self._json({"ok": True, "deleted": preset_id})
-
-    def _skeleton_render(self, skel_id: str) -> None:
-        try:
-            body = self._read_body()
-        except Exception as e:
-            return self._json({"ok": False, "error": str(e)}, 400)
-        try:
-            view = str(body.get("view", "front"))
-            # 体型参数覆盖支持两种传法：顶层 {head_scale:..} 或嵌套 {body:{head_scale:..}}
-            overrides_src = body.get("body") if isinstance(body.get("body"), dict) else body
-            body_overrides = _float_map(overrides_src, motion_mod.PROPORTION_NAMES) or None
-            img = self.render.skeleton_preview(skel_id, view, body_overrides)
-            return self._json({"ok": True, "data_url": _image_to_data_url(img)})
-        except Exception as e:
-            return self._json({"ok": False, "error": str(e)}, 500)
-
-    def _skeleton_save(self, skel_id: str) -> None:
-        """Save preset, stripping species-merged data (only preset's own fields)."""
-        try:
-            data = self._read_body()
-        except Exception as e:
-            return self._json({"ok": False, "error": str(e)}, 400)
-        # 只保留预设自身字段，去掉从物种合并来的数据（bones/joints/chains/param_chains/torso_inherit）
-        preset_own = {
-            k: v for k, v in data.items()
-            if k not in ("bones", "joints", "chains", "param_chains", "torso_inherit")
-        }
-        try:
-            saved = self.presets.save(skel_id, preset_own)
-        except Exception as e:
-            return self._json({"ok": False, "error": str(e)}, 400)
-        return self._json({"ok": True, "saved": saved})
-
-    # -- motions API ---------------------------------------------------
 
     # -- helpers -------------------------------------------------------
 
@@ -508,21 +407,12 @@ def build_server(port: int = 8765, host: str = "0.0.0.0"):
     """
     # 领域模块
     species = SpeciesService(PKG_ROOT / "species")
-    presets = PresetService(PKG_ROOT / "presets", species)
-
-    # 动作模块依赖物种模块（动作属于物种）
-    motion_mod.set_species_module(species)
-
-    # 渲染服务（封装 render.py + motion.py）
-    render = _RenderService()
 
     handler = type(
         "InjectedHandler",
         (AssetsLabHandler,),
         {
             "species": species,
-            "presets": presets,
-            "render": render,
         },
     )
     return ThreadingHTTPServer((host, port), handler)

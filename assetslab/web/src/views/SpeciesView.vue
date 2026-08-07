@@ -3,7 +3,7 @@
     <div class="page-header">
       <div>
         <h2>🦴 物种管理</h2>
-        <p class="page-desc">物种 = 骨骼拓扑 + 动作。定义骨骼结构，预设基于物种生成体型。</p>
+        <p class="page-desc">物种 = 骨骼拓扑 + 默认参数 + 动作。默认参数（default.json）是物种添加/修改动作的基础。</p>
       </div>
       <el-button type="primary" @click="startCreate" icon="Plus">新建物种</el-button>
     </div>
@@ -76,6 +76,17 @@
               <el-input v-model="editForm.paramChainsStr" type="textarea" :rows="4" class="mono" />
             </el-form-item>
           </div>
+          <div class="form-grid">
+            <el-form-item label="跟随链 (JSON, follow_chains)：父在前子在后">
+              <el-input v-model="editForm.followChainsStr" type="textarea" :rows="4" class="mono" />
+            </el-form-item>
+            <el-form-item label="跟随参数 (JSON, follow_config)：factor 传递系数">
+              <el-input v-model="editForm.followConfigStr" type="textarea" :rows="4" class="mono" />
+            </el-form-item>
+          </div>
+          <el-form-item label="默认参数 (default.json)：默认姿态 + 体型参数，动作/骨架预览的基础">
+            <el-input v-model="editForm.defaultStr" type="textarea" :rows="10" class="mono" />
+          </el-form-item>
         </el-form>
       </section>
 
@@ -113,8 +124,14 @@
               <el-button size="small" type="primary" @click="renderAction" :loading="motionRenderLoading" icon="Refresh">渲染</el-button>
             </div>
           </div>
-          <div v-if="motionPreview" class="motion-preview"><img :src="motionPreview" /></div>
-          <div v-else class="preview-empty"><p>保存动作后可预览</p></div>
+          <MotionPreview
+            :frames="motionFrames"
+            :fps="6"
+            :cam="cam"
+            :species-id="selectedSpecies?.id"
+            :motion-id="actionEditor?.motion_id"
+            :loading="motionRenderLoading"
+          />
         </div>
       </section>
 
@@ -200,18 +217,14 @@
           <el-tab-pane label="👁 骨架预览" name="preview">
             <div class="section">
               <div class="section-head">
-                <h4>三视图预览（基于 standard 预设）</h4>
-                <el-button size="small" type="primary" @click="renderAllViews" :loading="previewLoading" icon="Refresh">渲染三视图</el-button>
-              </div>
-              <div class="preview-grid" v-if="hasAnyPreview">
-                <div class="preview-cell" v-for="v in ['front','side','back']" :key="v">
-                  <template v-if="previews[v]">
-                    <div class="preview-title">{{ {front:'正面',side:'侧面',back:'背面'}[v] }}</div>
-                    <img :src="previews[v]" />
-                  </template>
+                <h4>骨架预览（基于物种默认参数）</h4>
+                <div class="preview-controls">
+                  <CameraControls v-model="cam" />
+                  <el-button size="small" type="primary" @click="renderAllViews" :loading="previewLoading" icon="Refresh">渲染</el-button>
                 </div>
               </div>
-              <div class="preview-empty" v-else><p>点击「渲染三视图」生成骨架预览</p></div>
+              <div v-if="skeletonPreview" class="motion-preview"><img :src="skeletonPreview" /></div>
+              <div class="preview-empty" v-else><p>点击「渲染」生成 3D 骨架预览</p></div>
             </div>
           </el-tab-pane>
         </el-tabs>
@@ -221,7 +234,7 @@
         <div class="empty-state">
           <div class="empty-icon">🦴</div>
           <h3>选择或创建物种</h3>
-          <p>物种定义骨骼拓扑和动作，是生成预设的基础。</p>
+          <p>物种定义骨骼拓扑和动作；默认参数（default.json）是添加/修改动作时的基础姿态。</p>
           <el-button type="primary" @click="startCreate">新建物种</el-button>
         </div>
       </section>
@@ -234,6 +247,7 @@ import { ref, computed, onMounted } from 'vue'
 import { api } from '../api.js'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import CameraControls from '../components/CameraControls.vue'
+import MotionPreview from '../components/MotionPreview.vue'
 
 const loading = ref(true)
 const speciesList = ref([])
@@ -244,17 +258,17 @@ const activeTab = ref('skeleton')
 const editMode = ref(null)
 const isCreating = ref(false)
 const saving = ref(false)
-const previews = ref({})
+const previews = ref(null)
+const skeletonPreview = ref(null)
 const previewLoading = ref(false)
 const actionEditor = ref(null)
 const actionJson = ref('')
-const motionPreview = ref(null)
+const motionFrames = ref([])
 const motionRenderLoading = ref(false)
 const cam = ref({ yaw: 30, pitch: 12, dist: 600, zoom: 1, panX: 0, panY: 0 })
 const camQS = () => `yaw=${cam.value.yaw}&pitch=${cam.value.pitch}&dist=${cam.value.dist}&zoom=${cam.value.zoom}&pan_x=${cam.value.panX}&pan_y=${cam.value.panY}`
 
-const editForm = ref({ species_id:'', title:'', description:'', jointsStr:'', bonesStr:'', chainsStr:'', paramChainsStr:'' })
-const hasAnyPreview = () => Object.values(previews.value).some(Boolean)
+const editForm = ref({ species_id:'', title:'', description:'', jointsStr:'', bonesStr:'', chainsStr:'', paramChainsStr:'', followChainsStr:'', followConfigStr:'', defaultStr:'' })
 
 const paramChainRows = computed(() => {
   const pc = speciesDetail.value?.param_chains || {}
@@ -273,8 +287,9 @@ async function loadSpecies() {
 async function selectSpecies(sp) {
   selectedSpecies.value = sp
   actionEditor.value = null
-  previews.value = {}
-  motionPreview.value = null
+  previews.value = null
+  skeletonPreview.value = null
+  motionFrames.value = []
   editMode.value = null
   try {
     speciesDetail.value = await api.speciesDetail(sp.id)
@@ -293,14 +308,17 @@ async function openAction(sp, actionId) {
     const act = await api.actionDetail(sp.id, actionId)
     actionEditor.value = act
     actionJson.value = JSON.stringify(act, null, 2)
-    motionPreview.value = null
+    motionFrames.value = []
+    // 进入动作预览：默认「正面」视角并自动渲染
+    cam.value = { ...cam.value, yaw: 0, pitch: 0 }
+    await renderAction()
   } catch(e) { ElMessage.error(e.message) }
 }
 
 function startCreateAction() {
   actionEditor.value = { schema:'assetslab_motion3d_v1', motion_id:'', title:'', description:'', species:selectedSpecies.value.id, frame_count:8, params:{}, root3d:{dy:{phase:true}}, offsets3d:{}, ik3d:{} }
   actionJson.value = JSON.stringify(actionEditor.value, null, 2)
-  motionPreview.value = null
+  motionFrames.value = []
 }
 
 async function saveAction() {
@@ -343,14 +361,9 @@ async function renderAllViews() {
   if (!selectedSpecies.value) return
   previewLoading.value = true
   try {
-    // 用第一个可用预设渲染（数据驱动，不硬编码预设 id）
-    const pl = await api.presets()
-    const pid = (pl.skeletons || [])[0]?.id
-    if (!pid) { ElMessage.warning('暂无预设，先创建预设'); return }
-    for (const view of ['front','side','back']) {
-      const r = await api.renderSkeleton(pid, { view })
-      previews.value[view] = r.data_url
-    }
+    // 基于物种默认参数 + 动态相机渲染（数据驱动，不依赖预设）
+    const r3 = await api.renderSkeleton3d(selectedSpecies.value.id, camQS())
+    skeletonPreview.value = r3.data_url
   } catch(e) { ElMessage.error(e.message) }
   previewLoading.value = false
 }
@@ -359,9 +372,9 @@ async function renderAction() {
   if (!actionEditor.value?.motion_id) { ElMessage.warning('请先填写 motion_id'); return }
   motionRenderLoading.value = true
   try {
-    // 3D 动作：3D 相机渲染
-    const r = await api.renderMotion3d(actionEditor.value.motion_id, camQS() + '&gif=1')
-    motionPreview.value = r.gif || r.data_url
+    // 3D 动作：3D 相机渲染（显式按所属物种）；frames=1 返回全部帧 PNG 供前端轮播
+    const r = await api.renderMotion3d(actionEditor.value.motion_id, `species=${selectedSpecies.value.id}&` + camQS() + '&frames=1')
+    motionFrames.value = (r.frames && r.frames.length) ? r.frames : (r.data_url ? [r.data_url] : [])
   } catch(e) { ElMessage.error(e.message) }
   motionRenderLoading.value = false
 }
@@ -371,13 +384,16 @@ async function renderAction() {
 function startCreate() {
   isCreating.value = true
   editMode.value = 'create'
-  editForm.value = { species_id:'', title:'', description:'', jointsStr:'{}', bonesStr:'{}', chainsStr:'{}', paramChainsStr:'{}' }
+  editForm.value = { species_id:'', title:'', description:'', jointsStr:'{}', bonesStr:'{}', chainsStr:'{}', paramChainsStr:'{}', followChainsStr:'{}', followConfigStr:'{}', defaultStr:'{}' }
 }
 
 function startEdit(sp) {
   isCreating.value = false
   editMode.value = 'edit'
-  api.speciesDetail(sp.id).then(d => {
+  Promise.all([
+    api.speciesDetail(sp.id),
+    api.speciesDefault(sp.id).catch(() => null),
+  ]).then(([d, def]) => {
     editForm.value = {
       species_id: d.species_id || sp.id,
       title: d.title || '', description: d.description || '',
@@ -385,6 +401,9 @@ function startEdit(sp) {
       bonesStr: JSON.stringify(d.bones || {}, null, 2),
       chainsStr: JSON.stringify(d.chains || {}, null, 2),
       paramChainsStr: JSON.stringify(d.param_chains || {}, null, 2),
+      followChainsStr: JSON.stringify(d.follow_chains || {}, null, 2),
+      followConfigStr: JSON.stringify(d.follow_config || {}, null, 2),
+      defaultStr: JSON.stringify(def || {}, null, 2),
     }
   }).catch(e => ElMessage.error(e.message))
 }
@@ -400,11 +419,18 @@ async function saveSpecies() {
       bones: JSON.parse(editForm.value.bonesStr),
       chains: JSON.parse(editForm.value.chainsStr),
       param_chains: JSON.parse(editForm.value.paramChainsStr),
+      follow_chains: JSON.parse(editForm.value.followChainsStr),
+      follow_config: JSON.parse(editForm.value.followConfigStr),
       schema: 'assetslab_species_v1',
     }
     if (!data.species_id) { ElMessage.warning('物种ID不能为空'); saving.value=false; return }
     if (isCreating.value) await api.createSpecies(data)
     else await api.updateSpecies(data.species_id, data)
+    // 保存默认参数（default.json）：默认姿态 + 体型参数，动作/预览的基础
+    try {
+      const def = JSON.parse(editForm.value.defaultStr || '{}')
+      if (def && Object.keys(def).length) await api.saveSpeciesDefault(data.species_id, def)
+    } catch (e) { /* 默认参数为空/无效则跳过 */ }
     ElMessage.success('已保存')
     editMode.value = null
     selectedSpecies.value = null

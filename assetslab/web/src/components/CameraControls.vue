@@ -1,17 +1,18 @@
 <template>
-  <div class="cam-controls">
+  <div class="cam-controls" :class="{ compact }">
     <!-- 预设视角快捷入口 -->
     <div class="cam-presets">
       <el-button v-for="p in presets" :key="p.label" size="small"
                  :type="activePreset === p.label ? 'primary' : ''"
                  @click="applyPreset(p)">{{ p.label }}</el-button>
     </div>
-    <!-- 相机滑块 -->
-    <div class="cam-grid" :class="{ compact }">
-      <div class="cam-item" v-for="item in items" :key="item.key">
-        <div class="cam-label">{{ item.label }} <span class="cam-key">{{ item.display }}</span></div>
-        <el-slider :min="item.min" :max="item.max" :step="item.step"
-                   :model-value="cam[item.key]" @update:model-value="set(item.key, $event)" size="small" />
+    <!-- 相机数值（input-number，紧凑单行；不用滑块） -->
+    <div class="cam-fields">
+      <div class="cam-field" v-for="item in items" :key="item.key" :title="item.label">
+        <span class="cam-key">{{ item.short }}</span>
+        <el-input-number :min="item.min" :max="item.max" :step="item.step"
+                         :model-value="cam[item.key]" @update:model-value="set(item.key, $event)"
+                         size="small" controls-position="right" class="cam-input" />
       </div>
     </div>
   </div>
@@ -51,25 +52,27 @@ const activePreset = computed(() => {
 
 const items = computed(() => {
   const base = [
-    { key: 'yaw', label: '水平角 yaw', min: 0, max: 360, step: 1, display: `${cam.value.yaw}°` },
-    { key: 'pitch', label: '俯仰 pitch', min: -60, max: 60, step: 1, display: `${cam.value.pitch}°` },
+    { key: 'yaw', label: '水平角 yaw', short: 'yaw', min: 0, max: 360, step: 1 },
+    { key: 'pitch', label: '俯仰 pitch', short: 'pitch', min: -60, max: 60, step: 1 },
   ]
   if (props.compact) return base
   base.push(
-    { key: 'dist', label: '距离 distance', min: 200, max: 1500, step: 20, display: cam.value.dist },
-    { key: 'zoom', label: '缩放 zoom', min: 0.5, max: 2, step: 0.1, display: cam.value.zoom.toFixed(1) },
-    { key: 'panX', label: '水平平移 panX', min: -300, max: 300, step: 10, display: cam.value.panX },
-    { key: 'panY', label: '垂直平移 panY', min: -200, max: 200, step: 10, display: cam.value.panY },
+    { key: 'dist', label: '距离 distance', short: 'dist', min: 200, max: 1500, step: 20 },
+    { key: 'zoom', label: '缩放 zoom', short: 'zoom', min: 0.5, max: 2, step: 0.1 },
+    { key: 'panX', label: '水平平移 panX', short: 'panX', min: -300, max: 300, step: 10 },
+    { key: 'panY', label: '垂直平移 panY', short: 'panY', min: -200, max: 200, step: 10 },
   )
   return base
 })
 </script>
 
 <style scoped>
-.cam-presets { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
-.cam-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px 14px; }
-.cam-grid.compact { grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); }
-.cam-item { border: 1px solid #ebeef5; border-radius: 8px; padding: 6px 10px; background: #fafbfc; }
-.cam-label { display: flex; justify-content: space-between; font-size: .78rem; color: #606266; margin-bottom: 2px; }
-.cam-key { font-family: monospace; color: #409eff; font-weight: 600; }
+.cam-controls { display: flex; flex-direction: column; gap: 6px; }
+.cam-presets { display: flex; flex-wrap: wrap; gap: 6px; }
+.cam-fields { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.cam-field { display: inline-flex; align-items: center; gap: 4px; }
+.cam-key { font-family: monospace; color: #909399; font-size: .7rem; width: 44px; flex-shrink: 0; }
+.cam-input { width: 96px; }
+.cam-controls.compact .cam-field { gap: 4px; }
+.cam-controls.compact .cam-input { width: 84px; }
 </style>

@@ -9,7 +9,7 @@
   python scripts/generate_presets.py            # 生成全部预设
   python scripts/generate_presets.py model_female  # 只生成指定预设
 
-生成的预设写入 assetslab/presets/<id>.json（positions_3d 为主，positions 为 2D 渲染派生层）。
+生成的预设写入 assetslab/presets/<species>/<id>.json（positions_3d 为主，positions 为 2D 渲染派生层）。
 """
 
 from __future__ import annotations
@@ -89,7 +89,12 @@ def _round(v: float) -> float:
 
 
 def gen_joints3d(spec: dict) -> dict[str, list[float]]:
-    """按解剖比例生成 39 个 3D 关节 [x(左右), y(上下), z(前后)]。"""
+    """按解剖比例生成 39 个 3D 关节 [x(左右), y(上下), z(前后)]。
+
+    默认 **T-pose（十字形）**：双臂水平打开、双腿并拢伸直、左右完全对称。
+    修复历史问题：左右肢不再用 z = ±(深度) 制造“左前右后”的错位，
+    而是让左右对称（同 z 深度）；手臂加长到解剖学比例（不再短小内弯）。
+    """
     T = 2.0 * spec["head_radius"]          # 头高（单位）
     sw = spec["shoulder"]                   # 肩宽
     hw = spec["hip"]                        # 髋宽
@@ -105,7 +110,7 @@ def gen_joints3d(spec: dict) -> dict[str, list[float]]:
     # 躯干中线 y（距头顶头数）
     mid = {
         "head": 0.5, "jaw": 1.0, "neck": 1.3, "upper_chest": 1.6,
-        "chest": 2.0, "sternum": 2.2, "waist": 2.6, "abdomen": 2.9,
+        "chest": 2.0, "sternum": 2.35, "waist": 2.6, "abdomen": 2.9,
         "pelvis": 3.2,
     }
     # 髋/腿 y
@@ -114,27 +119,21 @@ def gen_joints3d(spec: dict) -> dict[str, list[float]]:
     ankle_y = knee_y + y["shin"]
     foot_y = ankle_y + y["foot"]
 
-    # 上肢 y（相对肩/躯干）
+    # 肩/臂（头数）：上臂 ~1.3、前臂 ~1.15、手 ~0.15 —— 手臂够长，手可达大腿
     shoulder_y = 1.55
-    elbow_y = shoulder_y + 0.55 * T / T      # 上臂 ~0.55 头（近似，下面用比例）
-    # 用绝对头数：上臂长 ~0.6 头、前臂 ~0.55 头
-    upper_arm = 0.62
-    forearm = 0.58
-    elbow_y = shoulder_y + upper_arm
-    wrist_y = elbow_y + forearm
-    hand_y = wrist_y + 0.18
+    upper_arm = 1.3
+    forearm = 1.15
+    hand = 0.15
 
-    # 左右对称助手
+    # 左右对称助手（x 用距中线偏移）
     def lr(side: str, off: float) -> float:
         return CX - off if side == "left" else CX + off
 
-    # 各关节 x 偏移（半宽）
     sh_half = sw / 2.0
     hp_half = hw / 2.0
-    waist_half = sh_half * spec["waist_ratio"]
     J: dict[str, list[float]] = {}
 
-    # --- 中线 ---
+    # --- 中线（z=0 基准；胸/颈带前凸 cd、驼背 sl） ---
     for name, r in mid.items():
         z = 0.0
         if name in ("neck", "upper_chest", "chest", "sternum"):
@@ -142,32 +141,35 @@ def gen_joints3d(spec: dict) -> dict[str, list[float]]:
         z += sl * 0.7 if name in ("head", "jaw", "neck") else (sl * 0.4 if name in ("upper_chest", "chest", "sternum") else 0)
         J[name] = [CX, _round(Y(r)), _round(z)]
 
-    # --- 锁骨 / 肩 ---
+    # --- T-pose 手臂：水平打开（同肩高 y），左右 z 对称（自然前倾一档） ---
+    arm_z = 8.0 + cd * 0.2 + sl * 0.1
     for side in ("left", "right"):
-        s = 1 if side == "left" else -1
-        J[f"clavicle_{side}"] = [lr(side, sh_half * 0.5), _round(Y(1.5)), _round(6 * s + cd * 0.2 + sl * 0.3)]
-        J[f"shoulder_{side}"] = [lr(side, sh_half), _round(Y(shoulder_y)), _round(14 * s + cd * 0.3 + sl * 0.2)]
-        J[f"elbow_{side}"] = [lr(side, sh_half - 5), _round(Y(elbow_y)), _round(16 * s + sl * 0.1)]
-        J[f"wrist_{side}"] = [lr(side, sh_half - 7), _round(Y(wrist_y)), _round(16 * s)]
-        J[f"palm_{side}"] = [lr(side, sh_half - 9), _round(Y(hand_y)), _round(18 * s)]
-        J[f"finger_{side}"] = [lr(side, sh_half - 9), _round(Y(hand_y + 0.1)), _round(18 * s)]
+        sign = 1 if side == "left" else -1
+        shx = CX - sh_half * sign
+        J[f"clavicle_{side}"] = [CX - sh_half * 0.5 * sign, _round(Y(1.5)), _round(4.0 + cd * 0.2)]
+        J[f"shoulder_{side}"] = [shx, _round(Y(shoulder_y)), _round(arm_z)]
+        J[f"elbow_{side}"] = [CX - (sh_half + upper_arm * T) * sign, _round(Y(shoulder_y)), _round(arm_z)]
+        J[f"wrist_{side}"] = [CX - (sh_half + (upper_arm + forearm) * T) * sign, _round(Y(shoulder_y)), _round(arm_z)]
+        J[f"palm_{side}"] = [CX - (sh_half + (upper_arm + forearm + hand) * T) * sign, _round(Y(shoulder_y)), _round(arm_z)]
+        J[f"finger_{side}"] = [CX - (sh_half + (upper_arm + forearm + hand + 0.08) * T) * sign, _round(Y(shoulder_y)), _round(arm_z)]
 
-    # --- 肋骨 ---
+    # --- 肋骨（左右对称） ---
     for side in ("left", "right"):
-        s = 1 if side == "left" else -1
-        J[f"rib_upper_{side}"] = [lr(side, sh_half * 0.42), _round(Y(2.0)), _round(3 * s + cd * 0.3)]
-        J[f"rib_lower_{side}"] = [lr(side, sh_half * 0.38), _round(Y(2.3)), _round(3 * s + cd * 0.3)]
+        sign = 1 if side == "left" else -1
+        J[f"rib_upper_{side}"] = [CX - sh_half * 0.42 * sign, _round(Y(2.0)), _round(4.0 + cd * 0.2)]
+        J[f"rib_lower_{side}"] = [CX - sh_half * 0.38 * sign, _round(Y(2.3)), _round(4.0 + cd * 0.2)]
 
-    # --- 骨盆 / 髋 / 腿 ---
+    # --- 骨盆 / 髋 / 腿：伸直、双脚并拢（踝/脚靠中，左右 z 对称） ---
+    leg_z = 4.0
     for side in ("left", "right"):
-        s = 1 if side == "left" else -1
-        J[f"iliac_{side}"] = [lr(side, hp_half * 0.7), _round(Y(hip_y + 0.12)), _round(8 * s)]
-        J[f"hip_{side}"] = [lr(side, hp_half), _round(Y(hip_y + 0.15)), _round(10 * s)]
-        J[f"knee_{side}"] = [lr(side, hp_half - 2), _round(Y(knee_y)), _round(10 * s)]
-        J[f"ankle_{side}"] = [lr(side, hp_half - 3), _round(Y(ankle_y)), _round(12 * s)]
-        J[f"heel_{side}"] = [lr(side, hp_half - 3), _round(Y(ankle_y + 0.35)), _round(16 * s)]
-        J[f"foot_{side}"] = [lr(side, hp_half - 3), _round(Y(foot_y)), _round(20 * s)]
-        J[f"toe_{side}"] = [lr(side, hp_half - 3), _round(Y(foot_y)), _round(24 * s)]
+        sign = 1 if side == "left" else -1
+        J[f"iliac_{side}"] = [CX - hp_half * 0.7 * sign, _round(Y(hip_y + 0.12)), _round(leg_z)]
+        J[f"hip_{side}"] = [CX - hp_half * sign, _round(Y(hip_y + 0.15)), _round(leg_z)]
+        J[f"knee_{side}"] = [CX - hp_half * 0.85 * sign, _round(Y(knee_y)), _round(leg_z)]
+        J[f"ankle_{side}"] = [CX - 2.0 * sign, _round(Y(ankle_y)), _round(leg_z)]
+        J[f"heel_{side}"] = [CX - 2.0 * sign, _round(Y(ankle_y + 0.35)), _round(leg_z)]
+        J[f"foot_{side}"] = [CX - 2.0 * sign, _round(Y(foot_y)), _round(leg_z)]
+        J[f"toe_{side}"] = [CX - 6.0 * sign, _round(Y(foot_y)), _round(leg_z + 4.0)]
 
     return J
 
@@ -278,7 +280,8 @@ def main() -> None:
     print(f"preset_schema: {len(schema.get('joints_3d', []))} joints_3d, "
           f"{len(schema.get('params', {}))} params, "
           f"views_2d { {k: len(v) for k, v in schema.get('views_2d', {}).items()} }")
-    PRESETS_DIR.mkdir(parents=True, exist_ok=True)
+    species_dir = PRESETS_DIR / (schema.get("species") or "human")
+    species_dir.mkdir(parents=True, exist_ok=True)
     for pid in targets:
         if pid not in PRESET_SPECS:
             print(f"unknown preset: {pid} (available: {list(PRESET_SPECS)})")
@@ -289,9 +292,9 @@ def main() -> None:
         data["title"] = spec["title"]
         data["description"] = (f"{spec['gender']} · {spec['age']}，模特身材（解剖学比例）。"
                                f"头径 {2*spec['head_radius']:.0f}px，肩宽 {spec['shoulder']:.0f}px，髋宽 {spec['hip']:.0f}px。")
-        path = PRESETS_DIR / f"{pid}.json"
+        path = species_dir / f"{pid}.json"
         path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-        print(f"generated {path.name}: joints3d={len(data['positions_3d'])}, views={ {k: len(v) for k, v in data['positions'].items()} }")
+        print(f"generated {path.name} -> {species_dir.name}/: joints3d={len(data['positions_3d'])}, views={ {k: len(v) for k, v in data['positions'].items()} }")
 
 
 if __name__ == "__main__":

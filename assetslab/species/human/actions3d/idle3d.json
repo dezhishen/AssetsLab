@@ -2,51 +2,350 @@
   "schema": "assetslab_motion3d_v1",
   "motion_id": "idle3d",
   "title": "Idle 3D — 呼吸待机",
-  "description": "3D 待机：呼吸起伏、胸腔开合、耸肩、重心微移、手臂自然轻摆。",
+  "description": "自然待机：胸廓呼吸起伏、重心微移、轻微耸肩、手臂自然垂手轻摆、头颈轻转。",
   "species": "human",
   "frame_count": 8,
   "params": {
-    "intensity": {"default": 1.0, "min": 0.0, "max": 1.5, "label": "力度协调"},
-    "breath": {"default": 1.0, "min": 0.0, "max": 2.0, "label": "呼吸"},
-    "chest_expand": {"default": 1.0, "min": 0.0, "max": 2.0, "label": "胸廓"},
-    "shoulder_rise": {"default": 1.0, "min": 0.0, "max": 2.0, "label": "耸肩"},
-    "weight_shift": {"default": 1.0, "min": 0.0, "max": 2.0, "label": "重心"},
-    "arm_sway": {"default": 1.0, "min": 0.0, "max": 2.0, "label": "手臂"}
+    "intensity": {
+      "default": 1.0,
+      "min": 0.0,
+      "max": 1.5,
+      "label": "力度协调"
+    },
+    "breath": {
+      "default": 1.0,
+      "min": 0.0,
+      "max": 2.0,
+      "label": "呼吸"
+    },
+    "chest_expand": {
+      "default": 1.0,
+      "min": 0.0,
+      "max": 2.0,
+      "label": "胸廓"
+    },
+    "shoulder_rise": {
+      "default": 1.0,
+      "min": 0.0,
+      "max": 2.0,
+      "label": "耸肩"
+    },
+    "weight_shift": {
+      "default": 1.0,
+      "min": 0.0,
+      "max": 2.0,
+      "label": "重心"
+    },
+    "arm_sway": {
+      "default": 1.0,
+      "min": 0.0,
+      "max": 2.0,
+      "label": "手臂"
+    }
   },
   "signals": {
-    "phase": {"phase": true},
-    "breath": {"mul": [{"sin": {"phase": true}}, {"param": "breath"}, {"param": "intensity"}]},
-    "chest": {"mul": [{"sin": {"phase": true}}, {"param": "chest_expand"}, {"param": "intensity"}]},
-    "shoulder": {"mul": [{"sin": {"phase": true}}, {"param": "shoulder_rise"}, {"param": "intensity"}]},
-    "sway": {"mul": [{"sin": {"phase": true}}, {"param": "weight_shift"}, {"param": "intensity"}]},
-    "arm": {"mul": [{"sin": {"phase": true}}, {"param": "arm_sway"}, {"param": "intensity"}]},
-    "arm_r": {"neg": {"signal": "arm"}}
+    "phase": {
+      "phase": true
+    },
+    "breath": {
+      "mul": [
+        {
+          "sin": {
+            "phase": true
+          }
+        },
+        {
+          "param": "breath"
+        },
+        {
+          "param": "intensity"
+        }
+      ]
+    },
+    "chest": {
+      "mul": [
+        {
+          "sin": {
+            "phase": true
+          }
+        },
+        {
+          "param": "chest_expand"
+        },
+        {
+          "param": "intensity"
+        }
+      ]
+    },
+    "shoulder": {
+      "mul": [
+        {
+          "sin": {
+            "phase": true
+          }
+        },
+        {
+          "param": "shoulder_rise"
+        },
+        {
+          "param": "intensity"
+        }
+      ]
+    },
+    "sway": {
+      "mul": [
+        {
+          "sin": {
+            "phase": true
+          }
+        },
+        {
+          "param": "weight_shift"
+        },
+        {
+          "param": "intensity"
+        }
+      ]
+    },
+    "arm": {
+      "mul": [
+        {
+          "sin": {
+            "phase": true
+          }
+        },
+        {
+          "param": "arm_sway"
+        },
+        {
+          "param": "intensity"
+        }
+      ]
+    },
+    "arm_r": {
+      "neg": {
+        "signal": "arm"
+      }
+    }
   },
   "root3d": {
-    "x": {"mul": [{"signal": "sway"}, 1.5]},
-    "y": {"mul": [{"signal": "breath"}, -1.2]}
+    "x": {
+      "mul": [
+        {
+          "signal": "sway"
+        },
+        1.5
+      ]
+    },
+    "y": {
+      "mul": [
+        {
+          "signal": "breath"
+        },
+        -1.2
+      ]
+    }
   },
   "offsets3d": {
-    "pelvis": {"x": {"mul": [{"signal": "sway"}, 1.2]}},
-    "hip_left": {"x": {"mul": [{"signal": "sway"}, 1.2]}},
-    "hip_right": {"x": {"mul": [{"signal": "sway"}, 1.2]}},
-    "rib_upper_left": {"x": {"mul": [{"signal": "chest"}, -1.2]}},
-    "rib_upper_right": {"x": {"mul": [{"signal": "chest"}, 1.2]}},
-    "rib_lower_left": {"x": {"mul": [{"signal": "chest"}, -0.9]}},
-    "rib_lower_right": {"x": {"mul": [{"signal": "chest"}, 0.9]}},
-    "shoulder_left": {"y": {"mul": [{"signal": "shoulder"}, -1.2]}},
-    "shoulder_right": {"y": {"mul": [{"signal": "shoulder"}, -1.2]}},
-    "clavicle_left": {"y": {"mul": [{"signal": "shoulder"}, -1.2]}},
-    "clavicle_right": {"y": {"mul": [{"signal": "shoulder"}, -1.2]}},
-    "wrist_left": {"z": {"mul": [{"signal": "arm_r"}, 4]}, "y": {"mul": [{"signal": "arm_r"}, 3]}},
-    "wrist_right": {"z": {"mul": [{"signal": "arm"}, 4]}, "y": {"mul": [{"signal": "arm"}, 3]}}
+    "chest": {
+      "y": {
+        "mul": [
+          {
+            "signal": "breath"
+          },
+          -0.8
+        ]
+      }
+    },
+    "pelvis": {
+      "x": {
+        "mul": [
+          {
+            "signal": "sway"
+          },
+          1.2
+        ]
+      }
+    },
+    "hip_left": {
+      "x": {
+        "mul": [
+          {
+            "signal": "sway"
+          },
+          1.2
+        ]
+      }
+    },
+    "hip_right": {
+      "x": {
+        "mul": [
+          {
+            "signal": "sway"
+          },
+          1.2
+        ]
+      }
+    },
+    "rib_upper_left": {
+      "x": {
+        "mul": [
+          {
+            "signal": "chest"
+          },
+          -1.2
+        ]
+      }
+    },
+    "rib_upper_right": {
+      "x": {
+        "mul": [
+          {
+            "signal": "chest"
+          },
+          1.2
+        ]
+      }
+    },
+    "rib_lower_left": {
+      "x": {
+        "mul": [
+          {
+            "signal": "chest"
+          },
+          -0.9
+        ]
+      }
+    },
+    "rib_lower_right": {
+      "x": {
+        "mul": [
+          {
+            "signal": "chest"
+          },
+          0.9
+        ]
+      }
+    },
+    "shoulder_left": {
+      "y": {
+        "mul": [
+          {
+            "signal": "shoulder"
+          },
+          -1.2
+        ]
+      },
+      "z": {
+        "mul": [
+          {
+            "signal": "arm"
+          },
+          -1.6
+        ]
+      }
+    },
+    "shoulder_right": {
+      "y": {
+        "mul": [
+          {
+            "signal": "shoulder"
+          },
+          -1.2
+        ]
+      },
+      "z": {
+        "mul": [
+          {
+            "signal": "arm_r"
+          },
+          -1.6
+        ]
+      }
+    },
+    "clavicle_left": {
+      "y": {
+        "mul": [
+          {
+            "signal": "shoulder"
+          },
+          -1.2
+        ]
+      }
+    },
+    "clavicle_right": {
+      "y": {
+        "mul": [
+          {
+            "signal": "shoulder"
+          },
+          -1.2
+        ]
+      }
+    },
+    "head": {
+      "z": {
+        "mul": [
+          {
+            "signal": "sway"
+          },
+          1.2
+        ]
+      }
+    },
+    "neck_mid": {
+      "z": {
+        "mul": [
+          {
+            "signal": "sway"
+          },
+          0.8
+        ]
+      }
+    }
   },
   "ik3d": {
     "chains": [
-      {"root": "hip_left", "mid": "knee_left", "tip": "ankle_left"},
-      {"root": "hip_right", "mid": "knee_right", "tip": "ankle_right"},
-      {"root": "shoulder_left", "mid": "elbow_left", "tip": "wrist_left", "pole": [0.0, 0.0, -1.0]},
-      {"root": "shoulder_right", "mid": "elbow_right", "tip": "wrist_right", "pole": [0.0, 0.0, -1.0]}
+      {
+        "root": "hip_left",
+        "mid": "knee_left",
+        "tip": "ankle_left",
+        "pole": [
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      {
+        "root": "hip_right",
+        "mid": "knee_right",
+        "tip": "ankle_right",
+        "pole": [
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      {
+        "root": "shoulder_left",
+        "mid": "elbow_left",
+        "tip": "wrist_left",
+        "pole": [
+          0.0,
+          0.0,
+          -1.0
+        ]
+      },
+      {
+        "root": "shoulder_right",
+        "mid": "elbow_right",
+        "tip": "wrist_right",
+        "pole": [
+          0.0,
+          0.0,
+          -1.0
+        ]
+      }
     ]
   }
 }

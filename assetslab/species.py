@@ -40,6 +40,9 @@ class SpeciesService:
     def _preset_schema_path(self, species_id: str) -> Path:
         return self._root / species_id / "preset_schema.json"
 
+    def _default_path(self, species_id: str) -> Path:
+        return self._root / species_id / "default.json"
+
     def _actions_dir(self, species_id: str) -> Path:
         return self._root / species_id / "actions3d"
 
@@ -117,6 +120,24 @@ class SpeciesService:
         if not path.is_file():
             return None
         return json.loads(path.read_text(encoding="utf-8"))
+
+    # -- 默认参数（物种自带姿态/体型，动作与骨架预览的基础） --
+
+    def get_default(self, species_id: str) -> dict:
+        """读取 species/<id>/default.json（不存在抛 KeyError）。"""
+        path = self._default_path(species_id)
+        if not path.is_file():
+            raise KeyError(f"default not found: {species_id}")
+        return json.loads(path.read_text(encoding="utf-8"))
+
+    def save_default(self, species_id: str, data: dict) -> str:
+        """保存 species/<id>/default.json（存在则覆盖）。"""
+        path = self._default_path(species_id)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        data.setdefault("species", species_id)
+        data.setdefault("schema", "assetslab_default_v1")
+        self._save_json(path, data)
+        return species_id
 
     # -- 物种 CRUD --
 

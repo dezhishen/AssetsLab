@@ -11,16 +11,20 @@ assetslab/
   species/                    ← 物种（文件夹式，细颗粒度管理）
     human/                    ← 每个物种一个文件夹
       skeleton.json           ← 骨骼拓扑：关节、骨骼、链、参数链
-      actions/                ← 动作定义（每动作一个文件）
-        walk.json
-        run.json
-        idle.json
-        jump.json
-        base.json
-  presets/                    ← 体型预设（引用物种）
-    standard.json
-    female.json
-  motions/                    ← [兼容] 旧版动作目录
+      preset_schema.json      ← 预设 schema（随骨架自动派生）
+      actions3d/              ← 3D 动作定义（每动作一个文件）
+        walk3d.json
+        run3d.json
+        idle3d.json
+        jump3d.json
+    three_head_dragon/        ← 三头飞龙（同上结构）
+  presets/                    ← 体型预设（按物种分文件夹）
+    human/
+      model_male.json
+      model_female.json
+      ...
+    three_head_dragon/
+      three_head_dragon_default.json
 ```
 
 ## API
